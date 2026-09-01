@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Vincent Tapoc">
+    <meta name="description" content="Vincent Tapoc — Front End Developer, Marketing, Vibe Coder, Web Developer">
+    <title>Vincent Tapoc | Portfolio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Intro Screen -->
+    <div class="intro-screen" id="introScreen">
+        <div class="intro-content">
+            <div class="intro-logo">
+                <img src="logo.png" alt="Vincent Tapoc">
+            </div>
+            <h1 class="intro-title">Vincent Tapoc</h1>
+            <div class="typing-block role-block">
+                <span class="typing-prefix">//</span>
+                <span id="roleTyping" class="typewriter" aria-live="polite"></span>
+            </div>
+            <button class="intro-enter" id="enterBtn">Explore</button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <!-- Navigation -->
+    <nav class="nav">
+        <div class="nav-content">
+            <a href="#" class="logo">
+                <img src="logo.png" alt="Vincent Tapoc" class="logo-img">
+            </a>
+            <a href="mailto:bosstcode@outlook.com" class="nav-email">connect@bosstcode.com</a>
+        </div>
+    </nav>
+
+    <!-- 3D Canvas Container -->
+    <div id="canvas-container"></div>
+
+    <!-- Hover Tooltip -->
+    <div class="hover-tooltip" id="hoverTooltip">Portfolio</div>
+
+    <!-- Loading Screen -->
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loading-text">Loading 3D Scene...</div>
+        <div class="loading-bar">
+            <div class="loading-progress" id="loadingProgress"></div>
+        </div>
+    </div>
+
+    <!-- Digital Clock -->
+    <div class="digital-clock">
+        <div class="clock-time" id="clockTime">00:00:00</div>
+        <div class="clock-date" id="clockDate">Loading...</div>
+    </div>
+
+    <!-- Interactive Modal -->
+    <div class="portfolio-modal" id="portfolioModal">
+        <div class="modal-header">
+            <button class="modal-close" id="closeModal">&times;</button>
+        </div>
+        <div class="modal-content">
+            <nav class="modal-nav">
+                <button class="modal-nav-btn active" data-section="about">About</button>
+                <button class="modal-nav-btn" data-section="work">Work</button>
+                <button class="modal-nav-btn" data-section="contact">Contact</button>
+            </nav>
+
+            <div class="modal-sections">
+                <!-- About Section -->
+                <div class="modal-section active" id="about-section">
+                    <h2>About Me</h2>
+                    <p class="about-intro">I'm a developer who believes in the power of clean code and thoughtful design.</p>
+                    <p>With 5+ years of experience in web development, I specialize in creating performant, accessible, and visually stunning applications. My approach combines technical expertise with creative problem-solving.</p>
+                    <p>When I'm not coding, you'll find me exploring new technologies, contributing to open source, or sharing knowledge with the developer community.</p>
+
+                    <div class="skills-section">
+                        <h3>Skills</h3>
+                        <div class="skills-list">
+                            <div class="skill-group">
+                                <h4>Development</h4>
+                                <ul>
+                                    <li>JavaScript / TypeScript</li>
+                                    <li>React / Vue / Next.js</li>
+                                    <li>Node.js / Express</li>
+                                    <li>Python / Django</li>
+                                </ul>
+                            </div>
+                            <div class="skill-group">
+                                <h4>Design</h4>
+                                <ul>
+                                    <li>UI/UX Design</li>
+                                    <li>Figma / Adobe XD</li>
+                                    <li>Design Systems</li>
+                                    <li>Accessibility</li>
+                                </ul>
+                            </div>
+                            <div class="skill-group">
+                                <h4>Tools</h4>
+                                <ul>
+                                    <li>Git / GitHub</li>
+                                    <li>Docker / Kubernetes</li>
+                                    <li>CI/CD Pipelines</li>
+                                    <li>AWS / Vercel</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Work Section -->
+                <div class="modal-section" id="work-section">
+                    <h2>Projects</h2>
+                    <div class="projects-list">
+                        <div class="project-item">
+                            <h3>E-Commerce Platform</h3>
+                            <p>A full-stack e-commerce solution with real-time inventory management and seamless checkout experience.</p>
+                            <div class="project-tags">
+                                <span>React</span>
+                                <span>Node.js</span>
+                                <span>MongoDB</span>
+                            </div>
+                            <a href="#" class="project-link">View Project →</a>
+                        </div>
+
+                        <div class="project-item">
+                            <h3>Design System</h3>
+                            <p>Comprehensive design system and component library for enterprise applications.</p>
+                            <div class="project-tags">
+                                <span>TypeScript</span>
+                                <span>Storybook</span>
+                                <span>Figma</span>
+                            </div>
+                            <a href="#" class="project-link">View Project →</a>
+                        </div>
+
+                        <div class="project-item">
+                            <h3>Analytics Dashboard</h3>
+                            <p>Real-time data visualization dashboard for business intelligence and reporting.</p>
+                            <div class="project-tags">
+                                <span>Vue.js</span>
+                                <span>D3.js</span>
+                                <span>Python</span>
+                            </div>
+                            <a href="#" class="project-link">View Project →</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contact Section -->
+                <div class="modal-section" id="contact-section">
+                    <h2>Get In Touch</h2>
+                    <p class="contact-intro">I'm always interested in hearing about new projects and opportunities. Whether you have a question or just want to say hi, feel free to reach out!</p>
+
+                    <div class="contact-list">
+                        <a href="mailto:bosstcode@outlook.com" class="contact-link">
+                            <span class="contact-label">Email</span>
+                            <span class="contact-value">connect@bosstcode.com</span>
+                        </a>
+                        <a href="https://github.com/yourusername" target="_blank" class="contact-link">
+                            <span class="contact-label">GitHub</span>
+                            <span class="contact-value">@yourusername</span>
+                        </a>
+                        <a href="https://linkedin.com/in/yourusername" target="_blank" class="contact-link">
+                            <span class="contact-label">LinkedIn</span>
+                            <span class="contact-value">your-profile</span>
+                        </a>
+                        <a href="https://twitter.com/yourusername" target="_blank" class="contact-link">
+                            <span class="contact-label">Twitter</span>
+                            <span class="contact-value">@yourusername</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="scene.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
