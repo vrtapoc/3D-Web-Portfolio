@@ -948,6 +948,10 @@ body.intro-active {
     animation: fadeInUp 0.5s ease;
 }
 
+.modal-section.active {
+    display: block;
+}
+
 .about-header-row {
     display: flex;
     align-items: center;
