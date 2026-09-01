@@ -45,6 +45,7 @@ function typewriterEffect(element, phrases, options = {}) {
 }
 
 const roleElement = document.getElementById('roleTyping');
+const taglineElement = document.getElementById('taglineTyping');
 const descriptionElement = document.getElementById('descriptionTyping');
 
 if (roleElement) {
@@ -53,6 +54,42 @@ if (roleElement) {
         deleteDelay: 80,
         pauseDelay: 1800
     });
+}
+
+if (taglineElement) {
+    const taglinePhrases = [
+        'Marketer. Builder. Automator.',
+        'Turning ideas into scalable systems.',
+        '5+ years in marketing. Now building the web.'
+    ];
+
+    let taglineIndex = 0;
+    let taglineChar = 0;
+    let deletingTagline = false;
+
+    function spinTagline() {
+        const phrase = taglinePhrases[taglineIndex];
+        if (!deletingTagline) {
+            taglineChar += 1;
+            taglineElement.textContent = phrase.slice(0, taglineChar);
+            if (taglineChar >= phrase.length) {
+                deletingTagline = true;
+                setTimeout(spinTagline, 1600);
+                return;
+            }
+        } else {
+            taglineChar -= 1;
+            taglineElement.textContent = phrase.slice(0, taglineChar);
+            if (taglineChar <= 0) {
+                deletingTagline = false;
+                taglineIndex = (taglineIndex + 1) % taglinePhrases.length;
+            }
+        }
+
+        setTimeout(spinTagline, deletingTagline ? 55 : 95);
+    }
+
+    spinTagline();
 }
 
 // Dynamic 3-Digit Preloader Counter (000% to 100%) - Slower Smooth Counting
