@@ -6,8 +6,8 @@ let isAnimating = false;
 let hoveredObject = null;
 let pointerStart = null;
 let pointerStartTime = 0;
-const TAP_MOVE_THRESHOLD = 12;
-const TAP_TIME_THRESHOLD = 260;
+const TAP_MOVE_THRESHOLD = 18;
+const TAP_TIME_THRESHOLD = 280;
 
 const tooltip = document.getElementById('hoverTooltip');
 const loadingScreen = document.getElementById('loadingScreen');
@@ -106,9 +106,9 @@ function init() {
     // Event Listeners
     window.addEventListener('resize', onWindowResize);
     window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerdown', onPointerDown);
-    window.addEventListener('pointerup', onPointerUp);
-    window.addEventListener('pointercancel', onPointerCancel);
+    renderer.domElement.addEventListener('pointerdown', onPointerDown, { passive: false });
+    renderer.domElement.addEventListener('pointerup', onPointerUp, { passive: false });
+    renderer.domElement.addEventListener('pointercancel', onPointerCancel, { passive: false });
 
     // Hide loading
     setTimeout(() => {
@@ -1319,6 +1319,7 @@ function createTallPlant() {
 }
 
 function onPointerDown(event) {
+    event.preventDefault();
     pointerStart = { x: event.clientX, y: event.clientY };
     pointerStartTime = performance.now();
 }
@@ -1406,10 +1407,32 @@ function onPointerMove(event) {
     }
 }
 
-function onPointerClick() {
-    if (!hoveredObject) return;
+function onPointerClick(event) {
+    const rect = renderer && renderer.domElement ? renderer.domElement.getBoundingClientRect() : null;
+    if (event && rect) {
+        pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    }
 
-    const name = hoveredObject.userData.name;
+    raycaster.setFromCamera(pointer, camera);
+    const intersects = raycaster.intersectObjects(scene.children, true);
+
+    let hitObject = null;
+    for (let intersect of intersects) {
+        let obj = intersect.object;
+        while (obj && obj !== scene && (!obj.userData || !obj.userData.interactive)) {
+            obj = obj.parent;
+        }
+
+        if (obj && obj.userData && obj.userData.interactive) {
+            hitObject = obj;
+            break;
+        }
+    }
+
+    if (!hitObject) return;
+
+    const name = hitObject.userData.name;
 
     if (name === 'computer' && !isAnimating) {
         zoomToMonitor();
