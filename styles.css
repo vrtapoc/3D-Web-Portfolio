@@ -34,6 +34,13 @@ body {
     overflow: hidden;
 }
 
+#canvas-container,
+#canvas-container canvas {
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
 body.intro-active {
     overflow: hidden;
 }

@@ -4,6 +4,10 @@ let desk, monitor, keyboard, mouse, decorations;
 let raycaster, pointer;
 let isAnimating = false;
 let hoveredObject = null;
+let pointerStart = null;
+let pointerStartTime = 0;
+const TAP_MOVE_THRESHOLD = 12;
+const TAP_TIME_THRESHOLD = 260;
 
 const tooltip = document.getElementById('hoverTooltip');
 const loadingScreen = document.getElementById('loadingScreen');
@@ -102,7 +106,9 @@ function init() {
     // Event Listeners
     window.addEventListener('resize', onWindowResize);
     window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('click', onPointerClick);
+    window.addEventListener('pointerdown', onPointerDown);
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerCancel);
 
     // Hide loading
     setTimeout(() => {
@@ -1312,7 +1318,37 @@ function createTallPlant() {
     scene.add(plantGroup);
 }
 
+function onPointerDown(event) {
+    pointerStart = { x: event.clientX, y: event.clientY };
+    pointerStartTime = performance.now();
+}
+
+function onPointerUp(event) {
+    if (!pointerStart) return;
+
+    const dx = event.clientX - pointerStart.x;
+    const dy = event.clientY - pointerStart.y;
+    const dt = performance.now() - pointerStartTime;
+
+    if (Math.hypot(dx, dy) <= TAP_MOVE_THRESHOLD && dt <= TAP_TIME_THRESHOLD) {
+        onPointerClick(event);
+    }
+
+    pointerStart = null;
+    pointerStartTime = 0;
+}
+
+function onPointerCancel() {
+    pointerStart = null;
+    pointerStartTime = 0;
+}
+
 function onPointerMove(event) {
+    if (window.matchMedia('(pointer: coarse)').matches) {
+        tooltip.style.display = 'none';
+        return;
+    }
+
     pointer.x = (event.clientX / window.innerWidth) * 2 - 1;
     pointer.y = -(event.clientY / window.innerHeight) * 2 + 1;
     raycaster.setFromCamera(pointer, camera);
