@@ -1,0 +1,104 @@
+/* Shared modal side rails + solid black modal bg */
+.portfolio-modal {
+    background: #000000 !important;
+    backdrop-filter: none !important;
+}
+
+/* ============================================================
+   Shared modal side rails (desktop ≥1400px only)
+   Used by ALL tabs: About / Experience / Skills / Resume
+   ============================================================ */
+.modal-side-rail {
+    display: none; /* hidden by default — only show on wide desktops */
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    z-index: 10000;
+    pointer-events: none;
+    user-select: none;
+}
+
+.modal-side-rail--left {
+    left: 0;
+    width: 32px;
+    border-right: 1px solid #1a1a1a;
+}
+
+.modal-side-rail--right {
+    right: 0;
+    width: 48px;
+    border-left: 1px solid #1a1a1a;
+}
+
+.rail-tick {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 10px;
+    height: 1px;
+    background: #333;
+}
+
+.rail-tick--top { top: 18px; }
+.rail-tick--bottom { bottom: 18px; }
+
+.rail-label {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: #666;
+    text-transform: uppercase;
+    white-space: nowrap;
+    line-height: 1;
+}
+
+.rail-diamond {
+    color: var(--accent); /* site accent red */
+    margin: 0 2px;
+}
+
+.rail-icons {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+}
+
+.rail-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    color: #555;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    transition: color 0.25s ease, border-color 0.25s ease;
+}
+
+.rail-icon svg {
+    display: block;
+    flex-shrink: 0;
+}
+
+/* Active tab indicator — red ring + white icon */
+.rail-icon.active {
+    color: #ffffff;
+    border-color: var(--accent);
+}
+
+@media (min-width: 1400px) {
+    .modal-side-rail {
+        display: block;
+    }
+}
