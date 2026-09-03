@@ -77,7 +77,6 @@
 }
 
 .modal-side-rail--right {
-    /* Inset from edge so browser scrollbar stays usable */
     right: 18px;
     width: 48px;
     border-left: 1px solid #1a1a1a;
@@ -420,4 +419,21 @@
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.35);
     white-space: nowrap;
+}
+
+/* Clickable experience card (Liz Taiwan Stay) */
+a.project-item--link {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+a.project-item--link:hover {
+    border-color: rgba(239, 68, 68, 0.45);
+    box-shadow: 0 8px 24px rgba(239, 68, 68, 0.12);
+}
+
+a.project-item--link:focus-visible {
+    outline: 1px solid var(--accent, #ef4444);
+    outline-offset: 3px;
 }
