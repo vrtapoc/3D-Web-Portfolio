@@ -1,21 +1,27 @@
-/* Shared modal side rails + solid black modal bg */
+/* ============================================================
+   Shared modal side rails — ALL tabs (About / Experience / Skills / Resume)
+   Desktop + mobile adaptive
+   ============================================================ */
+
+/* Solid black modal background */
 .portfolio-modal {
     background: #000000 !important;
     backdrop-filter: none !important;
 }
 
-/* ============================================================
-   Shared modal side rails (desktop ≥1400px only)
-   Used by ALL tabs: About / Experience / Skills / Resume
-   ============================================================ */
 .modal-side-rail {
-    display: none; /* hidden by default — only show on wide desktops */
+    display: none;
     position: fixed;
     top: 0;
     bottom: 0;
-    z-index: 10000;
+    z-index: 10050;
     pointer-events: none;
     user-select: none;
+}
+
+/* Only show rails when the portfolio modal is open */
+.portfolio-modal.active .modal-side-rail {
+    display: block;
 }
 
 .modal-side-rail--left {
@@ -49,7 +55,7 @@
     transform: translate(-50%, -50%);
     writing-mode: vertical-rl;
     text-orientation: mixed;
-    font-family: var(--font-mono);
+    font-family: var(--font-mono), 'JetBrains Mono', monospace;
     font-size: 10px;
     letter-spacing: 3px;
     color: #666;
@@ -59,7 +65,7 @@
 }
 
 .rail-diamond {
-    color: var(--accent); /* site accent red */
+    color: var(--accent, #ef4444);
     margin: 0 2px;
 }
 
@@ -91,14 +97,117 @@
     flex-shrink: 0;
 }
 
-/* Active tab indicator — red ring + white icon */
 .rail-icon.active {
     color: #ffffff;
-    border-color: var(--accent);
+    border-color: var(--accent, #ef4444);
 }
 
-@media (min-width: 1400px) {
-    .modal-side-rail {
+/* ---- Desktop: full side rails from 900px up ---- */
+@media (min-width: 900px) {
+    .portfolio-modal.active .modal-side-rail {
         display: block;
+    }
+}
+
+/* ---- Tablet / smaller desktop: thinner rails ---- */
+@media (min-width: 900px) and (max-width: 1199px) {
+    .modal-side-rail--left { width: 26px; }
+    .modal-side-rail--right { width: 40px; }
+    .rail-label { font-size: 9px; letter-spacing: 2px; }
+    .rail-icons { gap: 22px; }
+}
+
+/* ---- Mobile: hide left text rail, show bottom icon strip ---- */
+@media (max-width: 899px) {
+    .portfolio-modal.active .modal-side-rail--left {
+        display: none !important;
+    }
+
+    .portfolio-modal.active .modal-side-rail--right {
+        display: flex !important;
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 56px;
+        border-left: none;
+        border-top: 1px solid #1a1a1a;
+        background: #000000;
+        align-items: center;
+        justify-content: center;
+        z-index: 10050;
+    }
+
+    .modal-side-rail--right .rail-tick {
+        display: none;
+    }
+
+    .modal-side-rail--right .rail-icons {
+        position: static;
+        transform: none;
+        flex-direction: row;
+        gap: 36px;
+    }
+
+    .rail-icon {
+        width: 28px;
+        height: 28px;
+    }
+
+    /* Give modal content room above the bottom bar */
+    .portfolio-modal.active .modal-content {
+        padding-bottom: 5rem !important;
+    }
+}
+
+/* Skills tab — match mock layout */
+.skills-list--mock {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem 3rem;
+}
+
+.skills-list--mock .skill-group--full {
+    grid-column: 1 / -1;
+}
+
+.skills-list--mock .skill-group h4 {
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.55);
+    margin-bottom: 1rem;
+    font-family: var(--font-mono), 'JetBrains Mono', monospace;
+    font-weight: 500;
+}
+
+.skills-list--mock .skill-group ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.skills-list--mock .skill-group li {
+    position: relative;
+    padding-left: 1.25rem;
+    margin-bottom: 0.65rem;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.95rem;
+    font-family: var(--font-display), 'Space Grotesk', sans-serif;
+}
+
+.skills-list--mock .skill-group li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: rgba(255, 255, 255, 0.45);
+}
+
+@media (max-width: 640px) {
+    .skills-list--mock {
+        grid-template-columns: 1fr;
+        gap: 1.75rem;
     }
 }
