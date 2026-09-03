@@ -131,12 +131,8 @@
 }
 
 @media (min-width: 900px) {
-    .portfolio-modal.active .modal-side-rail {
-        display: block;
-    }
-    .portfolio-modal .modal-header {
-        padding-right: 4.5rem !important;
-    }
+    .portfolio-modal.active .modal-side-rail { display: block; }
+    .portfolio-modal .modal-header { padding-right: 4.5rem !important; }
 }
 
 @media (min-width: 900px) and (max-width: 1199px) {
@@ -147,43 +143,27 @@
 }
 
 @media (max-width: 899px) {
-    .portfolio-modal.active .modal-side-rail--left {
-        display: none !important;
-    }
+    .portfolio-modal.active .modal-side-rail--left { display: none !important; }
     .portfolio-modal.active .modal-side-rail--right {
         display: flex !important;
         position: fixed;
-        top: auto;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        width: 100%;
-        height: 56px;
-        border-left: none;
-        border-top: 1px solid #1a1a1a;
+        top: auto; bottom: 0; left: 0; right: 0;
+        width: 100%; height: 56px;
+        border-left: none; border-top: 1px solid #1a1a1a;
         background: #000000;
-        align-items: center;
-        justify-content: center;
-        z-index: 10050;
-        pointer-events: auto;
+        align-items: center; justify-content: center;
+        z-index: 10050; pointer-events: auto;
     }
     .modal-side-rail--right .rail-tick { display: none; }
     .modal-side-rail--right .rail-icons {
-        position: static;
-        transform: none;
-        flex-direction: row;
-        gap: 36px;
+        position: static; transform: none;
+        flex-direction: row; gap: 36px;
     }
     .rail-icon { width: 30px; height: 30px; }
-    .portfolio-modal.active .modal-content {
-        padding-bottom: 5rem !important;
-    }
-    .portfolio-modal .modal-header {
-        padding-right: 1.5rem !important;
-    }
+    .portfolio-modal.active .modal-content { padding-bottom: 5rem !important; }
+    .portfolio-modal .modal-header { padding-right: 1.5rem !important; }
 }
 
-/* Consistent section pattern across all modal tabs */
 .section-kicker {
     font-family: var(--font-mono), 'JetBrains Mono', monospace;
     font-size: 0.72rem;
@@ -193,20 +173,28 @@
     margin: -0.35rem 0 1.75rem 0;
 }
 
-.skills-as-projects .project-item h3 {
-    margin-bottom: 0.35rem;
-}
+.skills-as-projects .project-item h3 { margin-bottom: 0.35rem; }
+.skills-as-projects .project-subtitle { margin-bottom: 1.1rem; }
 
-.skills-as-projects .project-subtitle {
-    margin-bottom: 1.1rem;
-}
-
-.project-item--wide {
-    grid-column: 1 / -1;
-}
+.project-item--wide { grid-column: 1 / -1; }
 
 @media (max-width: 900px) {
-    .project-item--wide {
-        grid-column: auto;
-    }
+    .project-item--wide { grid-column: auto; }
+}
+
+.about-metric {
+    font-size: 2.5rem !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.02em;
+    color: #fff !important;
+    margin: 0.25rem 0 0.35rem !important;
+    line-height: 1.1 !important;
+}
+
+.about-as-projects .project-item--wide p:not(.project-subtitle) {
+    margin-bottom: 0.85rem;
+}
+
+.about-as-projects .project-item--wide p:not(.project-subtitle):last-of-type {
+    margin-bottom: 0;
 }
