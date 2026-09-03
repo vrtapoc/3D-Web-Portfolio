@@ -77,7 +77,8 @@
 }
 
 .modal-side-rail--right {
-    right: 0;
+    /* Inset from edge so browser scrollbar stays usable */
+    right: 18px;
     width: 48px;
     border-left: 1px solid #1a1a1a;
     pointer-events: none;
@@ -259,7 +260,7 @@
 
 @media (min-width: 900px) and (max-width: 1199px) {
     .modal-side-rail--left { width: 26px; }
-    .modal-side-rail--right { width: 40px; }
+    .modal-side-rail--right { width: 40px; right: 16px; }
     .rail-label { font-size: 9px; letter-spacing: 2px; }
     .rail-icons { gap: 22px; }
 }
