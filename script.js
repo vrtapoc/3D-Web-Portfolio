@@ -133,6 +133,19 @@ setInterval(updateClock, 1000);
 const portfolioModal = document.getElementById('portfolioModal');
 const closeModal = document.getElementById('closeModal');
 
+function syncModalOpenClass() {
+    if (!portfolioModal) return;
+    document.body.classList.toggle('modal-open', portfolioModal.classList.contains('active'));
+}
+
+if (portfolioModal) {
+    syncModalOpenClass();
+    new MutationObserver(syncModalOpenClass).observe(portfolioModal, {
+        attributes: true,
+        attributeFilter: ['class']
+    });
+}
+
 closeModal.addEventListener('click', () => {
     portfolioModal.classList.remove('active');
     document.body.style.overflow = 'auto';
@@ -184,7 +197,6 @@ const railIcons = document.querySelectorAll('.rail-icon');
 function scrollModalToTop() {
     if (!portfolioModal) return;
 
-    // Instant reset — works more reliably on iOS Safari than scrollTo alone
     portfolioModal.scrollTop = 0;
     try {
         portfolioModal.scrollTo(0, 0);
@@ -193,7 +205,6 @@ function scrollModalToTop() {
     const content = portfolioModal.querySelector('.modal-content');
     if (content) content.scrollTop = 0;
 
-    // Second pass after layout paints (mobile sticky headers / section swap)
     requestAnimationFrame(() => {
         portfolioModal.scrollTop = 0;
         try {
