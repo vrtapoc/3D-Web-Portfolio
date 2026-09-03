@@ -421,7 +421,6 @@
     white-space: nowrap;
 }
 
-/* Clickable experience card (Liz Taiwan Stay) */
 a.project-item--link {
     text-decoration: none;
     color: inherit;
@@ -436,4 +435,24 @@ a.project-item--link:hover {
 a.project-item--link:focus-visible {
     outline: 1px solid var(--accent, #ef4444);
     outline-offset: 3px;
+}
+
+.project-live-cue {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-top: 1.15rem;
+    font-family: var(--font-mono), 'JetBrains Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent, #ef4444);
+    opacity: 0.85;
+    transition: opacity 0.2s ease, gap 0.2s ease, transform 0.2s ease;
+}
+
+a.project-item--link:hover .project-live-cue {
+    opacity: 1;
+    gap: 0.55rem;
 }
