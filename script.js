@@ -193,6 +193,11 @@ function goToSection(targetSection) {
     if (sectionEl) sectionEl.classList.add('active');
 
     setActiveRail(targetSection);
+
+    // Jump to top of modal content on every tab change
+    if (portfolioModal) {
+        portfolioModal.scrollTo({ top: 0, behavior: 'auto' });
+    }
 }
 
 function setActiveRail(section) {
