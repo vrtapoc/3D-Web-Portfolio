@@ -45,8 +45,6 @@ function typewriterEffect(element, phrases, options = {}) {
 }
 
 const roleElement = document.getElementById('roleTyping');
-const descriptionElement = document.getElementById('descriptionTyping');
-
 if (roleElement) {
     typewriterEffect(roleElement, ['Vibe Coder', 'Front End Developer', 'Web Developer', 'Marketing Management'], {
         typeDelay: 100,
@@ -179,7 +177,6 @@ portfolioModal.addEventListener('click', (e) => {
     }
 });
 
-// Modal navigation + shared right-rail secondary nav
 const modalNavBtns = document.querySelectorAll('.modal-nav-btn');
 const modalSections = document.querySelectorAll('.modal-section');
 const railIcons = document.querySelectorAll('.rail-icon');
@@ -202,6 +199,9 @@ function setActiveRail(section) {
     railIcons.forEach(icon => {
         icon.classList.toggle('active', icon.getAttribute('data-rail') === section);
     });
+    document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-section') === section);
+    });
 }
 
 setActiveRail('about');
@@ -212,7 +212,6 @@ modalNavBtns.forEach(btn => {
     });
 });
 
-// Right-rail icons = secondary nav (clickable)
 railIcons.forEach(icon => {
     icon.setAttribute('role', 'button');
     icon.setAttribute('tabindex', '0');
@@ -229,6 +228,14 @@ railIcons.forEach(icon => {
             e.preventDefault();
             goToSection(icon.getAttribute('data-rail'));
         }
+    });
+});
+
+// Mobile bottom tab nav
+document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        goToSection(btn.getAttribute('data-section'));
     });
 });
 

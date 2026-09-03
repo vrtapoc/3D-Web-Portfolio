@@ -1,6 +1,6 @@
 /* ============================================================
    Shared modal side rails — ALL tabs
-   Desktop + mobile adaptive + secondary nav
+   Desktop rails + dedicated mobile bottom nav
    ============================================================ */
 
 .portfolio-modal {
@@ -21,17 +21,13 @@
 }
 
 .modal-side-rail {
-    display: none;
+    display: none !important;
     position: fixed;
     top: 0;
     bottom: 0;
     z-index: 10050;
     pointer-events: none;
     user-select: none;
-}
-
-.portfolio-modal.active .modal-side-rail {
-    display: block;
 }
 
 .modal-side-rail--left {
@@ -131,8 +127,15 @@
 }
 
 @media (min-width: 900px) {
-    .portfolio-modal.active .modal-side-rail { display: block; }
-    .portfolio-modal .modal-header { padding-right: 4.5rem !important; }
+    .portfolio-modal.active .modal-side-rail {
+        display: block !important;
+    }
+    .portfolio-modal .modal-header {
+        padding-right: 4.5rem !important;
+    }
+    .mobile-tab-nav {
+        display: none !important;
+    }
 }
 
 @media (min-width: 900px) and (max-width: 1199px) {
@@ -142,63 +145,76 @@
     .rail-icons { gap: 22px; }
 }
 
-/* Mobile: bottom tab bar (replaces side rails) */
+.mobile-tab-nav {
+    display: none;
+}
+
 @media (max-width: 899px) {
-    .portfolio-modal.active .modal-side-rail--left {
+    .modal-side-rail,
+    .portfolio-modal.active .modal-side-rail,
+    .portfolio-modal.active .modal-side-rail--left,
+    .portfolio-modal.active .modal-side-rail--right {
         display: none !important;
+        pointer-events: none !important;
+        visibility: hidden !important;
     }
 
-    .portfolio-modal.active .modal-side-rail--right {
+    .mobile-tab-nav {
         display: flex !important;
         position: fixed;
-        top: auto;
         bottom: 0;
         left: 0;
         right: 0;
-        width: 100%;
-        height: auto;
-        min-height: 56px;
-        padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
-        box-sizing: border-box;
-        border-left: none;
-        border-top: 1px solid #1a1a1a;
+        z-index: 10070;
+        align-items: stretch;
+        justify-content: space-around;
+        gap: 0;
+        min-height: 60px;
+        padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
         background: #000000;
+        border-top: 1px solid #1a1a1a;
+        box-sizing: border-box;
+    }
+
+    .mobile-tab-btn {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        z-index: 10050;
-        pointer-events: auto;
+        gap: 4px;
+        min-height: 48px;
+        padding: 6px 4px;
+        margin: 0;
+        border: none;
+        background: transparent;
+        color: #666;
+        font-family: var(--font-mono), 'JetBrains Mono', monospace;
+        font-size: 9px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        cursor: pointer;
+        -webkit-tap-highlight-color: transparent;
+        transition: color 0.2s ease;
     }
 
-    .modal-side-rail--right .rail-tick {
-        display: none !important;
-    }
-
-    .modal-side-rail--right .rail-icons {
-        position: static;
-        transform: none;
-        flex-direction: row;
-        align-items: center;
-        justify-content: space-evenly;
-        width: 100%;
-        max-width: 360px;
-        gap: 0;
-        padding: 0;
-    }
-
-    .rail-icon {
-        width: 44px;
-        height: 44px;
+    .mobile-tab-btn svg {
+        display: block;
         flex-shrink: 0;
-        transform: none !important;
+        opacity: 0.85;
     }
 
-    .rail-icon:hover {
-        transform: none !important;
+    .mobile-tab-btn.active {
+        color: #ffffff;
     }
 
-    .rail-icon svg {
-        width: 18px;
-        height: 18px;
+    .mobile-tab-btn.active svg {
+        color: var(--accent, #ef4444);
+        opacity: 1;
+    }
+
+    .mobile-tab-btn:active {
+        color: #ffffff;
     }
 
     .portfolio-modal.active .modal-content {
@@ -206,17 +222,7 @@
     }
 
     .portfolio-modal .modal-header {
-        padding-right: 1.5rem !important;
-    }
-}
-
-@media (max-width: 360px) {
-    .modal-side-rail--right .rail-icons {
-        max-width: 100%;
-    }
-    .rail-icon {
-        width: 40px;
-        height: 40px;
+        padding-right: 1.25rem !important;
     }
 }
 
@@ -253,4 +259,30 @@
 
 .about-as-projects .project-item--wide p:not(.project-subtitle):last-of-type {
     margin-bottom: 0;
+}
+
+.about-section-break {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 0.5rem 0 0.15rem;
+    padding: 0.35rem 0;
+}
+
+.about-section-break::before,
+.about-section-break::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #1a1a1a;
+}
+
+.about-section-break-label {
+    font-family: var(--font-mono), 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.35);
+    white-space: nowrap;
 }
