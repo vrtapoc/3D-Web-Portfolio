@@ -55,11 +55,10 @@ if (roleElement) {
     });
 }
 
-// Dynamic 3-Digit Preloader Counter (000% to 100%) - Slower Smooth Counting
 const introPercent = document.getElementById('introPercent');
 
 function runIntroLoader() {
-    const totalDuration = 2200; // a little faster overall
+    const totalDuration = 2200;
     const startTime = Date.now();
 
     const interval = setInterval(() => {
@@ -95,7 +94,6 @@ function runIntroLoader() {
 
 runIntroLoader();
 
-// Hide intro on button click & play Enter Sound
 if (enterBtn) {
     enterBtn.addEventListener('click', hideIntro);
 }
@@ -111,7 +109,6 @@ function hideIntro() {
     }, 800);
 }
 
-// Exact intro sound from the provided file
 window.playEnterSound = function() {
     try {
         const audio = new Audio('assets/Among Us (Role Reveal) - Sound Effect (HD).mp3');
@@ -122,26 +119,19 @@ window.playEnterSound = function() {
     }
 };
 
-// Digital Clock with user's timezone
 function updateClock() {
     const now = new Date();
-
-    // Time
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
     const seconds = String(now.getSeconds()).padStart(2, '0');
     document.getElementById('clockTime').textContent = `${hours}:${minutes}:${seconds}`;
-
-    // Date
     const options = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' };
     document.getElementById('clockDate').textContent = now.toLocaleDateString('en-US', options);
 }
 
-// Update clock every second
 updateClock();
 setInterval(updateClock, 1000);
 
-// Modal controls
 const portfolioModal = document.getElementById('portfolioModal');
 const closeModal = document.getElementById('closeModal');
 
@@ -149,7 +139,6 @@ closeModal.addEventListener('click', () => {
     portfolioModal.classList.remove('active');
     document.body.style.overflow = 'auto';
 
-    // Reset camera position
     if (typeof camera !== 'undefined' && typeof controls !== 'undefined') {
         controls.autoRotate = true;
         const duration = 1000;
@@ -184,17 +173,30 @@ closeModal.addEventListener('click', () => {
     }
 });
 
-// Close modal on background click
 portfolioModal.addEventListener('click', (e) => {
     if (e.target === portfolioModal) {
         closeModal.click();
     }
 });
 
-// Modal navigation + shared right-rail active icon
+// Modal navigation + shared right-rail secondary nav
 const modalNavBtns = document.querySelectorAll('.modal-nav-btn');
 const modalSections = document.querySelectorAll('.modal-section');
 const railIcons = document.querySelectorAll('.rail-icon');
+
+function goToSection(targetSection) {
+    if (!targetSection) return;
+
+    modalNavBtns.forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-section') === targetSection);
+    });
+    modalSections.forEach(s => s.classList.remove('active'));
+
+    const sectionEl = document.getElementById(`${targetSection}-section`);
+    if (sectionEl) sectionEl.classList.add('active');
+
+    setActiveRail(targetSection);
+}
 
 function setActiveRail(section) {
     railIcons.forEach(icon => {
@@ -202,28 +204,34 @@ function setActiveRail(section) {
     });
 }
 
-// Initial state (About is default active)
 setActiveRail('about');
 
 modalNavBtns.forEach(btn => {
     btn.addEventListener('click', () => {
-        const targetSection = btn.getAttribute('data-section');
-
-        // Remove active class from all buttons and sections
-        modalNavBtns.forEach(b => b.classList.remove('active'));
-        modalSections.forEach(s => s.classList.remove('active'));
-
-        // Add active class to clicked button and corresponding section
-        btn.classList.add('active');
-        const sectionEl = document.getElementById(`${targetSection}-section`);
-        if (sectionEl) sectionEl.classList.add('active');
-
-        // Sync decorative right-rail icon
-        setActiveRail(targetSection);
+        goToSection(btn.getAttribute('data-section'));
     });
 });
 
-// Toast Notification System
+// Right-rail icons = secondary nav (clickable)
+railIcons.forEach(icon => {
+    icon.setAttribute('role', 'button');
+    icon.setAttribute('tabindex', '0');
+    icon.style.pointerEvents = 'auto';
+    icon.style.cursor = 'pointer';
+
+    icon.addEventListener('click', (e) => {
+        e.stopPropagation();
+        goToSection(icon.getAttribute('data-rail'));
+    });
+
+    icon.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            goToSection(icon.getAttribute('data-rail'));
+        }
+    });
+});
+
 window.showToast = function(message) {
     const container = document.getElementById('toastContainer');
     if (!container) return;
@@ -241,7 +249,6 @@ window.showToast = function(message) {
     }, 3200);
 };
 
-// Web Audio API Synthesized UI Sounds
 let audioCtx = null;
 window.playUiSound = function(type) {
     try {
@@ -293,12 +300,9 @@ window.playUiSound = function(type) {
             osc.start(now);
             osc.stop(now + 0.08);
         }
-    } catch (e) {
-        // Audio fallback
-    }
+    } catch (e) {}
 };
 
-// Synthesized Jazz Jukebox Loop
 let jukeboxInterval = null;
 window.playJukeboxBeats = function(isPlaying) {
     if (!isPlaying) {
@@ -319,24 +323,22 @@ window.playJukeboxBeats = function(isPlaying) {
             audioCtx.resume();
         }
 
-        // Jazz walking bass line (Dm7 - G7 - Cmaj7 - Am7 loop)
         const bassLine = [
-            { freq: 146.83, dur: 0.50 }, // D2
-            { freq: 164.81, dur: 0.50 }, // E2
-            { freq: 174.61, dur: 0.50 }, // F2
-            { freq: 196.00, dur: 0.50 }, // G2
-            { freq: 185.00, dur: 0.50 }, // F#2
-            { freq: 164.81, dur: 0.50 }, // E2
-            { freq: 130.81, dur: 0.50 }, // C2
-            { freq: 146.83, dur: 0.50 }  // D2
+            { freq: 146.83, dur: 0.50 },
+            { freq: 164.81, dur: 0.50 },
+            { freq: 174.61, dur: 0.50 },
+            { freq: 196.00, dur: 0.50 },
+            { freq: 185.00, dur: 0.50 },
+            { freq: 164.81, dur: 0.50 },
+            { freq: 130.81, dur: 0.50 },
+            { freq: 146.83, dur: 0.50 }
         ];
 
-        // Jazz chord voicings (played softer on top)
         const chordSets = [
-            [293.66, 369.99, 440.00, 523.25], // Dm7
-            [392.00, 493.88, 587.33, 698.46], // G7
-            [261.63, 329.63, 392.00, 493.88], // Cmaj7
-            [220.00, 277.18, 329.63, 415.30]  // Am7
+            [293.66, 369.99, 440.00, 523.25],
+            [392.00, 493.88, 587.33, 698.46],
+            [261.63, 329.63, 392.00, 493.88],
+            [220.00, 277.18, 329.63, 415.30]
         ];
 
         let step = 0;
@@ -348,7 +350,6 @@ window.playJukeboxBeats = function(isPlaying) {
             const chordIdx = Math.floor(step / 2) % chordSets.length;
             const chords = chordSets[chordIdx];
 
-            // Walking bass note
             const bassOsc = audioCtx.createOscillator();
             const bassGain = audioCtx.createGain();
             bassOsc.type = 'sine';
@@ -361,7 +362,6 @@ window.playJukeboxBeats = function(isPlaying) {
             bassOsc.start(now);
             bassOsc.stop(now + 0.48);
 
-            // Chord hit (on even steps)
             if (step % 2 === 0) {
                 chords.forEach(freq => {
                     const cOsc = audioCtx.createOscillator();
@@ -388,9 +388,6 @@ window.playJukeboxBeats = function(isPlaying) {
     }
 };
 
-
-
-// Copy email to clipboard with toast notification
 document.querySelectorAll('.nav-email, a[href^="mailto:"]').forEach(link => {
     link.addEventListener('click', (e) => {
         const email = 'connect@bosstcode.com';
@@ -403,7 +400,6 @@ document.querySelectorAll('.nav-email, a[href^="mailto:"]').forEach(link => {
     });
 });
 
-// Keyboard Navigation (Esc to close modal)
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         if (portfolioModal && portfolioModal.classList.contains('active')) {
@@ -412,7 +408,6 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Add loading animation
 window.addEventListener('load', () => {
     document.body.style.opacity = '0';
     setTimeout(() => {
