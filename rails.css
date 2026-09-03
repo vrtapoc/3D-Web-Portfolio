@@ -1,5 +1,5 @@
 /* ============================================================
-   Shared modal side rails — ALL tabs (About / Experience / Skills / Resume)
+   Shared modal side rails — ALL tabs
    Desktop + mobile adaptive
    ============================================================ */
 
@@ -7,6 +7,19 @@
 .portfolio-modal {
     background: #000000 !important;
     backdrop-filter: none !important;
+}
+
+/* Close button — clear of right rail */
+.portfolio-modal .modal-header {
+    padding: 1.5rem 4rem 1rem 2rem !important;
+    position: relative;
+    z-index: 10060;
+}
+
+.portfolio-modal .modal-close {
+    margin-right: 12px;
+    position: relative;
+    z-index: 10061;
 }
 
 .modal-side-rail {
@@ -19,7 +32,6 @@
     user-select: none;
 }
 
-/* Only show rails when the portfolio modal is open */
 .portfolio-modal.active .modal-side-rail {
     display: block;
 }
@@ -102,14 +114,16 @@
     border-color: var(--accent, #ef4444);
 }
 
-/* ---- Desktop: full side rails from 900px up ---- */
 @media (min-width: 900px) {
     .portfolio-modal.active .modal-side-rail {
         display: block;
     }
+
+    .portfolio-modal .modal-header {
+        padding-right: 4.5rem !important;
+    }
 }
 
-/* ---- Tablet / smaller desktop: thinner rails ---- */
 @media (min-width: 900px) and (max-width: 1199px) {
     .modal-side-rail--left { width: 26px; }
     .modal-side-rail--right { width: 40px; }
@@ -117,7 +131,7 @@
     .rail-icons { gap: 22px; }
 }
 
-/* ---- Mobile: hide left text rail, show bottom icon strip ---- */
+/* Mobile: bottom icon strip */
 @media (max-width: 899px) {
     .portfolio-modal.active .modal-side-rail--left {
         display: none !important;
@@ -140,9 +154,7 @@
         z-index: 10050;
     }
 
-    .modal-side-rail--right .rail-tick {
-        display: none;
-    }
+    .modal-side-rail--right .rail-tick { display: none; }
 
     .modal-side-rail--right .rail-icons {
         position: static;
@@ -156,13 +168,16 @@
         height: 28px;
     }
 
-    /* Give modal content room above the bottom bar */
     .portfolio-modal.active .modal-content {
         padding-bottom: 5rem !important;
     }
+
+    .portfolio-modal .modal-header {
+        padding-right: 1.5rem !important;
+    }
 }
 
-/* Skills tab — match mock layout */
+/* Skills mock layout */
 .skills-list--mock {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -196,6 +211,8 @@
     color: rgba(255, 255, 255, 0.9);
     font-size: 0.95rem;
     font-family: var(--font-display), 'Space Grotesk', sans-serif;
+    transition: color 0.2s ease;
+    cursor: default;
 }
 
 .skills-list--mock .skill-group li::before {
@@ -203,6 +220,16 @@
     position: absolute;
     left: 0;
     color: rgba(255, 255, 255, 0.45);
+    transition: color 0.2s ease;
+}
+
+/* Red highlight on skill hover */
+.skills-list--mock .skill-group li:hover {
+    color: var(--accent, #ef4444);
+}
+
+.skills-list--mock .skill-group li:hover::before {
+    color: var(--accent, #ef4444);
 }
 
 @media (max-width: 640px) {
