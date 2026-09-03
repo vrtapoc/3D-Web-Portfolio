@@ -9,6 +9,11 @@
     backdrop-filter: none !important;
 }
 
+/* Allow position:fixed side rails to stick to the viewport while modal scrolls */
+.portfolio-modal.active {
+    transform: none !important;
+}
+
 .portfolio-modal .modal-header {
     padding: 1.5rem 4rem 1rem 2rem !important;
     position: relative;
@@ -164,7 +169,6 @@
     outline-offset: 2px;
 }
 
-/* Header tabs: icons + labels on all screen sizes */
 .portfolio-modal .modal-nav {
     display: flex !important;
     justify-content: flex-start !important;
@@ -238,6 +242,10 @@
 @media (min-width: 900px) {
     .portfolio-modal.active .modal-side-rail {
         display: block !important;
+        position: fixed !important;
+        top: 0 !important;
+        bottom: 0 !important;
+        z-index: 10050 !important;
     }
     .portfolio-modal .modal-header {
         padding-right: 4.5rem !important;
