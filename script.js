@@ -181,6 +181,27 @@ const modalNavBtns = document.querySelectorAll('.modal-nav-btn');
 const modalSections = document.querySelectorAll('.modal-section');
 const railIcons = document.querySelectorAll('.rail-icon');
 
+function scrollModalToTop() {
+    if (!portfolioModal) return;
+
+    // Instant reset — works more reliably on iOS Safari than scrollTo alone
+    portfolioModal.scrollTop = 0;
+    try {
+        portfolioModal.scrollTo(0, 0);
+    } catch (e) {}
+
+    const content = portfolioModal.querySelector('.modal-content');
+    if (content) content.scrollTop = 0;
+
+    // Second pass after layout paints (mobile sticky headers / section swap)
+    requestAnimationFrame(() => {
+        portfolioModal.scrollTop = 0;
+        try {
+            portfolioModal.scrollTo(0, 0);
+        } catch (e) {}
+    });
+}
+
 function goToSection(targetSection) {
     if (!targetSection) return;
 
@@ -193,11 +214,7 @@ function goToSection(targetSection) {
     if (sectionEl) sectionEl.classList.add('active');
 
     setActiveRail(targetSection);
-
-    // Jump to top of modal content on every tab change
-    if (portfolioModal) {
-        portfolioModal.scrollTo({ top: 0, behavior: 'auto' });
-    }
+    scrollModalToTop();
 }
 
 function setActiveRail(section) {
@@ -236,7 +253,6 @@ railIcons.forEach(icon => {
     });
 });
 
-// Mobile bottom tab nav
 document.querySelectorAll('.mobile-tab-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
         e.stopPropagation();
