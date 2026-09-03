@@ -1,15 +1,13 @@
 /* ============================================================
    Shared modal side rails — ALL tabs
-   Desktop + mobile adaptive
+   Desktop + mobile adaptive + secondary nav
    ============================================================ */
 
-/* Solid black modal background */
 .portfolio-modal {
     background: #000000 !important;
     backdrop-filter: none !important;
 }
 
-/* Close button — clear of right rail */
 .portfolio-modal .modal-header {
     padding: 1.5rem 4rem 1rem 2rem !important;
     position: relative;
@@ -46,6 +44,7 @@
     right: 0;
     width: 48px;
     border-left: 1px solid #1a1a1a;
+    pointer-events: none;
 }
 
 .rail-tick {
@@ -90,35 +89,51 @@
     flex-direction: column;
     align-items: center;
     gap: 28px;
+    pointer-events: auto;
 }
 
 .rail-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
     color: #555;
     border-radius: 50%;
     border: 1px solid transparent;
-    transition: color 0.25s ease, border-color 0.25s ease;
+    transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+    cursor: pointer;
+    pointer-events: auto;
 }
 
 .rail-icon svg {
     display: block;
     flex-shrink: 0;
+    pointer-events: none;
+}
+
+.rail-icon:hover {
+    color: #ffffff;
+    border-color: rgba(239, 68, 68, 0.45);
+    background: rgba(239, 68, 68, 0.08);
+    transform: scale(1.08);
 }
 
 .rail-icon.active {
     color: #ffffff;
     border-color: var(--accent, #ef4444);
+    background: rgba(239, 68, 68, 0.12);
+}
+
+.rail-icon:focus-visible {
+    outline: 1px solid var(--accent, #ef4444);
+    outline-offset: 2px;
 }
 
 @media (min-width: 900px) {
     .portfolio-modal.active .modal-side-rail {
         display: block;
     }
-
     .portfolio-modal .modal-header {
         padding-right: 4.5rem !important;
     }
@@ -131,12 +146,10 @@
     .rail-icons { gap: 22px; }
 }
 
-/* Mobile: bottom icon strip */
 @media (max-width: 899px) {
     .portfolio-modal.active .modal-side-rail--left {
         display: none !important;
     }
-
     .portfolio-modal.active .modal-side-rail--right {
         display: flex !important;
         position: fixed;
@@ -152,89 +165,125 @@
         align-items: center;
         justify-content: center;
         z-index: 10050;
+        pointer-events: auto;
     }
-
     .modal-side-rail--right .rail-tick { display: none; }
-
     .modal-side-rail--right .rail-icons {
         position: static;
         transform: none;
         flex-direction: row;
         gap: 36px;
     }
-
-    .rail-icon {
-        width: 28px;
-        height: 28px;
-    }
-
+    .rail-icon { width: 30px; height: 30px; }
     .portfolio-modal.active .modal-content {
         padding-bottom: 5rem !important;
     }
-
     .portfolio-modal .modal-header {
         padding-right: 1.5rem !important;
     }
 }
 
-/* Skills mock layout */
-.skills-list--mock {
+/* Skills card grid */
+.skills-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 2.5rem 3rem;
+    gap: 1.25rem;
 }
 
-.skills-list--mock .skill-group--full {
+.skill-card {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    padding: 1.35rem 1.4rem 1.2rem;
+    transition: border-color 0.25s ease, background 0.25s ease, transform 0.25s ease;
+}
+
+.skill-card:hover {
+    border-color: rgba(239, 68, 68, 0.35);
+    background: rgba(239, 68, 68, 0.04);
+    transform: translateY(-2px);
+}
+
+.skill-card--wide {
     grid-column: 1 / -1;
 }
 
-.skills-list--mock .skill-group h4 {
-    font-size: 0.75rem;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.55);
+.skill-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
     margin-bottom: 1rem;
-    font-family: var(--font-mono), 'JetBrains Mono', monospace;
-    font-weight: 500;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.skills-list--mock .skill-group ul {
+.skill-card-icon {
+    font-family: var(--font-mono), 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--accent, #ef4444);
+    opacity: 0.9;
+    min-width: 1.5rem;
+}
+
+.skill-card-header h4 {
+    margin: 0 !important;
+    font-size: 0.72rem !important;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.55) !important;
+    font-family: var(--font-mono), 'JetBrains Mono', monospace !important;
+    font-weight: 500 !important;
+}
+
+.skill-card-list {
     list-style: none;
     padding: 0;
     margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
 }
 
-.skills-list--mock .skill-group li {
+.skill-card-list li {
     position: relative;
-    padding-left: 1.25rem;
-    margin-bottom: 0.65rem;
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 0.95rem;
+    padding-left: 1.2rem;
+    color: rgba(255, 255, 255, 0.88);
+    font-size: 0.92rem;
     font-family: var(--font-display), 'Space Grotesk', sans-serif;
+    line-height: 1.45;
     transition: color 0.2s ease;
-    cursor: default;
 }
 
-.skills-list--mock .skill-group li::before {
+.skill-card-list li::before {
     content: '→';
     position: absolute;
     left: 0;
-    color: rgba(255, 255, 255, 0.45);
+    color: rgba(255, 255, 255, 0.35);
     transition: color 0.2s ease;
 }
 
-/* Red highlight on skill hover */
-.skills-list--mock .skill-group li:hover {
+.skill-card-list li:hover {
     color: var(--accent, #ef4444);
 }
 
-.skills-list--mock .skill-group li:hover::before {
+.skill-card-list li:hover::before {
     color: var(--accent, #ef4444);
+}
+
+@media (min-width: 700px) {
+    .skill-card--wide .skill-card-list {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.5rem 1.5rem;
+    }
 }
 
 @media (max-width: 640px) {
-    .skills-list--mock {
+    .skills-grid {
         grid-template-columns: 1fr;
-        gap: 1.75rem;
+        gap: 1rem;
+    }
+    .skill-card--wide {
+        grid-column: auto;
     }
 }
