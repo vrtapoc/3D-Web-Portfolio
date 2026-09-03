@@ -1,7 +1,6 @@
 /* ============================================================
    Shared modal rails + responsive header nav
-   Desktop: side rails + icon header tabs (sticky)
-   Mobile: icon header tabs sticky (no bottom bar)
+   Rails live OUTSIDE .portfolio-modal so position:fixed sticks to viewport
    ============================================================ */
 
 .portfolio-modal {
@@ -9,7 +8,6 @@
     backdrop-filter: none !important;
 }
 
-/* Allow position:fixed side rails to stick to the viewport while modal scrolls */
 .portfolio-modal.active {
     transform: none !important;
 }
@@ -26,7 +24,6 @@
     z-index: 10061;
 }
 
-/* Sticky header + tabs while scrolling modal content */
 .portfolio-modal .modal-header {
     position: sticky !important;
     top: 0 !important;
@@ -65,10 +62,10 @@
 
 .modal-side-rail {
     display: none !important;
-    position: fixed;
-    top: 0;
-    bottom: 0;
-    z-index: 10050;
+    position: fixed !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    z-index: 10050 !important;
     pointer-events: none;
     user-select: none;
 }
@@ -240,13 +237,21 @@
 }
 
 @media (min-width: 900px) {
-    .portfolio-modal.active .modal-side-rail {
+    .portfolio-modal.active ~ .modal-side-rail,
+    body.modal-open .modal-side-rail {
         display: block !important;
         position: fixed !important;
         top: 0 !important;
         bottom: 0 !important;
         z-index: 10050 !important;
+        pointer-events: none !important;
     }
+
+    body.modal-open .modal-side-rail .rail-icons,
+    .portfolio-modal.active ~ .modal-side-rail .rail-icons {
+        pointer-events: auto !important;
+    }
+
     .portfolio-modal .modal-header {
         padding-right: 4.5rem !important;
     }
@@ -262,8 +267,8 @@
 @media (max-width: 899px) {
     .modal-side-rail,
     .portfolio-modal.active .modal-side-rail,
-    .portfolio-modal.active .modal-side-rail--left,
-    .portfolio-modal.active .modal-side-rail--right {
+    .portfolio-modal.active ~ .modal-side-rail,
+    body.modal-open .modal-side-rail {
         display: none !important;
         visibility: hidden !important;
         pointer-events: none !important;
