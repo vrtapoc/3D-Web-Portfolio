@@ -55,10 +55,10 @@
         <aside class="modal-side-rail modal-side-rail--right" aria-hidden="true">
             <span class="rail-tick rail-tick--top"></span>
             <div class="rail-icons">
-                <span class="rail-icon active" data-rail="about" title="About"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
-                <span class="rail-icon" data-rail="work" title="Experience"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
-                <span class="rail-icon" data-rail="skills" title="Skills"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
-                <span class="rail-icon" data-rail="resume" title="Resume"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
+                <span class="rail-icon active" data-rail="about" title="About" role="button" tabindex="0"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+                <span class="rail-icon" data-rail="work" title="Experience" role="button" tabindex="0"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg></span>
+                <span class="rail-icon" data-rail="skills" title="Skills" role="button" tabindex="0"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
+                <span class="rail-icon" data-rail="resume" title="Resume" role="button" tabindex="0"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>
             </div>
             <span class="rail-tick rail-tick--bottom"></span>
         </aside>
@@ -107,10 +107,30 @@
                 </div>
                 <div class="modal-section" id="skills-section">
                     <h2>Core skills</h2>
-                    <div class="skills-list skills-list--mock">
-                        <div class="skill-group"><h4>Marketing</h4><ul><li>Digital marketing</li><li>Influencer marketing</li><li>B2B lead generation</li></ul></div>
-                        <div class="skill-group"><h4>Development</h4><ul><li>Front-end web development</li><li>Three.js / 3D web experiences</li><li>Git &amp; GitHub</li></ul></div>
-                        <div class="skill-group skill-group--full"><h4>Automation &amp; Tools</h4><ul><li>n8n workflow automation</li><li>Docker</li></ul></div>
+                    <div class="skills-grid">
+                        <div class="skill-card">
+                            <div class="skill-card-header"><span class="skill-card-icon">◈</span><h4>Marketing</h4></div>
+                            <ul class="skill-card-list">
+                                <li>Digital marketing</li>
+                                <li>Influencer marketing</li>
+                                <li>B2B lead generation</li>
+                            </ul>
+                        </div>
+                        <div class="skill-card">
+                            <div class="skill-card-header"><span class="skill-card-icon">&lt;/&gt;</span><h4>Development</h4></div>
+                            <ul class="skill-card-list">
+                                <li>Front-end web development</li>
+                                <li>Three.js / 3D web experiences</li>
+                                <li>Git &amp; GitHub</li>
+                            </ul>
+                        </div>
+                        <div class="skill-card skill-card--wide">
+                            <div class="skill-card-header"><span class="skill-card-icon">⚡</span><h4>Automation &amp; Tools</h4></div>
+                            <ul class="skill-card-list">
+                                <li>n8n workflow automation</li>
+                                <li>Docker</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-section" id="resume-section">
