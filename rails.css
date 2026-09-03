@@ -1,6 +1,7 @@
 /* ============================================================
-   Shared modal side rails — ALL tabs
-   Desktop rails + dedicated mobile bottom nav
+   Shared modal rails + responsive header nav
+   Desktop: side rails + text tabs
+   Mobile: icon header tabs (no bottom bar)
    ============================================================ */
 
 .portfolio-modal {
@@ -126,15 +127,20 @@
     outline-offset: 2px;
 }
 
+.modal-nav-btn .nav-icon {
+    display: none;
+}
+
+.modal-nav-btn .nav-label {
+    display: inline;
+}
+
 @media (min-width: 900px) {
     .portfolio-modal.active .modal-side-rail {
         display: block !important;
     }
     .portfolio-modal .modal-header {
         padding-right: 4.5rem !important;
-    }
-    .mobile-tab-nav {
-        display: none !important;
     }
 }
 
@@ -145,84 +151,95 @@
     .rail-icons { gap: 22px; }
 }
 
-.mobile-tab-nav {
-    display: none;
-}
-
 @media (max-width: 899px) {
     .modal-side-rail,
     .portfolio-modal.active .modal-side-rail,
     .portfolio-modal.active .modal-side-rail--left,
     .portfolio-modal.active .modal-side-rail--right {
         display: none !important;
-        pointer-events: none !important;
         visibility: hidden !important;
+        pointer-events: none !important;
     }
 
     .mobile-tab-nav {
-        display: flex !important;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        z-index: 10070;
-        align-items: stretch;
-        justify-content: space-around;
-        gap: 0;
-        min-height: 60px;
-        padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px));
-        background: #000000;
-        border-top: 1px solid #1a1a1a;
-        box-sizing: border-box;
-    }
-
-    .mobile-tab-btn {
-        flex: 1;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 4px;
-        min-height: 48px;
-        padding: 6px 4px;
-        margin: 0;
-        border: none;
-        background: transparent;
-        color: #666;
-        font-family: var(--font-mono), 'JetBrains Mono', monospace;
-        font-size: 9px;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        cursor: pointer;
-        -webkit-tap-highlight-color: transparent;
-        transition: color 0.2s ease;
-    }
-
-    .mobile-tab-btn svg {
-        display: block;
-        flex-shrink: 0;
-        opacity: 0.85;
-    }
-
-    .mobile-tab-btn.active {
-        color: #ffffff;
-    }
-
-    .mobile-tab-btn.active svg {
-        color: var(--accent, #ef4444);
-        opacity: 1;
-    }
-
-    .mobile-tab-btn:active {
-        color: #ffffff;
-    }
-
-    .portfolio-modal.active .modal-content {
-        padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px)) !important;
+        display: none !important;
     }
 
     .portfolio-modal .modal-header {
-        padding-right: 1.25rem !important;
+        padding: 1rem 1.25rem 0.5rem !important;
+    }
+
+    .portfolio-modal.active .modal-content {
+        padding-bottom: 2rem !important;
+    }
+
+    .portfolio-modal .modal-nav {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: stretch !important;
+        justify-content: space-around !important;
+        gap: 0 !important;
+        width: 100% !important;
+        margin: 0 0 1.25rem 0 !important;
+        padding: 0.35rem 0 0.65rem !important;
+        border-bottom: 1px solid #1a1a1a !important;
+        overflow: visible !important;
+        flex-wrap: nowrap !important;
+    }
+
+    .portfolio-modal .modal-nav-btn {
+        flex: 1 1 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 5px !important;
+        min-width: 0 !important;
+        padding: 0.45rem 0.2rem !important;
+        margin: 0 !important;
+        border: none !important;
+        background: transparent !important;
+        color: #666 !important;
+        font-family: var(--font-mono), 'JetBrains Mono', monospace !important;
+        font-size: 9px !important;
+        letter-spacing: 0.06em !important;
+        text-transform: uppercase !important;
+        line-height: 1.2 !important;
+        white-space: nowrap !important;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .portfolio-modal .modal-nav-btn::after {
+        display: none !important;
+        content: none !important;
+    }
+
+    .portfolio-modal .modal-nav-btn .nav-icon {
+        display: block !important;
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+        opacity: 0.9;
+    }
+
+    .portfolio-modal .modal-nav-btn .nav-label {
+        display: block !important;
+        font-size: 9px !important;
+        letter-spacing: 0.06em !important;
+    }
+
+    .portfolio-modal .modal-nav-btn.active {
+        color: #ffffff !important;
+        background: transparent !important;
+    }
+
+    .portfolio-modal .modal-nav-btn.active .nav-icon {
+        color: var(--accent, #ef4444) !important;
+        opacity: 1;
+    }
+
+    .portfolio-modal .modal-nav-btn:hover {
+        color: #ffffff !important;
     }
 }
 
