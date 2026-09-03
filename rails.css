@@ -1,7 +1,7 @@
 /* ============================================================
    Shared modal rails + responsive header nav
-   Desktop: side rails + icon header tabs
-   Mobile: icon header tabs (no bottom bar)
+   Desktop: side rails + icon header tabs (sticky)
+   Mobile: icon header tabs sticky (no bottom bar)
    ============================================================ */
 
 .portfolio-modal {
@@ -19,6 +19,43 @@
     margin-right: 12px;
     position: relative;
     z-index: 10061;
+}
+
+/* Sticky header + tabs while scrolling modal content */
+.portfolio-modal .modal-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 10080 !important;
+    background: #000000 !important;
+}
+
+.portfolio-modal .modal-nav {
+    position: sticky !important;
+    top: 72px !important;
+    z-index: 10070 !important;
+    background: #000000 !important;
+    padding-top: 0.75rem !important;
+    margin-top: 0 !important;
+}
+
+@media (max-width: 899px) {
+    .portfolio-modal .modal-header {
+        top: 0 !important;
+    }
+    .portfolio-modal .modal-nav {
+        top: 56px !important;
+        padding-top: 0.5rem !important;
+        padding-bottom: 0.65rem !important;
+        margin-bottom: 1rem !important;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.85);
+    }
+}
+
+@media (min-width: 900px) {
+    .portfolio-modal .modal-nav {
+        top: 82px !important;
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.75);
+    }
 }
 
 .modal-side-rail {
@@ -237,6 +274,10 @@
     }
 
     .portfolio-modal .modal-nav {
+        position: sticky !important;
+        top: 56px !important;
+        z-index: 10070 !important;
+        background: #000000 !important;
         display: flex !important;
         flex-direction: row !important;
         align-items: stretch !important;
