@@ -60,49 +60,47 @@
     });
   }
 
-  // Rich dark hardwood — warm brown-black planks like reference
   function createRichDarkWoodFloor() {
+    // Match dark espresso hardwood reference — near-black brown, subtle grain only
     var canvas = document.createElement('canvas');
     canvas.width = 1024;
     canvas.height = 1024;
     var ctx = canvas.getContext('2d');
-    var planks = 16;
+    var planks = 12;
     var plankH = canvas.height / planks;
 
-    ctx.fillStyle = '#0e0c0a';
+    ctx.fillStyle = '#0a0908';
     ctx.fillRect(0, 0, 1024, 1024);
 
     for (var i = 0; i < planks; i++) {
       var y = i * plankH;
-      // Vary between deep chocolate and near-black brown
-      var r = 28 + ((i * 11) % 18);
-      var g = 18 + ((i * 7) % 12);
-      var b = 12 + ((i * 5) % 8);
-      ctx.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
-      ctx.fillRect(0, y + 2, 1024, plankH - 3);
+      // Tight variation around deep espresso (avoids rainbow under warm light)
+      var v = 16 + ((i * 3) % 5);
+      ctx.fillStyle = 'rgb(' + (v + 4) + ',' + (v + 1) + ',' + v + ')';
+      ctx.fillRect(0, y + 1, 1024, plankH - 2);
 
-      // Grain
-      for (var gLine = 0; gLine < 16; gLine++) {
-        ctx.strokeStyle = 'rgba(55,38,25,' + (0.06 + Math.random() * 0.12) + ')';
-        ctx.lineWidth = 1;
+      // Soft longitudinal grain (like stained ash)
+      for (var gLine = 0; gLine < 28; gLine++) {
+        var gy = y + 2 + Math.random() * (plankH - 4);
+        var alpha = 0.04 + Math.random() * 0.07;
+        ctx.strokeStyle = 'rgba(0,0,0,' + alpha + ')';
+        ctx.lineWidth = 0.8 + Math.random();
         ctx.beginPath();
-        var gy = y + 3 + Math.random() * (plankH - 6);
         ctx.moveTo(0, gy);
-        ctx.lineTo(1024, gy + (Math.random() - 0.5) * 2);
+        for (var x = 0; x < 1024; x += 32) {
+          ctx.lineTo(x, gy + Math.sin(x * 0.02 + i) * 1.2);
+        }
         ctx.stroke();
       }
 
-      // Seam
-      ctx.fillStyle = '#060504';
-      ctx.fillRect(0, y, 1024, 2);
-      // Slight highlight edge on plank
-      ctx.fillStyle = 'rgba(80,55,35,0.08)';
-      ctx.fillRect(0, y + 2, 1024, 1);
+      // Dark seam between planks
+      ctx.fillStyle = '#050403';
+      ctx.fillRect(0, y, 1024, 1.5);
     }
 
     var tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(1.8, 1.8);
+    tex.repeat.set(2.2, 2.2);
     tex.anisotropy = 8;
     return tex;
   }
@@ -224,7 +222,6 @@
       roughness: 0.92,
       metalness: 0.02
     });
-    // Slightly lighter panel inset suggestion on large faces via second material on door frame only
     var frameMat = new THREE.MeshStandardMaterial({
       color: 0x1a1a1c,
       roughness: 0.6,
@@ -265,14 +262,15 @@
     var zB = -2.7;
     var zF = 4.2;
 
-    // Rich dark hardwood floor
+    // Dark espresso hardwood floor only
     var woodTex = createRichDarkWoodFloor();
     var floor = new THREE.Mesh(
       new THREE.BoxGeometry(xR - xL + 0.6, 0.18, zF - zB + 0.4),
       new THREE.MeshStandardMaterial({
         map: woodTex,
-        roughness: 0.42,
-        metalness: 0.08
+        color: 0x1a1614,
+        roughness: 0.55,
+        metalness: 0.05
       })
     );
     floor.position.set((xL + xR) / 2, -0.09, (zB + zF) / 2);
@@ -293,13 +291,11 @@
     if (xR > doorX1) box(xR - doorX1, H, T, (doorX1 + xR) / 2, H / 2, zB);
     box(T, H, T, xR, H / 2, zB);
 
-    // Subtle wall panel lines (molding feel from reference — thin frames only)
     var panelMat = new THREE.MeshStandardMaterial({
       color: 0x1c1c1e,
       roughness: 0.85,
       metalness: 0.03
     });
-    // Horizontal chair-rail suggestion on back wall
     box(xR - xL - 0.3, 0.06, 0.04, (xL + xR) / 2, 1.4, zB + T / 2 + 0.02, panelMat);
     box(xR - xL - 0.3, 0.04, 0.04, (xL + xR) / 2, 0.35, zB + T / 2 + 0.02, panelMat);
 
@@ -391,10 +387,7 @@
   }
 
   function loadFurniture() {
-    if (typeof scene === 'undefined' || !scene) {
-      setTimeout(loadFurniture, 200);
-      return;
-    }
+    if (typeof scene === 'undefined' || !scene) return;
     if (window.__furnitureAdded) return;
 
     function runCreates() {
@@ -413,7 +406,7 @@
 
     if (!document.querySelector('script[data-furniture]')) {
       var s = document.createElement('script');
-      s.src = 'furniture.js?v=wf1';
+      s.src = 'furniture.js?v=floor2';
       s.setAttribute('data-furniture', '1');
       s.onload = runCreates;
       document.body.appendChild(s);
