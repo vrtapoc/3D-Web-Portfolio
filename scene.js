@@ -1,8 +1,9 @@
 /*
- * Layout fixes:
- * 1) Floor plinth fully under right wall + bench, flush edges, no stray posts
- * 2) Jukebox moved to back-right corner
- * 3) Sofa/rug handled in furniture.js (forward-left)
+ * Penthouse night layout:
+ * - Sofa faces window (furniture.js)
+ * - Jukebox in back-right, rotated toward camera
+ * - Night city skyline in window
+ * - Cooler ambient / moonlight
  */
 (function () {
   var GOOD_SCENE_URL =
@@ -59,33 +60,144 @@
     });
   }
 
-  function moveJukeboxToCorner() {
+  function applyNightLighting() {
     if (typeof scene === 'undefined' || !scene) return;
-    // Original jukebox group is typically named via userData or is the group at old pos
-    var moved = false;
     scene.traverse(function (obj) {
-      if (moved) return;
-      if (!obj.isGroup && !obj.isMesh) return;
-      // Match by known original position near (2.15, 0, -1.75) or name
-      var n = (obj.name || '').toLowerCase();
-      if (n.indexOf('jukebox') !== -1) {
-        obj.position.set(3.6, 0, -1.6);
-        moved = true;
-        return;
+      if (!obj.isLight) return;
+      // Dim warm lights; shift directional to cool moonlight
+      if (obj.isDirectionalLight) {
+        obj.color.setHex(0x1e293b);
+        obj.intensity = Math.min(obj.intensity, 0.35);
       }
-      if (
-        obj.isGroup &&
-        Math.abs(obj.position.x - 2.15) < 0.4 &&
-        Math.abs(obj.position.z + 1.75) < 0.5
-      ) {
-        obj.position.set(3.6, 0, -1.6);
-        moved = true;
+      if (obj.isAmbientLight) {
+        obj.color.setHex(0x0f172a);
+        obj.intensity = Math.min(obj.intensity * 0.55, 0.28);
+      }
+      if (obj.isPointLight) {
+        // Keep practicals; slightly reduce non-monitor fills
+        if (obj.intensity > 0.6) obj.intensity *= 0.7;
       }
     });
-    // Fallback: global jukebox var from original scene.js
-    if (!moved && typeof jukebox !== 'undefined' && jukebox) {
-      jukebox.position.set(3.6, 0, -1.6);
+    // Soft moonlight fill from window direction
+    if (typeof THREE !== 'undefined') {
+      var moon = new THREE.DirectionalLight(0x38bdf8, 0.22);
+      moon.position.set(8, 6, 2);
+      moon.castShadow = false;
+      scene.add(moon);
+      var cityFill = new THREE.PointLight(0x60a5fa, 0.25, 18);
+      cityFill.position.set(6, 3, 2);
+      scene.add(cityFill);
     }
+    if (scene.background) scene.background = new THREE.Color(0x09090b);
+    if (scene.fog) {
+      scene.fog.color = new THREE.Color(0x09090b);
+      scene.fog.near = 24;
+      scene.fog.far = 55;
+    }
+  }
+
+  function moveJukeboxToCorner() {
+    if (typeof scene === 'undefined' || !scene) return;
+    var target = null;
+    if (typeof jukebox !== 'undefined' && jukebox) target = jukebox;
+    if (!target) {
+      scene.traverse(function (obj) {
+        if (target) return;
+        var n = (obj.name || '').toLowerCase();
+        if (n.indexOf('jukebox') !== -1) {
+          target = obj;
+          return;
+        }
+        if (
+          obj.isGroup &&
+          Math.abs(obj.position.x - 2.15) < 0.5 &&
+          Math.abs(obj.position.z + 1.75) < 0.6
+        ) {
+          target = obj;
+        }
+      });
+    }
+    if (!target) return;
+    // Back-right corner, facing toward camera (front-left)
+    target.position.set(3.55, 0, -1.55);
+    target.rotation.y = Math.PI * 0.85; // arch toward isometric camera
+  }
+
+  function moveBalloonToEdge() {
+    // Optional: plant/balloon group near front-right edge if found
+    if (typeof scene === 'undefined' || !scene) return;
+    scene.traverse(function (obj) {
+      if (!obj.isGroup) return;
+      if (
+        Math.abs(obj.position.x + 1.85) < 0.4 &&
+        Math.abs(obj.position.z - 0.4) < 0.4
+      ) {
+        // balloon/plant was at left of desk — move to front-right edge of floor
+        obj.position.set(3.8, 0, 4.2);
+      }
+    });
+  }
+
+  function buildNightSkylineTexture() {
+    var c = document.createElement('canvas');
+    c.width = 1024;
+    c.height = 512;
+    var ctx = c.getContext('2d');
+
+    // Deep midnight sky
+    var g = ctx.createLinearGradient(0, 0, 0, 512);
+    g.addColorStop(0, '#020617');
+    g.addColorStop(0.55, '#0f172a');
+    g.addColorStop(1, '#1e1b4b');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, 1024, 512);
+
+    // Stars
+    for (var s = 0; s < 80; s++) {
+      ctx.fillStyle = 'rgba(248,250,252,' + (0.3 + Math.random() * 0.6) + ')';
+      ctx.fillRect(Math.random() * 1024, Math.random() * 220, 1.5, 1.5);
+    }
+
+    // Skyscraper silhouettes + window grids
+    for (var b = 0; b < 22; b++) {
+      var bx = 20 + b * 46 + Math.random() * 10;
+      var bw = 22 + Math.random() * 36;
+      var bh = 80 + Math.random() * 260;
+      var by = 512 - bh - 20;
+      ctx.fillStyle = b % 3 === 0 ? '#020617' : '#0f172a';
+      ctx.fillRect(bx, by, bw, bh);
+
+      // Window lights
+      var colors = ['#fef08a', '#38bdf8', '#f8fafc', '#fbbf24'];
+      for (var wy = by + 8; wy < by + bh - 10; wy += 12) {
+        for (var wx = bx + 4; wx < bx + bw - 4; wx += 8) {
+          if (Math.random() > 0.35) {
+            ctx.fillStyle = colors[(Math.random() * colors.length) | 0];
+            ctx.globalAlpha = 0.55 + Math.random() * 0.4;
+            ctx.fillRect(wx, wy, 3, 4);
+            ctx.globalAlpha = 1;
+          }
+        }
+      }
+
+      // Red spire beacon on some towers
+      if (Math.random() > 0.7) {
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(bx + bw / 2, by - 6, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    // Soft bokeh near horizon
+    for (var i = 0; i < 30; i++) {
+      ctx.beginPath();
+      ctx.fillStyle = 'rgba(248,250,252,' + (0.15 + Math.random() * 0.35) + ')';
+      ctx.arc(40 + Math.random() * 940, 380 + Math.random() * 100, 1 + Math.random() * 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    return new THREE.CanvasTexture(c);
   }
 
   function buildWalls() {
@@ -117,12 +229,12 @@
       metalness: 0.08
     });
     var floorMat = new THREE.MeshStandardMaterial({
-      color: 0x252528,
-      roughness: 0.88,
+      color: 0x18181b,
+      roughness: 0.9,
       metalness: 0.04
     });
     var benchMat = new THREE.MeshStandardMaterial({
-      color: 0x2a2a2e,
+      color: 0x27272a,
       roughness: 0.82,
       metalness: 0.05
     });
@@ -148,11 +260,10 @@
     var straightZ1 = zF - frontSolid;
     var winLen = Math.max(straightZ1 - straightZ0, 2);
 
-    // Floor plinth fully covers left → past straight right wall end
     var floorX0 = xL - 0.15;
-    var floorX1 = straightX + T / 2 + 0.12; // under full right wall thickness
+    var floorX1 = straightX + T / 2 + 0.12;
     var floorZ0 = zB - 0.15;
-    var floorZ1 = zF + 0.05; // flush with front wall termination
+    var floorZ1 = zF + 0.05;
     addArch(
       floorX1 - floorX0,
       0.14,
@@ -163,22 +274,16 @@
       floorMat
     );
 
-    // ========== BACK WALL + DOOR ==========
+    // Back wall + door
     var doorW = 1.9;
     var doorH = 4.5;
     var doorX = -3.4;
     var doorX0 = doorX - doorW / 2;
     var doorX1 = doorX + doorW / 2;
-    var backX0 = xL;
-    var backX1 = xR;
 
-    if (doorX0 > backX0) {
-      addArch(doorX0 - backX0, H, T, (backX0 + doorX0) / 2, H / 2, zB);
-    }
+    if (doorX0 > xL) addArch(doorX0 - xL, H, T, (xL + doorX0) / 2, H / 2, zB);
     addArch(doorW, H - doorH, T, doorX, doorH + (H - doorH) / 2, zB);
-    if (backX1 > doorX1) {
-      addArch(backX1 - doorX1, H, T, (doorX1 + backX1) / 2, H / 2, zB);
-    }
+    if (xR > doorX1) addArch(xR - doorX1, H, T, (doorX1 + xR) / 2, H / 2, zB);
     addArch(T * 1.2, H, T * 1.2, xR, H / 2, zB);
 
     var ft = 0.08;
@@ -189,20 +294,15 @@
     addArch(0.18, 0.04, 0.04, doorX + doorW * 0.28, doorH * 0.45, zB + T / 2 + 0.06, frameMat);
 
     var bbH = 0.1;
-    if (doorX0 > backX0) {
-      addArch(doorX0 - backX0, bbH, T + 0.02, (backX0 + doorX0) / 2, bbH / 2, zB, trimMat);
-    }
-    if (backX1 > doorX1) {
-      addArch(backX1 - doorX1, bbH, T + 0.02, (doorX1 + backX1) / 2, bbH / 2, zB, trimMat);
-    }
+    if (doorX0 > xL) addArch(doorX0 - xL, bbH, T + 0.02, (xL + doorX0) / 2, bbH / 2, zB, trimMat);
+    if (xR > doorX1) addArch(xR - doorX1, bbH, T + 0.02, (doorX1 + xR) / 2, bbH / 2, zB, trimMat);
 
-    // Single 45° at back-right only
+    // Single 45° bay
     var bayAngleLen = Math.sqrt(bayOut * bayOut + bayOut * bayOut);
     var angleWall = addArch(T, H, bayAngleLen, 0, H / 2, 0);
     angleWall.position.set(xR + bayOut * 0.45, H / 2, zB + bayOut * 0.45);
     angleWall.rotation.y = Math.PI / 4;
 
-    // Straight window wall
     var headerH = 1.05;
     var headerBottom = H - headerH;
     addArch(T, headerH, winLen, straightX, headerBottom + headerH / 2, straightZ0 + winLen / 2);
@@ -245,55 +345,31 @@
       var glass = new THREE.Mesh(
         new THREE.PlaneGeometry(paneW - 0.1, winH - 0.1),
         new THREE.MeshStandardMaterial({
-          color: 0x88aacc,
+          color: 0x6688aa,
           transparent: true,
-          opacity: 0.28,
+          opacity: 0.22,
           roughness: 0.1,
-          metalness: 0.15,
+          metalness: 0.2,
           side: THREE.DoubleSide
         })
       );
       glass.position.set(straightX - 0.02, winBottom + winH / 2, straightZ0 + paneW * (p + 0.5));
       glass.rotation.y = Math.PI / 2;
       glass.castShadow = false;
-      glass.receiveShadow = true;
       root.add(glass);
     }
 
-    var c = document.createElement('canvas');
-    c.width = 1024;
-    c.height = 512;
-    var ctx = c.getContext('2d');
-    var g = ctx.createLinearGradient(0, 0, 0, 512);
-    g.addColorStop(0, '#1a1528');
-    g.addColorStop(0.35, '#c45a2a');
-    g.addColorStop(0.55, '#e89040');
-    g.addColorStop(0.75, '#f0c070');
-    g.addColorStop(1, '#2a2838');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, 1024, 512);
-    ctx.beginPath();
-    ctx.arc(720, 200, 40, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(255,220,120,0.9)';
-    ctx.fill();
-    ctx.fillStyle = 'rgba(18,18,28,0.9)';
-    for (var b = 0; b < 28; b++) {
-      var bw = 18 + Math.random() * 42;
-      var bh = 50 + Math.random() * 220;
-      ctx.fillRect(10 + b * 36, 512 - bh - 30, bw, bh);
-    }
+    // Night penthouse skyline
     var view = new THREE.Mesh(
       new THREE.PlaneGeometry(winLen - 0.05, winH - 0.05),
-      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c) })
+      new THREE.MeshBasicMaterial({ map: buildNightSkylineTexture() })
     );
     view.position.set(straightX + 0.08, winBottom + winH / 2, straightZ0 + winLen / 2);
     view.rotation.y = -Math.PI / 2;
     view.castShadow = false;
     root.add(view);
 
-    // Front solid termination — FLUSH with floor front edge (no overhang post)
     addArch(T, H, frontSolid, straightX, H / 2, straightZ1 + frontSolid / 2);
-    // Cap sits ON floor front, not past it
     addArch(T + 0.04, H, 0.08, straightX, H / 2, zF - 0.02, wallMat);
 
     scene.add(root);
@@ -328,6 +404,8 @@
       trimOriginalFloor();
       buildWalls();
       moveJukeboxToCorner();
+      moveBalloonToEdge();
+      applyNightLighting();
     }, 250);
   }
 
@@ -355,7 +433,7 @@
 
     if (!document.querySelector('script[data-furniture]')) {
       var s = document.createElement('script');
-      s.src = 'furniture.js?v=layout3';
+      s.src = 'furniture.js?v=night1';
       s.setAttribute('data-furniture', '1');
       s.onload = runCreates;
       document.body.appendChild(s);
