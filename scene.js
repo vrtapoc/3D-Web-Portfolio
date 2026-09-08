@@ -1,10 +1,8 @@
 /*
- * Balanced dark room — not crushed black, not washed out:
- * - Charcoal walls #25262a
- * - Dark espresso wood floor (not blonde)
- * - Moderate fill + controlled sun (lower intensity)
- * - Sunset stays in the window only
- * - No sofa / no object layout changes
+ * Wall + floor color only (ambience locked from previous balanced pass):
+ * - Walls: deep formal black/charcoal like paneled reference
+ * - Floor: rich dark hardwood planks
+ * - Lights / exposure unchanged
  */
 (function () {
   var GOOD_SCENE_URL =
@@ -12,7 +10,8 @@
 
   var H = 5.8;
   var T = 0.22;
-  var WALL_COLOR = 0x25262a;
+  // Deep formal black wall (paneled-room reference)
+  var WALL_COLOR = 0x141416;
 
   function removeOriginalWalls() {
     if (typeof scene === 'undefined' || !scene) return;
@@ -61,41 +60,50 @@
     });
   }
 
-  // Dark espresso planks — not blonde/beige
-  function createDarkWoodFloorTexture() {
+  // Rich dark hardwood — warm brown-black planks like reference
+  function createRichDarkWoodFloor() {
     var canvas = document.createElement('canvas');
     canvas.width = 1024;
     canvas.height = 1024;
     var ctx = canvas.getContext('2d');
-    var planks = 14;
+    var planks = 16;
     var plankH = canvas.height / planks;
 
-    ctx.fillStyle = '#12100e';
+    ctx.fillStyle = '#0e0c0a';
     ctx.fillRect(0, 0, 1024, 1024);
 
     for (var i = 0; i < planks; i++) {
       var y = i * plankH;
-      var base = 22 + ((i * 5) % 8);
-      ctx.fillStyle = 'rgb(' + (base + 8) + ',' + (base + 4) + ',' + base + ')';
+      // Vary between deep chocolate and near-black brown
+      var r = 28 + ((i * 11) % 18);
+      var g = 18 + ((i * 7) % 12);
+      var b = 12 + ((i * 5) % 8);
+      ctx.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
       ctx.fillRect(0, y + 2, 1024, plankH - 3);
 
-      for (var g = 0; g < 10; g++) {
-        ctx.strokeStyle = 'rgba(40,28,20,' + (0.08 + Math.random() * 0.1) + ')';
+      // Grain
+      for (var gLine = 0; gLine < 16; gLine++) {
+        ctx.strokeStyle = 'rgba(55,38,25,' + (0.06 + Math.random() * 0.12) + ')';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        var gy = y + 4 + Math.random() * (plankH - 8);
+        var gy = y + 3 + Math.random() * (plankH - 6);
         ctx.moveTo(0, gy);
         ctx.lineTo(1024, gy + (Math.random() - 0.5) * 2);
         ctx.stroke();
       }
 
-      ctx.fillStyle = '#080706';
+      // Seam
+      ctx.fillStyle = '#060504';
       ctx.fillRect(0, y, 1024, 2);
+      // Slight highlight edge on plank
+      ctx.fillStyle = 'rgba(80,55,35,0.08)';
+      ctx.fillRect(0, y + 2, 1024, 1);
     }
 
     var tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(1.6, 1.6);
+    tex.repeat.set(1.8, 1.8);
+    tex.anisotropy = 8;
     return tex;
   }
 
@@ -125,10 +133,10 @@
     return new THREE.CanvasTexture(c);
   }
 
+  // SAME balanced lighting as last approved pass — do not brighten
   function applyBalancedLighting() {
     if (typeof scene === 'undefined' || !scene) return;
 
-    // Kill previous amb- / locked- lights if re-run
     var toRemove = [];
     scene.traverse(function (obj) {
       if (!obj.isLight) return;
@@ -137,7 +145,6 @@
         toRemove.push(obj);
         return;
       }
-      // Soften original scene lights
       if (obj.isAmbientLight || obj.isHemisphereLight) obj.intensity = 0.08;
       if (obj.isDirectionalLight) obj.intensity = Math.min(obj.intensity, 0.2);
       if (obj.isPointLight && obj.intensity > 1.5) obj.intensity *= 0.4;
@@ -146,7 +153,6 @@
       if (l.parent) l.parent.remove(l);
     });
 
-    // Moderate ambient — readable, not bright
     var amb = new THREE.AmbientLight(0xb8b4b0, 0.28);
     amb.name = 'amb-ambient';
     scene.add(amb);
@@ -155,13 +161,11 @@
     hemi.name = 'amb-hemi';
     scene.add(hemi);
 
-    // Soft camera fill
     var cameraFill = new THREE.DirectionalLight(0xe8e0d0, 0.35);
     cameraFill.name = 'amb-camera-fill';
     cameraFill.position.set(-5, 5.5, 7);
     scene.add(cameraFill);
 
-    // Controlled sun — warm, not blowing out the floor
     var sun = new THREE.DirectionalLight(0xff9e48, 1.6);
     sun.name = 'amb-sun';
     sun.position.set(8, 5, 1.5);
@@ -172,13 +176,11 @@
     scene.add(sun);
     scene.add(sun.target);
 
-    // Gentle window bounce on bench only
     var windowBounce = new THREE.PointLight(0xff9442, 0.9, 10, 1.2);
     windowBounce.name = 'amb-window-bounce';
     windowBounce.position.set(4.0, 2.0, 1.5);
     scene.add(windowBounce);
 
-    // Desk practicals stay subtle
     var screenLight = new THREE.PointLight(0x00c4e8, 0.7, 3.5);
     screenLight.name = 'amb-screen';
     screenLight.position.set(0, 2.0, 0.15);
@@ -219,32 +221,33 @@
 
     var wallMat = new THREE.MeshStandardMaterial({
       color: WALL_COLOR,
-      roughness: 0.9,
-      metalness: 0.03
+      roughness: 0.92,
+      metalness: 0.02
     });
+    // Slightly lighter panel inset suggestion on large faces via second material on door frame only
     var frameMat = new THREE.MeshStandardMaterial({
-      color: 0x1e1e22,
-      roughness: 0.55,
-      metalness: 0.12
+      color: 0x1a1a1c,
+      roughness: 0.6,
+      metalness: 0.1
     });
     var doorMat = new THREE.MeshStandardMaterial({
-      color: 0x1a1a1e,
-      roughness: 0.75,
-      metalness: 0.05
+      color: 0x101012,
+      roughness: 0.78,
+      metalness: 0.04
     });
     var metalMat = new THREE.MeshStandardMaterial({
-      color: 0xa0a0a8,
+      color: 0x9a9aa0,
       roughness: 0.3,
       metalness: 0.8
     });
     var benchMat = new THREE.MeshStandardMaterial({
-      color: 0x1c1c20,
-      roughness: 0.85,
-      metalness: 0.04
+      color: 0x121214,
+      roughness: 0.88,
+      metalness: 0.03
     });
     var cushionMat = new THREE.MeshStandardMaterial({
-      color: 0x2a2a30,
-      roughness: 0.88,
+      color: 0x1e1e22,
+      roughness: 0.9,
       metalness: 0.02
     });
 
@@ -262,13 +265,13 @@
     var zB = -2.7;
     var zF = 4.2;
 
-    // Dark espresso wood floor
-    var woodTex = createDarkWoodFloorTexture();
+    // Rich dark hardwood floor
+    var woodTex = createRichDarkWoodFloor();
     var floor = new THREE.Mesh(
       new THREE.BoxGeometry(xR - xL + 0.6, 0.18, zF - zB + 0.4),
       new THREE.MeshStandardMaterial({
         map: woodTex,
-        roughness: 0.45,
+        roughness: 0.42,
         metalness: 0.08
       })
     );
@@ -289,6 +292,16 @@
     box(doorW, H - doorH, T, doorX, doorH + (H - doorH) / 2, zB);
     if (xR > doorX1) box(xR - doorX1, H, T, (doorX1 + xR) / 2, H / 2, zB);
     box(T, H, T, xR, H / 2, zB);
+
+    // Subtle wall panel lines (molding feel from reference — thin frames only)
+    var panelMat = new THREE.MeshStandardMaterial({
+      color: 0x1c1c1e,
+      roughness: 0.85,
+      metalness: 0.03
+    });
+    // Horizontal chair-rail suggestion on back wall
+    box(xR - xL - 0.3, 0.06, 0.04, (xL + xR) / 2, 1.4, zB + T / 2 + 0.02, panelMat);
+    box(xR - xL - 0.3, 0.04, 0.04, (xL + xR) / 2, 0.35, zB + T / 2 + 0.02, panelMat);
 
     box(0.06, doorH + 0.08, T + 0.02, doorX0, doorH / 2, zB, frameMat);
     box(0.06, doorH + 0.08, T + 0.02, doorX1, doorH / 2, zB, frameMat);
@@ -400,7 +413,7 @@
 
     if (!document.querySelector('script[data-furniture]')) {
       var s = document.createElement('script');
-      s.src = 'furniture.js?v=bal1';
+      s.src = 'furniture.js?v=wf1';
       s.setAttribute('data-furniture', '1');
       s.onload = runCreates;
       document.body.appendChild(s);
