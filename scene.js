@@ -1,9 +1,10 @@
 /*
- * Penthouse night layout:
- * - Sofa faces window (furniture.js)
- * - Jukebox in back-right, rotated toward camera
- * - Night city skyline in window
- * - Cooler ambient / moonlight
+ * Reference match pass:
+ * - Dark walnut plank floor (procedural albedo + normal)
+ * - Left wall + door
+ * - Straight uniform walls
+ * - Sunset key light through right window
+ * - Cool monitor contrast kept from original scene
  */
 (function () {
   var GOOD_SCENE_URL =
@@ -11,14 +12,14 @@
 
   var H = 6.8;
   var T = 0.2;
-  var WALL_COLOR = 0x1e1e22;
+  var WALL_COLOR = 0x1a1a1e;
 
   function removeOriginalWalls() {
     if (typeof scene === 'undefined' || !scene) return;
     var kill = [];
     scene.traverse(function (obj) {
       if (!obj) return;
-      if (obj.name === 'diorama-walls' || obj.name === 'right-wall-window') {
+      if (obj.name === 'diorama-walls') {
         kill.push(obj);
         return;
       }
@@ -60,144 +61,153 @@
     });
   }
 
-  function applyNightLighting() {
-    if (typeof scene === 'undefined' || !scene) return;
-    scene.traverse(function (obj) {
-      if (!obj.isLight) return;
-      // Dim warm lights; shift directional to cool moonlight
-      if (obj.isDirectionalLight) {
-        obj.color.setHex(0x1e293b);
-        obj.intensity = Math.min(obj.intensity, 0.35);
+  function makeWalnutTextures() {
+    var size = 1024;
+    var albedo = document.createElement('canvas');
+    albedo.width = albedo.height = size;
+    var a = albedo.getContext('2d');
+
+    // Base espresso / black walnut
+    a.fillStyle = '#1a120e';
+    a.fillRect(0, 0, size, size);
+
+    var plankW = 48;
+    for (var x = 0; x < size; x += plankW) {
+      // Plank variation
+      var shade = 18 + ((x * 13) % 17);
+      a.fillStyle = 'rgb(' + (shade + 8) + ',' + (shade - 2) + ',' + (shade - 6) + ')';
+      a.fillRect(x + 1, 0, plankW - 2, size);
+
+      // Grain streaks
+      for (var g = 0; g < 40; g++) {
+        var gx = x + 4 + Math.random() * (plankW - 8);
+        a.strokeStyle = 'rgba(60,40,28,' + (0.08 + Math.random() * 0.12) + ')';
+        a.lineWidth = 1 + Math.random();
+        a.beginPath();
+        a.moveTo(gx, 0);
+        a.lineTo(gx + (Math.random() - 0.5) * 6, size);
+        a.stroke();
       }
-      if (obj.isAmbientLight) {
-        obj.color.setHex(0x0f172a);
-        obj.intensity = Math.min(obj.intensity * 0.55, 0.28);
-      }
-      if (obj.isPointLight) {
-        // Keep practicals; slightly reduce non-monitor fills
-        if (obj.intensity > 0.6) obj.intensity *= 0.7;
-      }
-    });
-    // Soft moonlight fill from window direction
-    if (typeof THREE !== 'undefined') {
-      var moon = new THREE.DirectionalLight(0x38bdf8, 0.22);
-      moon.position.set(8, 6, 2);
-      moon.castShadow = false;
-      scene.add(moon);
-      var cityFill = new THREE.PointLight(0x60a5fa, 0.25, 18);
-      cityFill.position.set(6, 3, 2);
-      scene.add(cityFill);
+
+      // Seam / groove
+      a.fillStyle = 'rgba(8,6,5,0.85)';
+      a.fillRect(x, 0, 2, size);
     }
-    if (scene.background) scene.background = new THREE.Color(0x09090b);
-    if (scene.fog) {
-      scene.fog.color = new THREE.Color(0x09090b);
-      scene.fog.near = 24;
-      scene.fog.far = 55;
+
+    // Subtle cross wear
+    for (var i = 0; i < 80; i++) {
+      a.fillStyle = 'rgba(90,70,50,' + (0.03 + Math.random() * 0.05) + ')';
+      a.fillRect(Math.random() * size, Math.random() * size, 20 + Math.random() * 40, 1);
     }
+
+    var normal = document.createElement('canvas');
+    normal.width = normal.height = size;
+    var n = normal.getContext('2d');
+    n.fillStyle = '#8080ff'; // flat normal base
+    n.fillRect(0, 0, size, size);
+    for (var nx = 0; nx < size; nx += plankW) {
+      // Groove as normal perturbation (darker = inward)
+      n.fillStyle = '#6060e0';
+      n.fillRect(nx, 0, 3, size);
+      n.fillStyle = '#a0a0ff';
+      n.fillRect(nx + 3, 0, 2, size);
+    }
+
+    var rough = document.createElement('canvas');
+    rough.width = rough.height = size;
+    var r = rough.getContext('2d');
+    r.fillStyle = '#4a4a4a'; // ~0.3 roughness grey
+    r.fillRect(0, 0, size, size);
+    for (var rx = 0; rx < size; rx += plankW) {
+      r.fillStyle = '#3a3a3a';
+      r.fillRect(rx, 0, 3, size);
+      for (var ry = 0; ry < 30; ry++) {
+        r.fillStyle = 'rgba(80,80,80,' + Math.random() * 0.3 + ')';
+        r.fillRect(rx + 4, Math.random() * size, plankW - 8, 2);
+      }
+    }
+
+    var map = new THREE.CanvasTexture(albedo);
+    map.wrapS = map.wrapT = THREE.RepeatWrapping;
+    map.repeat.set(6, 6);
+    map.anisotropy = 8;
+
+    var nmap = new THREE.CanvasTexture(normal);
+    nmap.wrapS = nmap.wrapT = THREE.RepeatWrapping;
+    nmap.repeat.set(6, 6);
+
+    var rmap = new THREE.CanvasTexture(rough);
+    rmap.wrapS = rmap.wrapT = THREE.RepeatWrapping;
+    rmap.repeat.set(6, 6);
+
+    return { map: map, normalMap: nmap, roughnessMap: rmap };
   }
 
-  function moveJukeboxToCorner() {
-    if (typeof scene === 'undefined' || !scene) return;
-    var target = null;
-    if (typeof jukebox !== 'undefined' && jukebox) target = jukebox;
-    if (!target) {
-      scene.traverse(function (obj) {
-        if (target) return;
-        var n = (obj.name || '').toLowerCase();
-        if (n.indexOf('jukebox') !== -1) {
-          target = obj;
-          return;
-        }
-        if (
-          obj.isGroup &&
-          Math.abs(obj.position.x - 2.15) < 0.5 &&
-          Math.abs(obj.position.z + 1.75) < 0.6
-        ) {
-          target = obj;
-        }
-      });
-    }
-    if (!target) return;
-    // Back-right corner, facing toward camera (front-left)
-    target.position.set(3.55, 0, -1.55);
-    target.rotation.y = Math.PI * 0.85; // arch toward isometric camera
-  }
-
-  function moveBalloonToEdge() {
-    // Optional: plant/balloon group near front-right edge if found
-    if (typeof scene === 'undefined' || !scene) return;
-    scene.traverse(function (obj) {
-      if (!obj.isGroup) return;
-      if (
-        Math.abs(obj.position.x + 1.85) < 0.4 &&
-        Math.abs(obj.position.z - 0.4) < 0.4
-      ) {
-        // balloon/plant was at left of desk — move to front-right edge of floor
-        obj.position.set(3.8, 0, 4.2);
-      }
-    });
-  }
-
-  function buildNightSkylineTexture() {
+  function makeSunsetSkyline() {
     var c = document.createElement('canvas');
     c.width = 1024;
     c.height = 512;
     var ctx = c.getContext('2d');
-
-    // Deep midnight sky
     var g = ctx.createLinearGradient(0, 0, 0, 512);
-    g.addColorStop(0, '#020617');
-    g.addColorStop(0.55, '#0f172a');
-    g.addColorStop(1, '#1e1b4b');
+    g.addColorStop(0, '#1a1520');
+    g.addColorStop(0.35, '#c45a2a');
+    g.addColorStop(0.55, '#ffa057');
+    g.addColorStop(0.75, '#ffd090');
+    g.addColorStop(1, '#2a2830');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, 1024, 512);
-
-    // Stars
-    for (var s = 0; s < 80; s++) {
-      ctx.fillStyle = 'rgba(248,250,252,' + (0.3 + Math.random() * 0.6) + ')';
-      ctx.fillRect(Math.random() * 1024, Math.random() * 220, 1.5, 1.5);
+    // Sun
+    ctx.beginPath();
+    ctx.arc(780, 220, 48, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,220,140,0.95)';
+    ctx.fill();
+    // Buildings
+    ctx.fillStyle = 'rgba(18,16,28,0.92)';
+    for (var b = 0; b < 26; b++) {
+      var bw = 18 + Math.random() * 40;
+      var bh = 60 + Math.random() * 220;
+      ctx.fillRect(15 + b * 38, 512 - bh - 25, bw, bh);
     }
-
-    // Skyscraper silhouettes + window grids
-    for (var b = 0; b < 22; b++) {
-      var bx = 20 + b * 46 + Math.random() * 10;
-      var bw = 22 + Math.random() * 36;
-      var bh = 80 + Math.random() * 260;
-      var by = 512 - bh - 20;
-      ctx.fillStyle = b % 3 === 0 ? '#020617' : '#0f172a';
-      ctx.fillRect(bx, by, bw, bh);
-
-      // Window lights
-      var colors = ['#fef08a', '#38bdf8', '#f8fafc', '#fbbf24'];
-      for (var wy = by + 8; wy < by + bh - 10; wy += 12) {
-        for (var wx = bx + 4; wx < bx + bw - 4; wx += 8) {
-          if (Math.random() > 0.35) {
-            ctx.fillStyle = colors[(Math.random() * colors.length) | 0];
-            ctx.globalAlpha = 0.55 + Math.random() * 0.4;
-            ctx.fillRect(wx, wy, 3, 4);
-            ctx.globalAlpha = 1;
-          }
-        }
-      }
-
-      // Red spire beacon on some towers
-      if (Math.random() > 0.7) {
-        ctx.fillStyle = '#ef4444';
-        ctx.beginPath();
-        ctx.arc(bx + bw / 2, by - 6, 2.5, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    // Soft bokeh near horizon
-    for (var i = 0; i < 30; i++) {
-      ctx.beginPath();
-      ctx.fillStyle = 'rgba(248,250,252,' + (0.15 + Math.random() * 0.35) + ')';
-      ctx.arc(40 + Math.random() * 940, 380 + Math.random() * 100, 1 + Math.random() * 2.5, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
     return new THREE.CanvasTexture(c);
+  }
+
+  function applySunsetLighting() {
+    if (typeof scene === 'undefined' || !scene) return;
+    scene.traverse(function (obj) {
+      if (!obj.isLight) return;
+      if (obj.isDirectionalLight) {
+        obj.color.setHex(0xffa057);
+        obj.intensity = 1.15;
+        obj.position.set(10, 8, 4);
+        obj.castShadow = true;
+      }
+      if (obj.isAmbientLight) {
+        obj.color.setHex(0x2a2030);
+        obj.intensity = 0.22;
+      }
+    });
+    // Strong golden key through window
+    var sun = new THREE.DirectionalLight(0xffa057, 1.4);
+    sun.position.set(12, 7, 3);
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(2048, 2048);
+    sun.shadow.bias = -0.0002;
+    scene.add(sun);
+
+    var warmFill = new THREE.PointLight(0xffc080, 0.55, 22);
+    warmFill.position.set(5.5, 3.2, 2);
+    scene.add(warmFill);
+
+    // Soft bounce
+    var bounce = new THREE.HemisphereLight(0xffd0a0, 0x1a1a1e, 0.25);
+    scene.add(bounce);
+
+    if (scene.background) scene.background = new THREE.Color(0x0c0c10);
+    if (typeof renderer !== 'undefined' && renderer) {
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.05;
+      renderer.outputColorSpace = THREE.SRGBColorSpace || renderer.outputEncoding;
+    }
   }
 
   function buildWalls() {
@@ -210,33 +220,33 @@
 
     var wallMat = new THREE.MeshStandardMaterial({
       color: WALL_COLOR,
-      roughness: 0.85,
-      metalness: 0.05
-    });
-    var trimMat = new THREE.MeshStandardMaterial({
-      color: 0x161618,
-      roughness: 0.9,
-      metalness: 0.04
+      roughness: 0.92,
+      metalness: 0.03
     });
     var frameMat = new THREE.MeshStandardMaterial({
-      color: 0x0a0a0a,
-      roughness: 0.45,
-      metalness: 0.25
+      color: 0x2a2a2e,
+      roughness: 0.5,
+      metalness: 0.2
     });
     var doorMat = new THREE.MeshStandardMaterial({
       color: 0x141416,
       roughness: 0.7,
       metalness: 0.08
     });
-    var floorMat = new THREE.MeshStandardMaterial({
-      color: 0x18181b,
-      roughness: 0.9,
-      metalness: 0.04
+    var metalMat = new THREE.MeshStandardMaterial({
+      color: 0xc0c0c8,
+      roughness: 0.35,
+      metalness: 0.8
     });
     var benchMat = new THREE.MeshStandardMaterial({
-      color: 0x27272a,
-      roughness: 0.82,
+      color: 0x3a3a40,
+      roughness: 0.75,
       metalness: 0.05
+    });
+    var cushionMat = new THREE.MeshStandardMaterial({
+      color: 0x5a5a62,
+      roughness: 0.85,
+      metalness: 0.02
     });
 
     function addArch(w, h, d, x, y, z, mat) {
@@ -248,129 +258,130 @@
       return m;
     }
 
-    var xL = -5.5;
-    var xR = 5.0;
+    var xL = -5.6;
+    var xR = 5.2;
     var zB = -2.9;
-    var zF = 5.0;
+    var zF = 5.2;
 
-    var bayOut = 1.5;
-    var straightX = xR + bayOut * 0.85;
-    var frontSolid = 0.75;
-    var straightZ0 = zB + bayOut * 0.9;
-    var straightZ1 = zF - frontSolid;
-    var winLen = Math.max(straightZ1 - straightZ0, 2);
+    // Walnut floor
+    var tex = makeWalnutTextures();
+    var floorGeo = new THREE.BoxGeometry(xR - xL + 1.2, 0.14, zF - zB + 0.6);
+    var floorMat = new THREE.MeshStandardMaterial({
+      map: tex.map,
+      normalMap: tex.normalMap,
+      roughnessMap: tex.roughnessMap,
+      roughness: 0.3,
+      metalness: 0.04
+    });
+    var floor = new THREE.Mesh(floorGeo, floorMat);
+    floor.position.set((xL + xR) / 2, -0.07, (zB + zF) / 2);
+    floor.castShadow = false;
+    floor.receiveShadow = true;
+    root.add(floor);
 
-    var floorX0 = xL - 0.15;
-    var floorX1 = straightX + T / 2 + 0.12;
-    var floorZ0 = zB - 0.15;
-    var floorZ1 = zF + 0.05;
-    addArch(
-      floorX1 - floorX0,
-      0.14,
-      floorZ1 - floorZ0,
-      (floorX0 + floorX1) / 2,
-      -0.07,
-      (floorZ0 + floorZ1) / 2,
-      floorMat
-    );
+    // LEFT WALL + DOOR (callout 3)
+    var doorW = 1.85;
+    var doorH = 4.4;
+    var doorZ = 1.6;
+    var doorZ0 = doorZ - doorW / 2;
+    var doorZ1 = doorZ + doorW / 2;
 
-    // Back wall + door
-    var doorW = 1.9;
-    var doorH = 4.5;
-    var doorX = -3.4;
-    var doorX0 = doorX - doorW / 2;
-    var doorX1 = doorX + doorW / 2;
-
-    if (doorX0 > xL) addArch(doorX0 - xL, H, T, (xL + doorX0) / 2, H / 2, zB);
-    addArch(doorW, H - doorH, T, doorX, doorH + (H - doorH) / 2, zB);
-    if (xR > doorX1) addArch(xR - doorX1, H, T, (doorX1 + xR) / 2, H / 2, zB);
-    addArch(T * 1.2, H, T * 1.2, xR, H / 2, zB);
+    addArch(T, H, doorZ0 - zB, xL, H / 2, (zB + doorZ0) / 2);
+    addArch(T, H - doorH, doorW, xL, doorH + (H - doorH) / 2, doorZ);
+    addArch(T, H, zF - doorZ1, xL, H / 2, (doorZ1 + zF) / 2);
 
     var ft = 0.08;
-    addArch(ft, doorH + 0.1, T + 0.04, doorX0, doorH / 2, zB, frameMat);
-    addArch(ft, doorH + 0.1, T + 0.04, doorX1, doorH / 2, zB, frameMat);
-    addArch(doorW, ft, T + 0.04, doorX, doorH, zB, frameMat);
-    addArch(doorW - 0.12, doorH - 0.1, 0.06, doorX, doorH / 2, zB + T / 2 + 0.02, doorMat);
-    addArch(0.18, 0.04, 0.04, doorX + doorW * 0.28, doorH * 0.45, zB + T / 2 + 0.06, frameMat);
+    addArch(T + 0.04, doorH + 0.12, ft, xL, doorH / 2, doorZ0, frameMat);
+    addArch(T + 0.04, doorH + 0.12, ft, xL, doorH / 2, doorZ1, frameMat);
+    addArch(T + 0.04, ft, doorW, xL, doorH, doorZ, frameMat);
+    addArch(0.06, doorH - 0.1, doorW - 0.12, xL + T / 2 + 0.02, doorH / 2, doorZ, doorMat);
+    addArch(0.04, 0.04, 0.16, xL + T / 2 + 0.08, doorH * 0.45, doorZ + doorW * 0.28, metalMat);
 
-    var bbH = 0.1;
-    if (doorX0 > xL) addArch(doorX0 - xL, bbH, T + 0.02, (xL + doorX0) / 2, bbH / 2, zB, trimMat);
-    if (xR > doorX1) addArch(xR - doorX1, bbH, T + 0.02, (doorX1 + xR) / 2, bbH / 2, zB, trimMat);
+    // BACK WALL — straight full height
+    addArch(xR - xL, H, T, (xL + xR) / 2, H / 2, zB);
 
-    // Single 45° bay
-    var bayAngleLen = Math.sqrt(bayOut * bayOut + bayOut * bayOut);
-    var angleWall = addArch(T, H, bayAngleLen, 0, H / 2, 0);
-    angleWall.position.set(xR + bayOut * 0.45, H / 2, zB + bayOut * 0.45);
-    angleWall.rotation.y = Math.PI / 4;
-
-    var headerH = 1.05;
+    // RIGHT WALL — straight, bay window opening
+    var winZ0 = zB + 0.8;
+    var winZ1 = zF - 0.9;
+    var winLen = winZ1 - winZ0;
+    var headerH = 1.0;
     var headerBottom = H - headerH;
-    addArch(T, headerH, winLen, straightX, headerBottom + headerH / 2, straightZ0 + winLen / 2);
+    var benchH = 0.85;
 
-    var benchH = 0.9;
-    var benchDepth = 1.35;
-    addArch(
-      benchDepth,
-      benchH,
-      winLen + 0.1,
-      straightX - T / 2 - benchDepth / 2 + 0.05,
-      benchH / 2,
-      straightZ0 + winLen / 2,
-      benchMat
-    );
-    addArch(
-      benchDepth * 0.98,
-      0.04,
-      winLen + 0.05,
-      straightX - T / 2 - benchDepth / 2 + 0.05,
-      benchH + 0.02,
-      straightZ0 + winLen / 2,
-      benchMat
-    );
+    // Solid above/below window + sides
+    addArch(T, headerH, winLen, xR, headerBottom + headerH / 2, (winZ0 + winZ1) / 2);
+    addArch(T, benchH, winLen, xR, benchH / 2, (winZ0 + winZ1) / 2);
+    addArch(T, H, winZ0 - zB, xR, H / 2, (zB + winZ0) / 2);
+    addArch(T, H, zF - winZ1, xR, H / 2, (winZ1 + zF) / 2);
 
-    var winBottom = benchH + 0.04;
+    // Bench / daybed cushion into room
+    addArch(1.4, 0.12, winLen - 0.2, xR - 0.75, benchH + 0.06, (winZ0 + winZ1) / 2, cushionMat);
+    addArch(1.35, benchH, winLen - 0.15, xR - 0.7, benchH / 2, (winZ0 + winZ1) / 2, benchMat);
+
+    // Throw pillows
+    var pillowMat = new THREE.MeshStandardMaterial({ color: 0x6a6570, roughness: 0.9 });
+    addArch(0.45, 0.35, 0.5, xR - 1.0, benchH + 0.35, (winZ0 + winZ1) / 2 - 0.9, pillowMat);
+    addArch(0.4, 0.32, 0.45, xR - 0.95, benchH + 0.32, (winZ0 + winZ1) / 2 + 0.7, pillowMat);
+
+    // Window frames 4 panes
+    var winBottom = benchH + 0.12;
     var winTop = headerBottom;
     var winH = winTop - winBottom;
-    var panes = 5;
+    var panes = 4;
     var paneW = winLen / panes;
-
     for (var i = 0; i <= panes; i++) {
-      addArch(0.07, winH, 0.07, straightX, winBottom + winH / 2, straightZ0 + i * paneW, frameMat);
+      addArch(0.08, winH, 0.08, xR, winBottom + winH / 2, winZ0 + i * paneW, frameMat);
     }
-    addArch(0.07, 0.07, winLen, straightX, winBottom, straightZ0 + winLen / 2, frameMat);
-    addArch(0.07, 0.07, winLen, straightX, winTop, straightZ0 + winLen / 2, frameMat);
-    addArch(0.07, 0.07, winLen, straightX, winBottom + winH * 0.55, straightZ0 + winLen / 2, frameMat);
+    addArch(0.08, 0.08, winLen, xR, winBottom, (winZ0 + winZ1) / 2, frameMat);
+    addArch(0.08, 0.08, winLen, xR, winTop, (winZ0 + winZ1) / 2, frameMat);
 
     for (var p = 0; p < panes; p++) {
       var glass = new THREE.Mesh(
-        new THREE.PlaneGeometry(paneW - 0.1, winH - 0.1),
+        new THREE.PlaneGeometry(paneW - 0.12, winH - 0.12),
         new THREE.MeshStandardMaterial({
-          color: 0x6688aa,
+          color: 0x88aacc,
           transparent: true,
-          opacity: 0.22,
-          roughness: 0.1,
-          metalness: 0.2,
+          opacity: 0.2,
+          roughness: 0.08,
+          metalness: 0.15,
           side: THREE.DoubleSide
         })
       );
-      glass.position.set(straightX - 0.02, winBottom + winH / 2, straightZ0 + paneW * (p + 0.5));
+      glass.position.set(xR - 0.02, winBottom + winH / 2, winZ0 + paneW * (p + 0.5));
       glass.rotation.y = Math.PI / 2;
       glass.castShadow = false;
       root.add(glass);
     }
 
-    // Night penthouse skyline
     var view = new THREE.Mesh(
-      new THREE.PlaneGeometry(winLen - 0.05, winH - 0.05),
-      new THREE.MeshBasicMaterial({ map: buildNightSkylineTexture() })
+      new THREE.PlaneGeometry(winLen - 0.1, winH - 0.1),
+      new THREE.MeshBasicMaterial({ map: makeSunsetSkyline() })
     );
-    view.position.set(straightX + 0.08, winBottom + winH / 2, straightZ0 + winLen / 2);
+    view.position.set(xR + 0.1, winBottom + winH / 2, (winZ0 + winZ1) / 2);
     view.rotation.y = -Math.PI / 2;
-    view.castShadow = false;
     root.add(view);
 
-    addArch(T, H, frontSolid, straightX, H / 2, straightZ1 + frontSolid / 2);
-    addArch(T + 0.04, H, 0.08, straightX, H / 2, zF - 0.02, wallMat);
+    // Picture lights (warm) above back wall art zone
+    for (var pl = 0; pl < 3; pl++) {
+      var lx = -1.5 + pl * 1.4;
+      var bulb = new THREE.PointLight(0xffe2b0, 0.35, 4);
+      bulb.position.set(lx, 4.8, zB + 0.5);
+      root.add(bulb);
+    }
+
+    // Right wall sconce
+    var sconce = new THREE.PointLight(0xffe2b0, 0.4, 5);
+    sconce.position.set(xR - 0.3, 3.5, zF - 0.5);
+    root.add(sconce);
+    addArch(0.08, 0.5, 0.08, xR - 0.12, 3.5, zF - 0.5, metalMat);
+
+    // Credenza right of desk
+    var cred = addArch(2.2, 0.85, 0.55, 2.6, 0.42, zB + 0.9, new THREE.MeshStandardMaterial({
+      color: 0x121214,
+      roughness: 0.6,
+      metalness: 0.1
+    }));
+    cred.castShadow = true;
 
     scene.add(root);
   }
@@ -383,19 +394,19 @@
     if (window.__isoViewApplied) return;
     window.__isoViewApplied = true;
 
-    controls.target.set(0.2, 1.5, 0.6);
-    camera.position.set(-8.5, 8.8, 8.5);
-    camera.lookAt(0.2, 1.5, 0.6);
+    controls.target.set(0.3, 1.4, 0.8);
+    camera.position.set(-9.2, 9.2, 9.5);
+    camera.lookAt(0.3, 1.4, 0.8);
 
     controls.enablePan = false;
-    controls.minDistance = 10;
-    controls.maxDistance = 18;
-    controls.minAzimuthAngle = -Math.PI / 8;
-    controls.maxAzimuthAngle = Math.PI / 6;
+    controls.minDistance = 11;
+    controls.maxDistance = 20;
+    controls.minAzimuthAngle = -Math.PI / 7;
+    controls.maxAzimuthAngle = Math.PI / 5;
     controls.minPolarAngle = Math.PI / 3.5;
     controls.maxPolarAngle = Math.PI / 2.3;
     controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.15;
+    controls.autoRotateSpeed = 0.12;
     if (controls.update) controls.update();
 
     setTimeout(function () {
@@ -403,10 +414,8 @@
       removeOriginalWalls();
       trimOriginalFloor();
       buildWalls();
-      moveJukeboxToCorner();
-      moveBalloonToEdge();
-      applyNightLighting();
-    }, 250);
+      applySunsetLighting();
+    }, 280);
   }
 
   function loadFurniture() {
@@ -427,13 +436,13 @@
         if (typeof createOfficeChair === 'function') createOfficeChair();
         createLobbyChair();
       } catch (e) {
-        console.warn('Furniture create failed', e);
+        console.warn(e);
       }
     }
 
     if (!document.querySelector('script[data-furniture]')) {
       var s = document.createElement('script');
-      s.src = 'furniture.js?v=night1';
+      s.src = 'furniture.js?v=ref1';
       s.setAttribute('data-furniture', '1');
       s.onload = runCreates;
       document.body.appendChild(s);
@@ -447,9 +456,7 @@
       if (typeof init === 'function' && typeof scene === 'undefined') {
         try {
           init();
-        } catch (e) {
-          console.warn('init error', e);
-        }
+        } catch (e) {}
       }
       if (typeof scene === 'undefined') {
         setTimeout(ensureInit, 100);
@@ -463,7 +470,7 @@
 
   fetch(GOOD_SCENE_URL, { cache: 'no-cache' })
     .then(function (r) {
-      if (!r.ok) throw new Error('Failed to fetch good scene: ' + r.status);
+      if (!r.ok) throw new Error('scene fetch failed');
       return r.text();
     })
     .then(function (code) {
@@ -474,13 +481,5 @@
     })
     .catch(function (err) {
       console.error(err);
-      var el = document.getElementById('loadingScreen');
-      if (el) {
-        el.style.opacity = '1';
-        el.innerHTML =
-          '<div style="color:#fff;padding:2rem;font-family:monospace;text-align:center">Scene load failed. Hard-refresh.<br/>' +
-          String(err) +
-          '</div>';
-      }
     });
 })();
