@@ -1,12 +1,12 @@
-// Dark moody layout: sofa toward open left; chair at desk; red LED underglow
+// Furniture with non-black charcoal materials for readable late-night look
 
 function createFloorMat() {}
 
 function createOfficeChair() {
   const chair = new THREE.Group();
-  const seatMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.8, metalness: 0.06 });
-  const blackMat = new THREE.MeshStandardMaterial({ color: 0x0e0e0e, roughness: 0.55, metalness: 0.12 });
-  const metalMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.4, metalness: 0.55 });
+  const seatMat = new THREE.MeshStandardMaterial({ color: 0x1e2023, roughness: 0.75, metalness: 0.06 });
+  const blackMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1e, roughness: 0.55, metalness: 0.12 });
+  const metalMat = new THREE.MeshStandardMaterial({ color: 0x3a3a40, roughness: 0.4, metalness: 0.55 });
 
   const seat = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.1, 0.68), seatMat);
   seat.position.set(0, 0.72, 0);
@@ -51,31 +51,28 @@ function createOfficeChair() {
     chair.add(armTop);
   });
 
-  // At desk, slightly pulled back
   chair.position.set(0.2, 0, 1.7);
   chair.rotation.y = Math.PI + 0.1;
   scene.add(chair);
 }
 
-// Sofa + rug shifted to open left, in front of desk
 function createLobbyChair() {
   const zone = new THREE.Group();
 
   const rug = new THREE.Mesh(
     new THREE.BoxGeometry(2.8, 0.03, 2.2),
-    new THREE.MeshStandardMaterial({ color: 0x121214, roughness: 0.95, metalness: 0.03 })
+    new THREE.MeshStandardMaterial({ color: 0x1a1a1e, roughness: 0.92, metalness: 0.03 })
   );
   rug.position.set(0, 0.02, 0);
   rug.receiveShadow = true;
   zone.add(rug);
 
-  // Crisp red LED underglow
   const neonMat = new THREE.MeshStandardMaterial({
     color: 0xff2020,
     roughness: 0.4,
     metalness: 0.1,
     emissive: 0xff2020,
-    emissiveIntensity: 0.9
+    emissiveIntensity: 0.85
   });
   [
     [2.75, 0.035, 0.045, 0, 0.04, 1.05],
@@ -88,13 +85,13 @@ function createLobbyChair() {
     zone.add(strip);
   });
 
-  const led = new THREE.PointLight(0xff2020, 0.55, 4);
+  const led = new THREE.PointLight(0xff2020, 0.5, 4);
   led.position.set(0, 0.1, 0.2);
   zone.add(led);
 
-  const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1e, roughness: 0.75, metalness: 0.06 });
-  const accentMat = new THREE.MeshStandardMaterial({ color: 0x222228, roughness: 0.7, metalness: 0.06 });
-  const legMat = new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: 0.45, metalness: 0.4 });
+  const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1e2023, roughness: 0.75, metalness: 0.06 });
+  const accentMat = new THREE.MeshStandardMaterial({ color: 0x25272a, roughness: 0.7, metalness: 0.06 });
+  const legMat = new THREE.MeshStandardMaterial({ color: 0x2a2a30, roughness: 0.45, metalness: 0.4 });
 
   const seat = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.15, 0.9), bodyMat);
   seat.position.set(0, 0.5, 0.05);
@@ -132,7 +129,6 @@ function createLobbyChair() {
     zone.add(leg);
   });
 
-  // Open left, in front of desk area
   zone.position.set(-1.8, 0, 2.6);
   zone.rotation.y = 0.15;
   scene.add(zone);

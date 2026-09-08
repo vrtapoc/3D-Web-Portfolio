@@ -1,10 +1,9 @@
 /*
- * Dark moody late-night theme + blueprint layout:
- * - No left wall (open cutaway)
- * - Door on back wall far-left
- * - Dim charcoal floor (no bright wood stripes)
- * - Subtle sunset in window only — practicals are the only clear lights
- * - Jukebox back-right facing camera; balloon front-right edge
+ * Readable late-night charcoal room (match reference visibility):
+ * - Ambient/Hemisphere fill so walls & floor read as grey, not pure black
+ * - Materials #2d2f33 walls, #25272a floor, #1e2023 furniture
+ * - Warm desk lamp + soft window amber
+ * - Exposure ~1.0
  */
 (function () {
   var GOOD_SCENE_URL =
@@ -12,7 +11,9 @@
 
   var H = 6.8;
   var T = 0.2;
-  var WALL_COLOR = 0x151518;
+  var WALL_COLOR = 0x2d2f33;
+  var FLOOR_COLOR = 0x25272a;
+  var FURN_COLOR = 0x1e2023;
 
   function removeOriginalWalls() {
     if (typeof scene === 'undefined' || !scene) return;
@@ -61,45 +62,24 @@
     });
   }
 
-  function makeDarkFloorTexture() {
-    var size = 512;
-    var c = document.createElement('canvas');
-    c.width = c.height = size;
-    var ctx = c.getContext('2d');
-    ctx.fillStyle = '#151518';
-    ctx.fillRect(0, 0, size, size);
-    // Very subtle plank hints only
-    for (var x = 0; x < size; x += 42) {
-      ctx.fillStyle = 'rgba(0,0,0,0.25)';
-      ctx.fillRect(x, 0, 1, size);
-      ctx.fillStyle = 'rgba(255,255,255,0.015)';
-      ctx.fillRect(x + 1, 0, 40, size);
-    }
-    var tex = new THREE.CanvasTexture(c);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(5, 5);
-    return tex;
-  }
-
   function makeSoftSunset() {
     var c = document.createElement('canvas');
     c.width = 1024;
     c.height = 512;
     var ctx = c.getContext('2d');
     var g = ctx.createLinearGradient(0, 0, 0, 512);
-    // Soft, dim sunset — not blinding
-    g.addColorStop(0, '#0a0a12');
-    g.addColorStop(0.4, '#3a2818');
-    g.addColorStop(0.6, '#6a4020');
-    g.addColorStop(0.8, '#4a3020');
-    g.addColorStop(1, '#121018');
+    g.addColorStop(0, '#1a1520');
+    g.addColorStop(0.35, '#c45a2a');
+    g.addColorStop(0.55, '#e89040');
+    g.addColorStop(0.75, '#f0b060');
+    g.addColorStop(1, '#2a2830');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, 1024, 512);
     ctx.beginPath();
-    ctx.arc(760, 240, 36, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(200,140,70,0.45)';
+    ctx.arc(760, 230, 42, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,210,120,0.85)';
     ctx.fill();
-    ctx.fillStyle = 'rgba(10,10,16,0.9)';
+    ctx.fillStyle = 'rgba(20,18,30,0.88)';
     for (var b = 0; b < 24; b++) {
       var bw = 16 + Math.random() * 36;
       var bh = 50 + Math.random() * 200;
@@ -108,52 +88,68 @@
     return new THREE.CanvasTexture(c);
   }
 
-  function applyDarkMoodyLighting() {
+  function applyReadableLighting() {
     if (typeof scene === 'undefined' || !scene) return;
 
-    // Dim / neutralize existing scene lights
+    // Neutralize extreme lights from original scene, keep practicals
     scene.traverse(function (obj) {
       if (!obj.isLight) return;
       if (obj.isDirectionalLight) {
-        obj.color.setHex(0x1a1a22);
-        obj.intensity = 0.12;
-        obj.castShadow = false;
+        obj.color.setHex(0xff9e4a);
+        obj.intensity = 0.55;
+        obj.position.set(8, 6, 3);
       }
       if (obj.isAmbientLight) {
-        obj.color.setHex(0x0c0c10);
-        obj.intensity = 0.12;
-      }
-      if (obj.isPointLight || obj.isSpotLight) {
-        // Keep practicals near desk; dim large fills
-        if (obj.intensity > 1) obj.intensity *= 0.25;
-        else if (obj.intensity > 0.4) obj.intensity *= 0.5;
+        obj.color.setHex(0xd8d8e0);
+        obj.intensity = 0.45;
       }
       if (obj.isHemisphereLight) {
-        obj.intensity = 0.08;
+        obj.intensity = 0.2;
       }
     });
 
-    // Very soft window glow only (not a room wash)
-    var windowGlow = new THREE.PointLight(0xc07040, 0.18, 14);
-    windowGlow.position.set(5.5, 3, 2);
-    scene.add(windowGlow);
+    // Primary ambient fill — readable charcoal, not void
+    var amb = new THREE.AmbientLight(0xd8d8e0, 0.5);
+    amb.name = 'readable-ambient';
+    scene.add(amb);
 
-    if (scene.background) scene.background = new THREE.Color(0x050508);
+    var hemi = new THREE.HemisphereLight(0xc8c8d0, 0x1a1a1e, 0.35);
+    hemi.name = 'readable-hemi';
+    scene.add(hemi);
+
+    // Soft warm window key (bench top catch)
+    var windowKey = new THREE.DirectionalLight(0xff9e4a, 0.9);
+    windowKey.position.set(10, 5, 2);
+    windowKey.castShadow = false;
+    scene.add(windowKey);
+
+    // Desk floor lamp — warm pool on desk / chair area
+    var deskLamp = new THREE.PointLight(0xffb347, 2.0, 8);
+    deskLamp.position.set(0.8, 2.2, 0.3);
+    deskLamp.castShadow = false;
+    scene.add(deskLamp);
+
+    // Soft bounce so back wall isn't crushed
+    var fill = new THREE.PointLight(0xb0b0c0, 0.35, 16);
+    fill.position.set(-2, 4, 3);
+    scene.add(fill);
+
+    if (scene.background) scene.background = new THREE.Color(0x1a1a1e);
     if (scene.fog) {
-      scene.fog.color = new THREE.Color(0x050508);
-      scene.fog.near = 20;
-      scene.fog.far = 48;
+      scene.fog.color = new THREE.Color(0x1a1a1e);
+      scene.fog.near = 28;
+      scene.fog.far = 60;
     }
+
     if (typeof renderer !== 'undefined' && renderer) {
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 0.72; // darker overall
+      renderer.toneMappingExposure = 1.0;
     }
   }
 
   function placeProps() {
     if (typeof scene === 'undefined' || !scene) return;
 
-    // Jukebox → back-right, facing camera
     if (typeof jukebox !== 'undefined' && jukebox) {
       jukebox.position.set(3.5, 0, -1.55);
       jukebox.rotation.y = Math.PI * 0.9;
@@ -170,14 +166,15 @@
       });
     }
 
-    // Balloon / plant group → front-right edge
+    // Balloon stays near desk left in reference shot — keep near desk
     scene.traverse(function (obj) {
       if (!obj.isGroup) return;
       if (
         Math.abs(obj.position.x + 1.85) < 0.5 &&
         Math.abs(obj.position.z - 0.4) < 0.5
       ) {
-        obj.position.set(4.0, 0, 4.3);
+        // leave near desk for readability like reference
+        obj.position.set(-1.6, 0, 0.5);
       }
     });
   }
@@ -192,27 +189,32 @@
 
     var wallMat = new THREE.MeshStandardMaterial({
       color: WALL_COLOR,
-      roughness: 0.94,
-      metalness: 0.02
+      roughness: 0.85,
+      metalness: 0.03
+    });
+    var floorMat = new THREE.MeshStandardMaterial({
+      color: FLOOR_COLOR,
+      roughness: 0.7,
+      metalness: 0.04
     });
     var frameMat = new THREE.MeshStandardMaterial({
-      color: 0x1c1c20,
+      color: 0x1e2023,
       roughness: 0.55,
-      metalness: 0.15
+      metalness: 0.12
     });
     var doorMat = new THREE.MeshStandardMaterial({
-      color: 0x0e0e10,
+      color: FURN_COLOR,
       roughness: 0.75,
       metalness: 0.06
     });
     var metalMat = new THREE.MeshStandardMaterial({
-      color: 0x8a8a90,
+      color: 0x9a9aa0,
       roughness: 0.4,
-      metalness: 0.75
+      metalness: 0.7
     });
     var benchMat = new THREE.MeshStandardMaterial({
-      color: 0x1a1a1e,
-      roughness: 0.85,
+      color: FURN_COLOR,
+      roughness: 0.8,
       metalness: 0.04
     });
 
@@ -225,32 +227,25 @@
       return m;
     }
 
-    // No left wall — open cutaway
     var xL = -5.4;
     var xR = 5.1;
     var zB = -2.9;
     var zF = 5.1;
 
-    // Dark charcoal floor — subtle only
-    var floorTex = makeDarkFloorTexture();
+    // Floor — readable slate charcoal
     var floor = new THREE.Mesh(
       new THREE.BoxGeometry(xR - xL + 0.8, 0.12, zF - zB + 0.5),
-      new THREE.MeshStandardMaterial({
-        map: floorTex,
-        color: 0x151518,
-        roughness: 0.88,
-        metalness: 0.03
-      })
+      floorMat
     );
     floor.position.set((xL + xR) / 2, -0.06, (zB + zF) / 2);
     floor.receiveShadow = true;
     floor.castShadow = false;
     root.add(floor);
 
-    // ========== BACK WALL + DOOR (far left) ==========
+    // Back wall + door far left
     var doorW = 1.85;
     var doorH = 4.4;
-    var doorX = -3.5; // far left of back wall
+    var doorX = -3.5;
     var doorX0 = doorX - doorW / 2;
     var doorX1 = doorX + doorW / 2;
 
@@ -261,7 +256,6 @@
     if (xR > doorX1) {
       addArch(xR - doorX1, H, T, (doorX1 + xR) / 2, H / 2, zB);
     }
-    // Corner join to right wall
     addArch(T * 1.1, H, T * 1.1, xR, H / 2, zB);
 
     var ft = 0.07;
@@ -271,7 +265,7 @@
     addArch(doorW - 0.1, doorH - 0.08, 0.05, doorX, doorH / 2, zB + T / 2 + 0.02, doorMat);
     addArch(0.15, 0.035, 0.035, doorX + doorW * 0.28, doorH * 0.45, zB + T / 2 + 0.05, metalMat);
 
-    // ========== RIGHT WALL + WINDOW + BENCH ==========
+    // Right wall + window + bench
     var winZ0 = zB + 0.7;
     var winZ1 = zF - 0.8;
     var winLen = winZ1 - winZ0;
@@ -284,7 +278,6 @@
     addArch(T, H, winZ0 - zB, xR, H / 2, (zB + winZ0) / 2);
     addArch(T, H, zF - winZ1, xR, H / 2, (winZ1 + zF) / 2);
 
-    // Bench — clean, no loose cubes
     addArch(1.25, benchH, winLen - 0.2, xR - 0.65, benchH / 2, (winZ0 + winZ1) / 2, benchMat);
     addArch(1.2, 0.05, winLen - 0.25, xR - 0.65, benchH + 0.02, (winZ0 + winZ1) / 2, benchMat);
 
@@ -304,11 +297,11 @@
       var glass = new THREE.Mesh(
         new THREE.PlaneGeometry(paneW - 0.1, winH - 0.1),
         new THREE.MeshStandardMaterial({
-          color: 0x445566,
+          color: 0x6688aa,
           transparent: true,
-          opacity: 0.18,
-          roughness: 0.15,
-          metalness: 0.1,
+          opacity: 0.22,
+          roughness: 0.12,
+          metalness: 0.12,
           side: THREE.DoubleSide
         })
       );
@@ -320,7 +313,7 @@
 
     var view = new THREE.Mesh(
       new THREE.PlaneGeometry(winLen - 0.08, winH - 0.08),
-      new THREE.MeshBasicMaterial({ map: makeSoftSunset(), transparent: true, opacity: 0.85 })
+      new THREE.MeshBasicMaterial({ map: makeSoftSunset() })
     );
     view.position.set(xR + 0.08, winBottom + winH / 2, (winZ0 + winZ1) / 2);
     view.rotation.y = -Math.PI / 2;
@@ -358,7 +351,7 @@
       trimOriginalFloor();
       buildWalls();
       placeProps();
-      applyDarkMoodyLighting();
+      applyReadableLighting();
     }, 280);
   }
 
@@ -386,7 +379,7 @@
 
     if (!document.querySelector('script[data-furniture]')) {
       var s = document.createElement('script');
-      s.src = 'furniture.js?v=dark2';
+      s.src = 'furniture.js?v=read1';
       s.setAttribute('data-furniture', '1');
       s.onload = runCreates;
       document.body.appendChild(s);
