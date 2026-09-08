@@ -1,9 +1,9 @@
 /*
- * Walls + diorama framing cleanup:
- * - No floor border rails
- * - Clean flat window bench
- * - Trimmed floor footprint
- * - Orbit clamped to front diorama angles
+ * Bugfix pass:
+ * 1) Flush back wall ↔ bay corner (no gap)
+ * 2) Remove front-right floating pillar
+ * 3) Walls/frames/bench/header: castShadow=false (props keep shadows)
+ * 4) Stricter OrbitControls azimuth/polar + centered target
  */
 (function () {
   var GOOD_SCENE_URL =
@@ -45,19 +45,16 @@
     });
   }
 
-  /** Hide original oversized floor plane; optional clean replacement later */
   function trimOriginalFloor() {
     if (typeof scene === 'undefined' || !scene) return;
     scene.traverse(function (obj) {
       if (!obj.isMesh || !obj.geometry) return;
-      // Original floor: PlaneGeometry, y≈0, rotated flat
       if (
         obj.geometry.type === 'PlaneGeometry' &&
         Math.abs(obj.position.y) < 0.05 &&
         obj.rotation &&
         Math.abs(obj.rotation.x + Math.PI / 2) < 0.25
       ) {
-        // Shrink visually by hiding — replaced by clean slab
         obj.visible = false;
       }
     });
@@ -102,109 +99,102 @@
       metalness: 0.05
     });
 
-    function addBox(w, h, d, x, y, z, mat) {
+    // Architectural meshes: receive light, do NOT cast floor-cutting shadows
+    function addArch(w, h, d, x, y, z, mat) {
       var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat || wallMat);
       m.position.set(x, y, z);
-      m.castShadow = true;
+      m.castShadow = false;
       m.receiveShadow = true;
       root.add(m);
       return m;
     }
 
-    // Compact footprint — less empty void in front
     var xL = -5.8;
     var xR = 5.4;
     var zB = -2.95;
-    var zF = 5.2; // pulled in toward furniture
+    var zF = 5.2;
 
-    // ---------- CLEAN FLOOR SLAB (no border rails) ----------
-    var floorW = xR + 1.9 - xL + 0.4;
-    var floorD = zF - zB + 0.5;
-    var floor = addBox(
-      floorW,
-      0.12,
-      floorD,
-      (xL + xR + 1.6) / 2,
-      -0.06,
-      (zB + zF) / 2,
-      floorMat
-    );
-    floor.receiveShadow = true;
-    // Top surface only — single clean box, no perimeter bars
+    // Floor slab
+    var floorW = xR + 1.7 - xL + 0.3;
+    var floorD = zF - zB + 0.4;
+    addArch(floorW, 0.12, floorD, (xL + xR + 1.5) / 2, -0.06, (zB + zF) / 2, floorMat);
 
     // ---------- BACK WALL + DOOR ----------
+    // Extend back wall fully to xR so it meets bay with zero gap
     var doorW = 1.9;
     var doorH = 4.5;
     var doorX = -3.6;
     var doorX0 = doorX - doorW / 2;
     var doorX1 = doorX + doorW / 2;
     var backX0 = xL;
-    var backX1 = xR;
+    var backX1 = xR + T / 2; // overlap slightly into bay corner
 
     if (doorX0 > backX0) {
-      addBox(doorX0 - backX0, H, T, (backX0 + doorX0) / 2, H / 2, zB);
+      addArch(doorX0 - backX0, H, T, (backX0 + doorX0) / 2, H / 2, zB);
     }
-    addBox(doorW, H - doorH, T, doorX, doorH + (H - doorH) / 2, zB);
+    addArch(doorW, H - doorH, T, doorX, doorH + (H - doorH) / 2, zB);
     if (backX1 > doorX1) {
-      addBox(backX1 - doorX1, H, T, (doorX1 + backX1) / 2, H / 2, zB);
+      addArch(backX1 - doorX1, H, T, (doorX1 + backX1) / 2, H / 2, zB);
     }
+
+    // Corner fill block — seals back wall to right bay
+    addArch(T * 1.5, H, T * 1.5, xR, H / 2, zB);
 
     var ft = 0.08;
-    addBox(ft, doorH + 0.1, T + 0.04, doorX0, doorH / 2, zB, frameMat);
-    addBox(ft, doorH + 0.1, T + 0.04, doorX1, doorH / 2, zB, frameMat);
-    addBox(doorW, ft, T + 0.04, doorX, doorH, zB, frameMat);
-    addBox(doorW - 0.12, doorH - 0.1, 0.06, doorX, doorH / 2, zB + T / 2 + 0.02, doorMat);
-    addBox(0.18, 0.04, 0.04, doorX + doorW * 0.28, doorH * 0.45, zB + T / 2 + 0.06, frameMat);
+    addArch(ft, doorH + 0.1, T + 0.04, doorX0, doorH / 2, zB, frameMat);
+    addArch(ft, doorH + 0.1, T + 0.04, doorX1, doorH / 2, zB, frameMat);
+    addArch(doorW, ft, T + 0.04, doorX, doorH, zB, frameMat);
+    addArch(doorW - 0.12, doorH - 0.1, 0.06, doorX, doorH / 2, zB + T / 2 + 0.02, doorMat);
+    addArch(0.18, 0.04, 0.04, doorX + doorW * 0.28, doorH * 0.45, zB + T / 2 + 0.06, frameMat);
 
-    // Baseboard on back wall only (not floor perimeter bars)
     var bbH = 0.1;
     if (doorX0 > backX0) {
-      addBox(doorX0 - backX0, bbH, T + 0.02, (backX0 + doorX0) / 2, bbH / 2, zB, trimMat);
+      addArch(doorX0 - backX0, bbH, T + 0.02, (backX0 + doorX0) / 2, bbH / 2, zB, trimMat);
     }
     if (backX1 > doorX1) {
-      addBox(backX1 - doorX1, bbH, T + 0.02, (doorX1 + backX1) / 2, bbH / 2, zB, trimMat);
+      addArch(backX1 - doorX1, bbH, T + 0.02, (doorX1 + backX1) / 2, bbH / 2, zB, trimMat);
     }
 
-    // ---------- RIGHT BAY WINDOW ----------
+    // ---------- RIGHT BAY (no front-right floating pillar) ----------
     var bayDepth = 1.6;
     var bayXInner = xR;
     var bayXOuter = xR + bayDepth;
-    var bayZ0 = zB + 0.15;
-    var bayZ1 = zF - 0.2;
+    var bayZ0 = zB; // flush with back wall z
+    var bayZ1 = zF - 0.25;
 
-    var sideLen = Math.sqrt(bayDepth * bayDepth + bayDepth * bayDepth) * 0.85;
-    var sideBack = addBox(T, H, sideLen, 0, H / 2, 0);
-    sideBack.position.set((bayXInner + bayXOuter) / 2, H / 2, bayZ0);
+    // Back 45° side — starts AT back wall plane (no gap)
+    var sideLen = Math.sqrt(bayDepth * bayDepth + bayDepth * bayDepth) * 0.9;
+    var sideBack = addArch(T, H, sideLen, 0, H / 2, 0);
+    sideBack.position.set((bayXInner + bayXOuter) / 2, H / 2, bayZ0 + bayDepth * 0.15);
     sideBack.rotation.y = Math.PI / 4;
 
-    var sideFront = addBox(T, H, sideLen, 0, H / 2, 0);
-    sideFront.position.set((bayXInner + bayXOuter) / 2, H / 2, bayZ1);
+    // Front 45° return — keep ON the floor footprint (not past edge)
+    var sideFront = addArch(T, H, sideLen * 0.75, 0, H / 2, 0);
+    sideFront.position.set((bayXInner + bayXOuter) / 2, H / 2, bayZ1 - bayDepth * 0.1);
     sideFront.rotation.y = -Math.PI / 4;
 
-    var outerZ0 = bayZ0 + 0.5;
-    var outerZ1 = bayZ1 - 0.5;
+    var outerZ0 = bayZ0 + 0.55;
+    var outerZ1 = bayZ1 - 0.45;
     var outerLen = Math.max(outerZ1 - outerZ0, 2);
 
     var headerH = 1.0;
     var headerBottom = H - headerH;
-    addBox(T, headerH, outerLen, bayXOuter, headerBottom + headerH / 2, (outerZ0 + outerZ1) / 2);
+    addArch(T, headerH, outerLen, bayXOuter, headerBottom + headerH / 2, (outerZ0 + outerZ1) / 2);
 
-    // CLEAN bench — single box, dedicated material (no overlapping diagonals)
     var benchH = 0.85;
-    var bench = addBox(
+    addArch(
       bayDepth * 0.95,
       benchH,
-      outerLen + 0.35,
+      outerLen + 0.3,
       (bayXInner + bayXOuter) / 2 - 0.05,
       benchH / 2,
       (outerZ0 + outerZ1) / 2,
       benchMat
     );
-    // Flat top lid to hide any z-fight
-    addBox(
+    addArch(
       bayDepth * 0.92,
       0.04,
-      outerLen + 0.3,
+      outerLen + 0.25,
       (bayXInner + bayXOuter) / 2 - 0.05,
       benchH + 0.02,
       (outerZ0 + outerZ1) / 2,
@@ -218,11 +208,11 @@
     var paneW = outerLen / paneCount;
 
     for (var i = 0; i <= paneCount; i++) {
-      addBox(0.07, winH, 0.07, bayXOuter, winBottom + winH / 2, outerZ0 + i * paneW, frameMat);
+      addArch(0.07, winH, 0.07, bayXOuter, winBottom + winH / 2, outerZ0 + i * paneW, frameMat);
     }
-    addBox(0.07, 0.07, outerLen, bayXOuter, winBottom, (outerZ0 + outerZ1) / 2, frameMat);
-    addBox(0.07, 0.07, outerLen, bayXOuter, winTop, (outerZ0 + outerZ1) / 2, frameMat);
-    addBox(0.07, 0.07, outerLen, bayXOuter, winBottom + winH * 0.5, (outerZ0 + outerZ1) / 2, frameMat);
+    addArch(0.07, 0.07, outerLen, bayXOuter, winBottom, (outerZ0 + outerZ1) / 2, frameMat);
+    addArch(0.07, 0.07, outerLen, bayXOuter, winTop, (outerZ0 + outerZ1) / 2, frameMat);
+    addArch(0.07, 0.07, outerLen, bayXOuter, winBottom + winH * 0.5, (outerZ0 + outerZ1) / 2, frameMat);
 
     for (var p = 0; p < paneCount; p++) {
       var glass = new THREE.Mesh(
@@ -238,6 +228,8 @@
       );
       glass.position.set(bayXOuter - 0.02, winBottom + winH / 2, outerZ0 + paneW * (p + 0.5));
       glass.rotation.y = Math.PI / 2;
+      glass.castShadow = false;
+      glass.receiveShadow = true;
       root.add(glass);
     }
 
@@ -269,10 +261,10 @@
     );
     view.position.set(bayXOuter + 0.1, winBottom + winH / 2, (outerZ0 + outerZ1) / 2);
     view.rotation.y = -Math.PI / 2;
+    view.castShadow = false;
     root.add(view);
 
-    // Small front-right terminator only (not a floor bar)
-    addBox(T, H, 0.35, xR, H / 2, zF - 0.1);
+    // NO front-right terminator pillar (removed — was floating off floor)
 
     scene.add(root);
   }
@@ -285,20 +277,20 @@
     if (window.__isoViewApplied) return;
     window.__isoViewApplied = true;
 
-    camera.position.set(-9.5, 9.5, 9.0);
-    camera.lookAt(0.3, 1.6, 0.8);
-    controls.target.set(0.3, 1.6, 0.8);
+    // Pivot around room interior center
+    controls.target.set(0.2, 1.5, 0.6);
+    camera.position.set(-8.5, 8.8, 8.5);
+    camera.lookAt(0.2, 1.5, 0.6);
 
-    // Strict diorama orbit — cannot see behind back/right walls
     controls.enablePan = false;
     controls.minDistance = 10;
-    controls.maxDistance = 20;
-    controls.minAzimuthAngle = -Math.PI / 6; // ~ -30°
-    controls.maxAzimuthAngle = Math.PI / 3; // ~ +60°
-    controls.minPolarAngle = Math.PI / 4; // ~ 45°
-    controls.maxPolarAngle = Math.PI / 2.2; // ~ 80°
+    controls.maxDistance = 18;
+    controls.minAzimuthAngle = -Math.PI / 8; // ~-22°
+    controls.maxAzimuthAngle = Math.PI / 6; // ~+30° — stops before right wall exterior
+    controls.minPolarAngle = Math.PI / 3.5; // ~51°
+    controls.maxPolarAngle = Math.PI / 2.3; // ~78°
     controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.18;
+    controls.autoRotateSpeed = 0.15;
     if (controls.update) controls.update();
 
     setTimeout(function () {
@@ -333,7 +325,7 @@
 
     if (!document.querySelector('script[data-furniture]')) {
       var s = document.createElement('script');
-      s.src = 'furniture.js?v=clean2';
+      s.src = 'furniture.js?v=bugs4';
       s.setAttribute('data-furniture', '1');
       s.onload = runCreates;
       document.body.appendChild(s);
