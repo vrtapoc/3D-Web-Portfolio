@@ -1,72 +1,38 @@
 /*
- * Minimal cutaway pass on the last good scene:
- * - Keep every original object position
- * - Hide LEFT wall only (right + back stay)
- * - Do NOT rebuild walls (no overlapping panels)
- * - Add thin edge rims only (floor + open cut) for dollhouse read
+ * Clean cutaway:
+ * - Load last good scene (all original object positions)
+ * - Hide LEFT wall only
+ * - No extra edge lines, rims, posts, or overlapping walls
+ * - Elevated camera from open-left side
  */
 (function () {
   var GOOD_SCENE_URL =
     'https://raw.githubusercontent.com/vrtapoc/3D-Web-Portfolio/e85884eca00ae0cd9dc9f3d523d1d14a99f376e5/scene.js';
 
-  function applyCutawayEdgesOnly() {
-    if (typeof scene === 'undefined' || !scene || typeof THREE === 'undefined') {
-      setTimeout(applyCutawayEdgesOnly, 150);
+  function hideLeftWallOnly() {
+    if (typeof scene === 'undefined' || !scene) {
+      setTimeout(hideLeftWallOnly, 150);
       return;
     }
-    if (window.__cutawayEdgesApplied) return;
-    window.__cutawayEdgesApplied = true;
+    if (window.__leftWallHidden) return;
+    window.__leftWallHidden = true;
 
-    // 1) Hide LEFT wall only — leave every other original mesh alone
     try {
       scene.traverse(function (obj) {
         if (!obj.isMesh) return;
         var p = obj.position;
-        // Original left wall is at x ≈ -7.5, y ≈ 4
+        // Original left wall at x ≈ -7.5
         if (Math.abs(p.x + 7.5) < 0.35 && Math.abs(p.y - 4) < 2) {
           obj.visible = false;
         }
+        // Remove any leftover cutaway-edge meshes from older builds
+        if (obj.name === 'cutaway-edge' || obj.name === 'cutaway-slab') {
+          obj.visible = false;
+          if (obj.parent) obj.parent.remove(obj);
+        }
       });
     } catch (e) {
-      console.warn('left wall hide failed', e);
-    }
-
-    // 2) Thin edge rims only (no full replacement walls/floors)
-    //    These sit on the open left cut + floor perimeter so the room reads as a slab
-    //    without moving any existing props.
-    var edgeMat = new THREE.MeshStandardMaterial({
-      color: 0x1c1c1c,
-      roughness: 0.9,
-      metalness: 0.05
-    });
-
-    function addEdge(w, h, d, x, y, z) {
-      var mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), edgeMat);
-      mesh.position.set(x, y, z);
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      mesh.name = 'cutaway-edge';
-      scene.add(mesh);
-    }
-
-    // Floor front lip (thin)
-    addEdge(14.5, 0.06, 0.08, 0, 0.03, 7.2);
-    // Floor left open lip (thin) — the cut edge
-    addEdge(0.08, 0.06, 14.5, -7.2, 0.03, 0.5);
-    // Floor right lip
-    addEdge(0.08, 0.06, 14.5, 7.2, 0.03, 0.5);
-    // Floor back lip
-    addEdge(14.5, 0.06, 0.08, 0, 0.03, -2.7);
-
-    // Vertical edge where left wall was cut away (back-left corner post)
-    addEdge(0.1, 7.5, 0.1, -7.2, 3.75, -2.7);
-    // Vertical edge at front-left of open side
-    addEdge(0.1, 7.5, 0.1, -7.2, 3.75, 7.2);
-
-    // Soften fog slightly; do not change object layout
-    if (scene.fog) {
-      scene.fog.near = 22;
-      scene.fog.far = 55;
+      console.warn('hideLeftWall failed', e);
     }
   }
 
@@ -78,8 +44,6 @@
     if (window.__isoViewApplied) return;
     window.__isoViewApplied = true;
 
-    // Elevated view from open-left side so RIGHT wall stays visible
-    // Does not move any scene objects — camera only
     camera.position.set(-9.5, 10.5, 9.8);
     camera.lookAt(0, 1.4, 0.5);
     controls.target.set(0, 1.4, 0.5);
@@ -93,7 +57,7 @@
     controls.autoRotateSpeed = 0.25;
     if (controls.update) controls.update();
 
-    applyCutawayEdgesOnly();
+    hideLeftWallOnly();
   }
 
   function loadFurniture() {
@@ -120,7 +84,7 @@
 
     if (!document.querySelector('script[data-furniture]')) {
       var s = document.createElement('script');
-      s.src = 'furniture.js?v=iso5';
+      s.src = 'furniture.js?v=clean1';
       s.setAttribute('data-furniture', '1');
       s.onload = runCreates;
       document.body.appendChild(s);
