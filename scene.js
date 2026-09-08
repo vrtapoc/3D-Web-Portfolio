@@ -1,9 +1,8 @@
 /*
- * Right wall profile:
- * - Single 45° outward angle at back-right corner only
- * - Then straight panoramic window run to front
- * - NO 45° front return — clean square termination
- * - Walls castShadow=false; orbit clamped
+ * Layout fixes:
+ * 1) Floor plinth fully under right wall + bench, flush edges, no stray posts
+ * 2) Jukebox moved to back-right corner
+ * 3) Sofa/rug handled in furniture.js (forward-left)
  */
 (function () {
   var GOOD_SCENE_URL =
@@ -60,6 +59,35 @@
     });
   }
 
+  function moveJukeboxToCorner() {
+    if (typeof scene === 'undefined' || !scene) return;
+    // Original jukebox group is typically named via userData or is the group at old pos
+    var moved = false;
+    scene.traverse(function (obj) {
+      if (moved) return;
+      if (!obj.isGroup && !obj.isMesh) return;
+      // Match by known original position near (2.15, 0, -1.75) or name
+      var n = (obj.name || '').toLowerCase();
+      if (n.indexOf('jukebox') !== -1) {
+        obj.position.set(3.6, 0, -1.6);
+        moved = true;
+        return;
+      }
+      if (
+        obj.isGroup &&
+        Math.abs(obj.position.x - 2.15) < 0.4 &&
+        Math.abs(obj.position.z + 1.75) < 0.5
+      ) {
+        obj.position.set(3.6, 0, -1.6);
+        moved = true;
+      }
+    });
+    // Fallback: global jukebox var from original scene.js
+    if (!moved && typeof jukebox !== 'undefined' && jukebox) {
+      jukebox.position.set(3.6, 0, -1.6);
+    }
+  }
+
   function buildWalls() {
     if (typeof THREE === 'undefined' || typeof scene === 'undefined' || !scene) return;
     if (window.__dioramaBuilt) return;
@@ -108,25 +136,41 @@
       return m;
     }
 
-    // Footprint (scene units ~ scaled from 6m back wall)
     var xL = -5.5;
-    var xR = 5.0; // inner face of straight right wall
+    var xR = 5.0;
     var zB = -2.9;
     var zF = 5.0;
 
-    // Floor under footprint
-    var floorW = xR + 0.4 - xL + 0.3;
-    var floorD = zF - zB + 0.35;
-    addArch(floorW, 0.12, floorD, (xL + xR) / 2 + 0.15, -0.06, (zB + zF) / 2, floorMat);
+    var bayOut = 1.5;
+    var straightX = xR + bayOut * 0.85;
+    var frontSolid = 0.75;
+    var straightZ0 = zB + bayOut * 0.9;
+    var straightZ1 = zF - frontSolid;
+    var winLen = Math.max(straightZ1 - straightZ0, 2);
 
-    // ========== BACK WALL (straight, ~6m) + door left ==========
+    // Floor plinth fully covers left → past straight right wall end
+    var floorX0 = xL - 0.15;
+    var floorX1 = straightX + T / 2 + 0.12; // under full right wall thickness
+    var floorZ0 = zB - 0.15;
+    var floorZ1 = zF + 0.05; // flush with front wall termination
+    addArch(
+      floorX1 - floorX0,
+      0.14,
+      floorZ1 - floorZ0,
+      (floorX0 + floorX1) / 2,
+      -0.07,
+      (floorZ0 + floorZ1) / 2,
+      floorMat
+    );
+
+    // ========== BACK WALL + DOOR ==========
     var doorW = 1.9;
     var doorH = 4.5;
     var doorX = -3.4;
     var doorX0 = doorX - doorW / 2;
     var doorX1 = doorX + doorW / 2;
     var backX0 = xL;
-    var backX1 = xR; // meets right wall flush
+    var backX1 = xR;
 
     if (doorX0 > backX0) {
       addArch(doorX0 - backX0, H, T, (backX0 + doorX0) / 2, H / 2, zB);
@@ -135,7 +179,6 @@
     if (backX1 > doorX1) {
       addArch(backX1 - doorX1, H, T, (doorX1 + backX1) / 2, H / 2, zB);
     }
-    // Corner seal back↔right
     addArch(T * 1.2, H, T * 1.2, xR, H / 2, zB);
 
     var ft = 0.08;
@@ -153,54 +196,38 @@
       addArch(backX1 - doorX1, bbH, T + 0.02, (doorX1 + backX1) / 2, bbH / 2, zB, trimMat);
     }
 
-    // ========== SINGLE 45° BAY ANGLE (back-right only) ==========
-    // ~0.8m scaled outward from corner
-    var bayOut = 1.5;
+    // Single 45° at back-right only
     var bayAngleLen = Math.sqrt(bayOut * bayOut + bayOut * bayOut);
     var angleWall = addArch(T, H, bayAngleLen, 0, H / 2, 0);
-    // Center of 45° segment sits between back corner and start of straight wall
     angleWall.position.set(xR + bayOut * 0.45, H / 2, zB + bayOut * 0.45);
     angleWall.rotation.y = Math.PI / 4;
 
-    // Where straight right wall begins (after the angle)
-    var straightX = xR + bayOut * 0.85; // outer line of straight window wall
-    var straightZ0 = zB + bayOut * 0.9; // after angle
-    var frontSolid = 0.75; // solid wall section at front (~0.4m scaled)
-    var straightZ1 = zF - frontSolid; // window ends before front solid
-
-    // ========== STRAIGHT RIGHT WINDOW WALL ==========
-    var winLen = straightZ1 - straightZ0;
-    if (winLen < 2) winLen = 2;
-
-    // Ceiling soffit / header (top band)
+    // Straight window wall
     var headerH = 1.05;
     var headerBottom = H - headerH;
     addArch(T, headerH, winLen, straightX, headerBottom + headerH / 2, straightZ0 + winLen / 2);
 
-    // Full-length bench along straight window
     var benchH = 0.9;
     var benchDepth = 1.35;
     addArch(
       benchDepth,
       benchH,
-      winLen + 0.15,
+      winLen + 0.1,
       straightX - T / 2 - benchDepth / 2 + 0.05,
       benchH / 2,
       straightZ0 + winLen / 2,
       benchMat
     );
-    // Flat clean lid
     addArch(
       benchDepth * 0.98,
       0.04,
-      winLen + 0.1,
+      winLen + 0.05,
       straightX - T / 2 - benchDepth / 2 + 0.05,
       benchH + 0.02,
       straightZ0 + winLen / 2,
       benchMat
     );
 
-    // Glass + mullions (5 panels)
     var winBottom = benchH + 0.04;
     var winTop = headerBottom;
     var winH = winTop - winBottom;
@@ -212,7 +239,6 @@
     }
     addArch(0.07, 0.07, winLen, straightX, winBottom, straightZ0 + winLen / 2, frameMat);
     addArch(0.07, 0.07, winLen, straightX, winTop, straightZ0 + winLen / 2, frameMat);
-    // Transom mid bar
     addArch(0.07, 0.07, winLen, straightX, winBottom + winH * 0.55, straightZ0 + winLen / 2, frameMat);
 
     for (var p = 0; p < panes; p++) {
@@ -234,7 +260,6 @@
       root.add(glass);
     }
 
-    // Skyline view
     var c = document.createElement('canvas');
     c.width = 1024;
     c.height = 512;
@@ -266,11 +291,10 @@
     view.castShadow = false;
     root.add(view);
 
-    // ========== SOLID FRONT-RIGHT TERMINATION (square cut, NO 45°) ==========
-    // Small solid wall section frames the window then ends cleanly
-    addArch(T, H, frontSolid + 0.15, straightX, H / 2, straightZ1 + frontSolid / 2);
-    // Thickness cap on the front face of the right wall end
-    addArch(T + 0.06, H, 0.1, straightX, H / 2, zF, wallMat);
+    // Front solid termination — FLUSH with floor front edge (no overhang post)
+    addArch(T, H, frontSolid, straightX, H / 2, straightZ1 + frontSolid / 2);
+    // Cap sits ON floor front, not past it
+    addArch(T + 0.04, H, 0.08, straightX, H / 2, zF - 0.02, wallMat);
 
     scene.add(root);
   }
@@ -303,6 +327,7 @@
       removeOriginalWalls();
       trimOriginalFloor();
       buildWalls();
+      moveJukeboxToCorner();
     }, 250);
   }
 
@@ -330,7 +355,7 @@
 
     if (!document.querySelector('script[data-furniture]')) {
       var s = document.createElement('script');
-      s.src = 'furniture.js?v=straight1';
+      s.src = 'furniture.js?v=layout3';
       s.setAttribute('data-furniture', '1');
       s.onload = runCreates;
       document.body.appendChild(s);

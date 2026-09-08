@@ -1,11 +1,10 @@
 // Side lounge zone: long chair + large rug (no desk mat)
 
 function createFloorMat() {
-  // Desk mat removed per request — no-op kept so older callers don't break
+  // Desk mat removed — no-op
 }
 
 function createOfficeChair() {
-  // Keep a simple office chair at the desk (no mat under desk)
   const chair = new THREE.Group();
   const seatMat = new THREE.MeshStandardMaterial({ color: 0x1c1c1c, roughness: 0.75, metalness: 0.08 });
   const blackMat = new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.55, metalness: 0.15 });
@@ -60,11 +59,10 @@ function createOfficeChair() {
   scene.add(chair);
 }
 
-// Long lounge chair + big rug on the side (reference: sofa + large area rug)
+// Long lounge + rug — pulled FORWARD and slightly LEFT into open floor
 function createLobbyChair() {
   const zone = new THREE.Group();
 
-  // Large long rug under lounge
   const rug = new THREE.Mesh(
     new THREE.BoxGeometry(3.6, 0.035, 2.4),
     new THREE.MeshStandardMaterial({ color: 0x1f1f1f, roughness: 0.95, metalness: 0.04 })
@@ -74,16 +72,14 @@ function createLobbyChair() {
   rug.castShadow = true;
   zone.add(rug);
 
-  // Rug border
   const rugBorder = new THREE.Mesh(
     new THREE.BoxGeometry(3.75, 0.028, 2.55),
     new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.9, metalness: 0.05 })
   );
-  rugBorder.position.set(0, 0.012, 0);
+  rugBorder.position.set(0, 0.015, 0);
   rugBorder.receiveShadow = true;
   zone.add(rugBorder);
 
-  // Thin red accent strip on rug edge
   const rugAccent = new THREE.Mesh(
     new THREE.BoxGeometry(3.55, 0.038, 0.07),
     new THREE.MeshStandardMaterial({
@@ -97,7 +93,6 @@ function createLobbyChair() {
   rugAccent.position.set(0, 0.03, 1.12);
   zone.add(rugAccent);
 
-  // Long lounge / sofa-style chair
   const bodyMat = new THREE.MeshStandardMaterial({ color: 0x171717, roughness: 0.72, metalness: 0.08 });
   const accentMat = new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.65, metalness: 0.08 });
   const legMat = new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.4, metalness: 0.5 });
@@ -119,7 +114,6 @@ function createLobbyChair() {
   back.castShadow = true;
   zone.add(back);
 
-  // Arms
   [-1, 1].forEach(function (side) {
     const arm = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.32, 0.9), accentMat);
     arm.position.set(side * 1.27, 0.72, 0.0);
@@ -127,7 +121,6 @@ function createLobbyChair() {
     zone.add(arm);
   });
 
-  // Legs under long seat
   const legPositions = [
     [-1.0, 0.24, 0.35],
     [1.0, 0.24, 0.35],
@@ -143,8 +136,8 @@ function createLobbyChair() {
     zone.add(leg);
   });
 
-  // Place on right side of room, angled for isometric readability
-  zone.position.set(3.15, 0, 1.35);
-  zone.rotation.y = -Math.PI / 2.35;
+  // Forward + left into open living area (away from desk / window bench)
+  zone.position.set(-0.4, 0, 3.1);
+  zone.rotation.y = Math.PI; // face toward desk / back wall
   scene.add(zone);
 }
