@@ -1,8 +1,7 @@
 /*
  * CRITICAL RESTORE
- * Loads the last known-good scene from commit e85884e, then applies
- * hybrid camera + furniture. This keeps the full 3D scene working
- * while avoiding a truncated upload of the large scene file.
+ * Loads last known-good scene from commit e85884e, then applies
+ * hybrid camera + furniture.
  */
 (function () {
   var GOOD_SCENE_URL =
@@ -26,7 +25,7 @@
     controls.minAzimuthAngle = -Math.PI / 3.2;
     controls.maxAzimuthAngle = Math.PI / 3.2;
     controls.autoRotateSpeed = 0.35;
-    controls.update();
+    if (controls.update) controls.update();
   }
 
   function loadFurniture() {
@@ -35,8 +34,13 @@
       return;
     }
     if (window.__furnitureAdded) return;
-    // furniture.js defines createFloorMat / createOfficeChair / createLobbyChair
-    if (typeof createFloorMat === 'function') {
+
+    function runCreates() {
+      if (window.__furnitureAdded) return;
+      if (typeof createFloorMat !== 'function') {
+        setTimeout(runCreates, 100);
+        return;
+      }
       window.__furnitureAdded = true;
       try {
         createFloorMat();
@@ -45,15 +49,38 @@
       } catch (e) {
         console.warn('Furniture create failed', e);
       }
-    } else {
-      // Load furniture.js if not already present
-      var s = document.createElement('script');
-      s.src = 'furniture.js?v=1';
-      s.onload = function () {
-        setTimeout(loadFurniture, 50);
-      };
-      document.body.appendChild(s);
     }
+
+    var existing = document.querySelector('script[data-furniture]');
+    if (!existing) {
+      var s = document.createElement('script');
+      s.src = 'furniture.js?v=2';
+      s.setAttribute('data-furniture', '1');
+      s.onload = runCreates;
+      document.body.appendChild(s);
+    } else {
+      runCreates();
+    }
+  }
+
+  function afterSceneCodeInjected() {
+    // Historical scene registers init on window load — if load already fired, call init now
+    function ensureInit() {
+      if (typeof init === 'function' && typeof scene === 'undefined') {
+        try {
+          init();
+        } catch (e) {
+          console.warn('init error', e);
+        }
+      }
+      if (typeof scene === 'undefined') {
+        setTimeout(ensureInit, 100);
+        return;
+      }
+      applyHybridCamera();
+      loadFurniture();
+    }
+    setTimeout(ensureInit, 50);
   }
 
   fetch(GOOD_SCENE_URL, { cache: 'no-cache' })
@@ -62,21 +89,20 @@
       return r.text();
     })
     .then(function (code) {
-      // Prevent double window.load init conflicts by running immediately
       var script = document.createElement('script');
       script.textContent = code;
       document.body.appendChild(script);
-
-      // Apply upgrades after scene init starts
-      setTimeout(applyHybridCamera, 900);
-      setTimeout(loadFurniture, 1200);
+      afterSceneCodeInjected();
     })
     .catch(function (err) {
       console.error(err);
       var el = document.getElementById('loadingScreen');
       if (el) {
+        el.style.opacity = '1';
         el.innerHTML =
-          '<div style="color:#fff;padding:2rem;font-family:monospace">Scene restore failed. Hard refresh or contact support.</div>';
+          '<div style="color:#fff;padding:2rem;font-family:monospace;text-align:center">Scene restore failed. Please hard-refresh.<br/>' +
+          String(err) +
+          '</div>';
       }
     });
 })();
