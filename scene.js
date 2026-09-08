@@ -1,22 +1,16 @@
 /*
- * Walls-only rebuild to match portfolio mock-up.
- * Does not move or edit any other scene objects.
- *
- * - Uniform flat wall height (no steps)
- * - Continuous perimeter: left → back → bay alcove → right return
- * - Door opening on left wall
- * - Projecting bay window (header, bench, 3 panes)
- * - Baseboards
- * - Charcoal matte material
+ * Walls-only layout:
+ * - No left wall (open diorama view)
+ * - Continuous back wall with door on the left side of it
+ * - Giant full-length panoramic bay on the right
+ * - Does not move desk/props (walls only)
  */
 (function () {
   var GOOD_SCENE_URL =
     'https://raw.githubusercontent.com/vrtapoc/3D-Web-Portfolio/e85884eca00ae0cd9dc9f3d523d1d14a99f376e5/scene.js';
 
-  // Scene-unit scale (existing room ~15 units; original walls were H≈8).
-  // Proportions map from mock meters (3.2m ceiling) into this room.
-  var H = 6.8; // uniform wall height
-  var T = 0.18; // wall thickness
+  var H = 6.8;
+  var T = 0.18;
   var WALL_COLOR = 0x1e1e22;
 
   function removeOriginalWalls() {
@@ -30,12 +24,10 @@
       }
       if (!obj.isMesh) return;
       var p = obj.position || { x: 0, y: 0, z: 0 };
-      // Original left / right stucco planes
       if (Math.abs(p.x + 7.5) < 0.6 || Math.abs(p.x - 7.5) < 0.6) {
         kill.push(obj);
         return;
       }
-      // Original back plane
       if (
         obj.geometry &&
         obj.geometry.type === 'PlaneGeometry' &&
@@ -91,119 +83,106 @@
       return m;
     }
 
-    // Footprint (top-down), aligned to existing room props
-    var xL = -6.8; // left wall inner face centerline ~
-    var xR = 6.2; // right return
+    // Footprint — left & front open for camera
+    var xL = -6.2; // open edge (no wall)
+    var xR = 5.8; // right bay inner line
     var zB = -2.95; // back wall
-    var zF = 8.2; // front open edge (no front wall)
+    var zF = 7.8; // front open edge
 
-    // Bay alcove on right-back (45° sides, center parallel to back)
-    var bayDepth = 1.7; // ~0.8m scaled
-    var bayCenterW = 3.6; // center pane run along Z-parallel (actually along X from back)
-    // Bay sits on the right side: from back wall going forward a bit, projecting +X
-    var bayZ0 = zB + 0.15;
-    var bayZ1 = bayZ0 + bayCenterW;
+    // ---------- BACK WALL (continuous) + DOOR on left side ----------
+    var doorW = 1.9;
+    var doorH = 4.5;
+    // Door placed left of desk (desk is near x=0), so door center around x = -3.8
+    var doorX = -3.9;
+    var doorX0 = doorX - doorW / 2;
+    var doorX1 = doorX + doorW / 2;
+
+    // Back wall spans from open left edge to right bay start
+    var backX0 = xL;
+    var backX1 = xR;
+
+    // Segment left of door
+    if (doorX0 > backX0) {
+      addBox(doorX0 - backX0, H, T, (backX0 + doorX0) / 2, H / 2, zB);
+    }
+    // Above door
+    addBox(doorW, H - doorH, T, doorX, doorH + (H - doorH) / 2, zB);
+    // Segment right of door → bay
+    if (backX1 > doorX1) {
+      addBox(backX1 - doorX1, H, T, (doorX1 + backX1) / 2, H / 2, zB);
+    }
+
+    // Door frame + panel (on back wall)
+    var ft = 0.08;
+    addBox(ft, doorH + 0.1, T + 0.04, doorX0, doorH / 2, zB, frameMat);
+    addBox(ft, doorH + 0.1, T + 0.04, doorX1, doorH / 2, zB, frameMat);
+    addBox(doorW, ft, T + 0.04, doorX, doorH, zB, frameMat);
+    addBox(doorW - 0.12, doorH - 0.1, 0.06, doorX, doorH / 2, zB + T / 2 + 0.02, doorMat);
+    // Handle
+    addBox(0.18, 0.04, 0.04, doorX + doorW * 0.28, doorH * 0.45, zB + T / 2 + 0.06, frameMat);
+
+    // ---------- GIANT RIGHT BAY WINDOW (full depth) ----------
+    var bayDepth = 1.8;
     var bayXInner = xR;
     var bayXOuter = xR + bayDepth;
 
-    // ---------- LEFT WALL (with door) ----------
-    // Runs from front to back at x = xL
-    var doorW = 1.9;
-    var doorH = 4.5;
-    var doorZ = 2.2; // centered along left wall stretch
-    var leftLen = zF - zB;
-    var leftCenterZ = (zF + zB) / 2;
+    // Bay runs almost full room depth along Z
+    var bayZ0 = zB + 0.2;
+    var bayZ1 = zF - 0.4;
+    var bayLen = bayZ1 - bayZ0; // ~ major depth span
 
-    // Left wall segments around door
-    var leftZ0 = zB;
-    var leftZ1 = zF;
-    var doorZ0 = doorZ - doorW / 2;
-    var doorZ1 = doorZ + doorW / 2;
+    // 45° side walls at back and front of bay
+    var sideLen = Math.sqrt(bayDepth * bayDepth + bayDepth * bayDepth) * 0.92;
 
-    // Behind door (toward back)
-    addBox(T, H, doorZ0 - leftZ0, xL, H / 2, (leftZ0 + doorZ0) / 2);
-    // Above door
-    addBox(T, H - doorH, doorW, xL, doorH + (H - doorH) / 2, doorZ);
-    // In front of door (toward front)
-    addBox(T, H, leftZ1 - doorZ1, xL, H / 2, (doorZ1 + leftZ1) / 2);
+    var sideBack = addBox(T, H, sideLen, 0, H / 2, 0);
+    sideBack.position.set((bayXInner + bayXOuter) / 2, H / 2, bayZ0 - 0.05);
+    sideBack.rotation.y = Math.PI / 4;
 
-    // Door frame + panel
-    var frameT = 0.08;
-    addBox(T + 0.04, doorH + 0.12, frameT, xL, doorH / 2, doorZ0, frameMat);
-    addBox(T + 0.04, doorH + 0.12, frameT, xL, doorH / 2, doorZ1, frameMat);
-    addBox(T + 0.04, frameT, doorW, xL, doorH, doorZ, frameMat);
-    // Flat door panel
-    addBox(0.06, doorH - 0.1, doorW - 0.12, xL - T / 2 - 0.02, doorH / 2, doorZ, doorMat);
-    // Handle
-    addBox(0.04, 0.04, 0.18, xL - T / 2 - 0.06, doorH * 0.45, doorZ + doorW * 0.28, frameMat);
+    var sideFront = addBox(T, H, sideLen, 0, H / 2, 0);
+    sideFront.position.set((bayXInner + bayXOuter) / 2, H / 2, bayZ1 + 0.05);
+    sideFront.rotation.y = -Math.PI / 4;
 
-    // ---------- BACK WALL (straight, uniform height) ----------
-    // From left wall to bay start
-    var backStartX = xL + T / 2;
-    var backEndX = bayXInner;
-    var backLen = backEndX - backStartX;
-    addBox(backLen, H, T, (backStartX + backEndX) / 2, H / 2, zB);
+    // Outer window wall (main run)
+    var outerZ0 = bayZ0 + 0.55;
+    var outerZ1 = bayZ1 - 0.55;
+    var outerLen = Math.max(outerZ1 - outerZ0, 2);
 
-    // ---------- BAY WINDOW ALCOVE (right-back) ----------
-    // 45° outward, center parallel, 45° back in
-    // Approximate 45° walls with thin boxes along diagonals in XZ
+    // Ceiling header / soffit (~0.5m scaled)
+    var headerH = 1.05;
+    var headerBottom = H - headerH;
+    addBox(T, headerH, outerLen, bayXOuter, headerBottom + headerH / 2, (outerZ0 + outerZ1) / 2);
 
-    // Side wall A: from (bayXInner, bayZ0) outward to (bayXOuter, bayZ0 + bayDepth*0.15)
-    // Simpler architectural bay matching mock: three faces
-    // 1) Angled left side of bay (back-left of bay)
-    var sideLen = Math.sqrt(bayDepth * bayDepth + (bayDepth * 0.85) * (bayDepth * 0.85));
-    // Left 45° panel (from inner back toward outer)
-    var baySideA = addBox(T, H, sideLen, 0, H / 2, 0);
-    baySideA.position.set(
+    // Full-length built-in bench
+    var benchH = 0.9;
+    addBox(
+      bayDepth + 0.1,
+      benchH,
+      outerLen + 0.6,
       (bayXInner + bayXOuter) / 2,
-      H / 2,
-      bayZ0 - 0.15
+      benchH / 2,
+      (outerZ0 + outerZ1) / 2
     );
-    baySideA.rotation.y = Math.PI / 4;
 
-    // Right 45° panel
-    var baySideB = addBox(T, H, sideLen, 0, H / 2, 0);
-    baySideB.position.set(
-      (bayXInner + bayXOuter) / 2,
-      H / 2,
-      bayZ1 + 0.15
-    );
-    baySideB.rotation.y = -Math.PI / 4;
-
-    // Outer center face of bay (parallel to back wall, holds windows)
-    var outerZ0 = bayZ0 + 0.35;
-    var outerZ1 = bayZ1 - 0.35;
-    var outerLen = outerZ1 - outerZ0;
-
-    // Header / soffit: solid from H down to 2.6m-scaled (~5.5)
-    var headerBottom = 5.5;
-    addBox(T, H - headerBottom, outerLen, bayXOuter, headerBottom + (H - headerBottom) / 2, (outerZ0 + outerZ1) / 2);
-
-    // Built-in bench 0→0.45m scaled (~0.95)
-    var benchH = 0.95;
-    addBox(bayDepth + 0.15, benchH, outerLen + 0.5, (bayXInner + bayXOuter) / 2, benchH / 2, (outerZ0 + outerZ1) / 2, wallMat);
-
-    // Mullions / 3 window panels between bench top and header bottom
+    // Multi-panel mullions (floor-to-header glass)
     var winBottom = benchH;
     var winTop = headerBottom;
     var winH = winTop - winBottom;
-    var paneW = outerLen / 3;
+    var paneCount = 5;
+    var paneW = outerLen / paneCount;
 
-    // Vertical mullions
-    for (var i = 0; i <= 3; i++) {
+    for (var i = 0; i <= paneCount; i++) {
       var mz = outerZ0 + i * paneW;
       addBox(0.07, winH, 0.07, bayXOuter, winBottom + winH / 2, mz, frameMat);
     }
-    // Horizontal rails
     addBox(0.07, 0.07, outerLen, bayXOuter, winBottom, (outerZ0 + outerZ1) / 2, frameMat);
     addBox(0.07, 0.07, outerLen, bayXOuter, winTop, (outerZ0 + outerZ1) / 2, frameMat);
-    addBox(0.07, 0.07, outerLen, bayXOuter, winBottom + winH / 2, (outerZ0 + outerZ1) / 2, frameMat);
+    addBox(0.07, 0.07, outerLen, bayXOuter, winBottom + winH * 0.5, (outerZ0 + outerZ1) / 2, frameMat);
 
-    // Glass panes (3)
-    for (var p = 0; p < 3; p++) {
+    // Glass panes
+    for (var p = 0; p < paneCount; p++) {
       var pz = outerZ0 + paneW * (p + 0.5);
       var glass = new THREE.Mesh(
-        new THREE.PlaneGeometry(paneW - 0.12, winH - 0.12),
+        new THREE.PlaneGeometry(paneW - 0.1, winH - 0.1),
         new THREE.MeshStandardMaterial({
           color: 0x88aacc,
           transparent: true,
@@ -218,56 +197,60 @@
       root.add(glass);
     }
 
-    // Soft exterior view behind bay
+    // Sunset city skyline view
     var c = document.createElement('canvas');
-    c.width = 512;
+    c.width = 1024;
     c.height = 512;
     var ctx = c.getContext('2d');
     var g = ctx.createLinearGradient(0, 0, 0, 512);
-    g.addColorStop(0, '#1a1520');
-    g.addColorStop(0.4, '#c47a3a');
-    g.addColorStop(0.7, '#e8a050');
-    g.addColorStop(1, '#2a2a35');
+    g.addColorStop(0, '#1a1528');
+    g.addColorStop(0.35, '#c45a2a');
+    g.addColorStop(0.55, '#e89040');
+    g.addColorStop(0.75, '#f0c070');
+    g.addColorStop(1, '#2a2838');
     ctx.fillStyle = g;
-    ctx.fillRect(0, 0, 512, 512);
-    // simple city blocks silhouette
-    ctx.fillStyle = 'rgba(20,20,28,0.85)';
-    for (var b = 0; b < 14; b++) {
-      var bw = 20 + Math.random() * 40;
-      var bh = 60 + Math.random() * 180;
-      ctx.fillRect(15 + b * 35, 512 - bh - 40, bw, bh);
+    ctx.fillRect(0, 0, 1024, 512);
+    // sun
+    ctx.beginPath();
+    ctx.arc(720, 200, 40, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(255,220,120,0.9)';
+    ctx.fill();
+    // buildings
+    ctx.fillStyle = 'rgba(18,18,28,0.9)';
+    for (var b = 0; b < 28; b++) {
+      var bw = 18 + Math.random() * 42;
+      var bh = 50 + Math.random() * 220;
+      ctx.fillRect(10 + b * 36, 512 - bh - 30, bw, bh);
     }
     var view = new THREE.Mesh(
-      new THREE.PlaneGeometry(outerLen - 0.1, winH - 0.1),
+      new THREE.PlaneGeometry(outerLen - 0.05, winH - 0.05),
       new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c) })
     );
-    view.position.set(bayXOuter + 0.12, winBottom + winH / 2, (outerZ0 + outerZ1) / 2);
+    view.position.set(bayXOuter + 0.1, winBottom + winH / 2, (outerZ0 + outerZ1) / 2);
     view.rotation.y = -Math.PI / 2;
     root.add(view);
 
-    // ---------- RIGHT RETURN WALL (straight to front) ----------
-    var rightZ0 = bayZ1 + 0.2;
-    var rightZ1 = zF;
-    if (rightZ1 > rightZ0) {
-      addBox(T, H, rightZ1 - rightZ0, xR, H / 2, (rightZ0 + rightZ1) / 2);
-    }
+    // Short solid return at front-right (terminates bay cleanly)
+    addBox(T, H, 0.5, xR, H / 2, zF - 0.15);
 
-    // Corner posts for clean thickness at outer cuts
-    addBox(T + 0.04, H, T + 0.04, xL, H / 2, zB, wallMat);
-    addBox(T + 0.04, H, T + 0.04, xL, H / 2, zF - 0.05, wallMat);
-    addBox(T + 0.04, H, T + 0.04, xR, H / 2, zF - 0.05, wallMat);
-
-    // ---------- BASEBOARDS (continuous along walls at floor) ----------
+    // ---------- BASEBOARDS ----------
     var bbH = 0.12;
-    // Left
-    addBox(T + 0.02, bbH, leftLen, xL, bbH / 2, leftCenterZ, trimMat);
-    // Back
-    addBox(backLen, bbH, T + 0.02, (backStartX + backEndX) / 2, bbH / 2, zB, trimMat);
-    // Right return
-    if (rightZ1 > rightZ0) {
-      addBox(T + 0.02, bbH, rightZ1 - rightZ0, xR, bbH / 2, (rightZ0 + rightZ1) / 2, trimMat);
-    }
-    // Bay bench already acts as base in alcove
+    // Back wall baseboard (skip door gap roughly)
+    addBox(doorX0 - backX0, bbH, T + 0.02, (backX0 + doorX0) / 2, bbH / 2, zB, trimMat);
+    addBox(backX1 - doorX1, bbH, T + 0.02, (doorX1 + backX1) / 2, bbH / 2, zB, trimMat);
+
+    // ---------- FLOOR PLATFORM under new footprint (snug) ----------
+    // Does not move props; adds a subtle slab edge under open sides only if needed
+    // Keep minimal — user asked floor base fit; use thin edge under open left/front
+    var floorMat = new THREE.MeshStandardMaterial({
+      color: 0x1a1a1c,
+      roughness: 0.9,
+      metalness: 0.04
+    });
+    // Front lip
+    addBox((xR + bayDepth) - xL + 1.2, 0.08, 0.2, (xL + xR + bayDepth) / 2, 0.02, zF + 0.05, floorMat);
+    // Left lip
+    addBox(0.2, 0.08, zF - zB + 0.4, xL - 0.1, 0.02, (zB + zF) / 2, floorMat);
 
     scene.add(root);
   }
@@ -280,18 +263,18 @@
     if (window.__isoViewApplied) return;
     window.__isoViewApplied = true;
 
-    // Framing only — no light changes
-    camera.position.set(-9.5, 10.5, 9.8);
-    camera.lookAt(0, 1.4, 0.5);
-    controls.target.set(0, 1.4, 0.5);
-    controls.minDistance = 10;
-    controls.maxDistance = 26;
+    // Open-left diorama framing — clears left wall so frustum is free
+    camera.position.set(-10.5, 11.0, 10.5);
+    camera.lookAt(0.2, 1.5, 1.0);
+    controls.target.set(0.2, 1.5, 1.0);
+    controls.minDistance = 11;
+    controls.maxDistance = 28;
     controls.minPolarAngle = Math.PI / 6;
     controls.maxPolarAngle = Math.PI / 2.4;
-    controls.minAzimuthAngle = -Math.PI / 1.7;
-    controls.maxAzimuthAngle = Math.PI / 3.2;
+    controls.minAzimuthAngle = -Math.PI / 1.6;
+    controls.maxAzimuthAngle = Math.PI / 3.5;
     controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.25;
+    controls.autoRotateSpeed = 0.22;
     if (controls.update) controls.update();
 
     setTimeout(function () {
@@ -325,7 +308,7 @@
 
     if (!document.querySelector('script[data-furniture]')) {
       var s = document.createElement('script');
-      s.src = 'furniture.js?v=walls3';
+      s.src = 'furniture.js?v=walls4';
       s.setAttribute('data-furniture', '1');
       s.onload = runCreates;
       document.body.appendChild(s);
