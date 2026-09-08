@@ -159,7 +159,7 @@ closeModal.addEventListener('click', () => {
             y: camera.position.y,
             z: camera.position.z
         };
-        const targetPosition = { x: 0, y: 4.8, z: 10.8 };
+        const targetPosition = { x: 0, y: 6.4, z: 13.2 };
 
         function animateBack() {
             const elapsed = Date.now() - startTime;
@@ -170,7 +170,7 @@ closeModal.addEventListener('click', () => {
             camera.position.y = startPosition.y + (targetPosition.y - startPosition.y) * eased;
             camera.position.z = startPosition.z + (targetPosition.z - startPosition.z) * eased;
 
-            camera.lookAt(0, 2.0, 0);
+            camera.lookAt(0, 1.2, 0.3);
 
             if (progress < 1) {
                 requestAnimationFrame(animateBack);
