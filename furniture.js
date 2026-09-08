@@ -1,5 +1,4 @@
-// Sofa & rug REMOVED — center floor stays open
-// Desk chair only
+// Desk chair only — no sofa/rug
 
 function createFloorMat() {}
 
@@ -52,11 +51,9 @@ function createOfficeChair() {
     chair.add(armTop);
   });
 
-  // Slightly pulled back from desk
-  chair.position.set(0.15, 0, 1.65);
+  chair.position.set(0.15, 0, 1.55);
   chair.rotation.y = Math.PI + 0.08;
   scene.add(chair);
 }
 
-// No sofa / rug / LED — open center floor
 function createLobbyChair() {}
