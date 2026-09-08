@@ -1,31 +1,50 @@
 /*
- * CRITICAL RESTORE
- * Loads last known-good scene from commit e85884e, then applies
- * hybrid camera + furniture.
+ * Loads last known-good scene, then forces isometric cutaway framing
+ * + side lounge furniture (no desk rug).
  */
 (function () {
   var GOOD_SCENE_URL =
     'https://raw.githubusercontent.com/vrtapoc/3D-Web-Portfolio/e85884eca00ae0cd9dc9f3d523d1d14a99f376e5/scene.js';
 
-  function applyHybridCamera() {
+  function applyIsometricView() {
     if (typeof camera === 'undefined' || typeof controls === 'undefined' || !camera || !controls) {
-      setTimeout(applyHybridCamera, 150);
+      setTimeout(applyIsometricView, 150);
       return;
     }
-    if (window.__hybridCamApplied) return;
-    window.__hybridCamApplied = true;
+    if (window.__isoViewApplied) return;
+    window.__isoViewApplied = true;
 
-    camera.position.set(0, 6.4, 13.2);
-    camera.lookAt(0, 1.2, 0.3);
-    controls.target.set(0, 1.2, 0.3);
-    controls.minDistance = 9;
-    controls.maxDistance = 22;
-    controls.minPolarAngle = Math.PI / 5;
-    controls.maxPolarAngle = Math.PI / 2.35;
-    controls.minAzimuthAngle = -Math.PI / 3.2;
-    controls.maxAzimuthAngle = Math.PI / 3.2;
-    controls.autoRotateSpeed = 0.35;
+    // Elevated corner angle — reads closer to dollhouse / isometric cutaway
+    camera.position.set(9.5, 10.5, 9.5);
+    camera.lookAt(0, 1.0, 0.4);
+    controls.target.set(0, 1.0, 0.4);
+    controls.minDistance = 11;
+    controls.maxDistance = 26;
+    controls.minPolarAngle = Math.PI / 6;
+    controls.maxPolarAngle = Math.PI / 2.5;
+    controls.minAzimuthAngle = -Math.PI / 2.2;
+    controls.maxAzimuthAngle = Math.PI / 2.2;
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.28;
     if (controls.update) controls.update();
+
+    // Soften fog so the open room reads cleaner from above
+    if (typeof scene !== 'undefined' && scene && scene.fog) {
+      scene.fog.near = 28;
+      scene.fog.far = 60;
+    }
+
+    // Hide the wall closest to camera side for a cutaway feel (right wall at +x)
+    try {
+      scene.traverse(function (obj) {
+        if (!obj.isMesh) return;
+        var p = obj.position;
+        // Right wall was placed around x = 7.5
+        if (Math.abs(p.x - 7.5) < 0.2 && Math.abs(p.y - 4) < 0.5) {
+          obj.visible = false;
+        }
+      });
+    } catch (e) {}
   }
 
   function loadFurniture() {
@@ -37,24 +56,23 @@
 
     function runCreates() {
       if (window.__furnitureAdded) return;
-      if (typeof createFloorMat !== 'function') {
+      if (typeof createLobbyChair !== 'function') {
         setTimeout(runCreates, 100);
         return;
       }
       window.__furnitureAdded = true;
       try {
-        createFloorMat();
-        createOfficeChair();
+        // No desk mat
+        if (typeof createOfficeChair === 'function') createOfficeChair();
         createLobbyChair();
       } catch (e) {
         console.warn('Furniture create failed', e);
       }
     }
 
-    var existing = document.querySelector('script[data-furniture]');
-    if (!existing) {
+    if (!document.querySelector('script[data-furniture]')) {
       var s = document.createElement('script');
-      s.src = 'furniture.js?v=2';
+      s.src = 'furniture.js?v=iso3';
       s.setAttribute('data-furniture', '1');
       s.onload = runCreates;
       document.body.appendChild(s);
@@ -64,20 +82,15 @@
   }
 
   function afterSceneCodeInjected() {
-    // Historical scene registers init on window load — if load already fired, call init now
     function ensureInit() {
       if (typeof init === 'function' && typeof scene === 'undefined') {
-        try {
-          init();
-        } catch (e) {
-          console.warn('init error', e);
-        }
+        try { init(); } catch (e) { console.warn('init error', e); }
       }
       if (typeof scene === 'undefined') {
         setTimeout(ensureInit, 100);
         return;
       }
-      applyHybridCamera();
+      applyIsometricView();
       loadFurniture();
     }
     setTimeout(ensureInit, 50);
@@ -100,7 +113,7 @@
       if (el) {
         el.style.opacity = '1';
         el.innerHTML =
-          '<div style="color:#fff;padding:2rem;font-family:monospace;text-align:center">Scene restore failed. Please hard-refresh.<br/>' +
+          '<div style="color:#fff;padding:2rem;font-family:monospace;text-align:center">Scene load failed. Hard-refresh.<br/>' +
           String(err) +
           '</div>';
       }
