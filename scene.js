@@ -1,118 +1,82 @@
-// Three.js 3D Scene Setup - Minimal Clean Version
-let scene, camera, renderer, controls;
-let desk, monitor, keyboard, mouse, decorations;
-let raycaster, pointer;
-let hoveredObject = null;
-let isAnimating = false;
-let balloonMesh, balloonWobbleTime = 0;
-let steamParticles = [];
+/*
+ * CRITICAL RESTORE
+ * Loads the last known-good scene from commit e85884e, then applies
+ * hybrid camera + furniture. This keeps the full 3D scene working
+ * while avoiding a truncated upload of the large scene file.
+ */
+(function () {
+  var GOOD_SCENE_URL =
+    'https://raw.githubusercontent.com/vrtapoc/3D-Web-Portfolio/e85884eca00ae0cd9dc9f3d523d1d14a99f376e5/scene.js';
 
-const loadingScreen = document.getElementById('loadingScreen');
-const tooltip = document.getElementById('hoverTooltip');
-
-const TAP_MOVE_THRESHOLD = 12;
-const TAP_TIME_THRESHOLD = 500;
-let pointerStart = null;
-let pointerStartTime = 0;
-
-function init() {
-    console.log('Scene created');
-
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0a0a);
-    scene.fog = new THREE.Fog(0x0a0a0a, 15, 35);
-
-    camera = new THREE.PerspectiveCamera(
-        45,
-        window.innerWidth / window.innerHeight,
-        0.1,
-        1000
-    );
-    camera.position.set(0, 6.4, 13.2);
-    camera.lookAt(0, 1.2, 0.3);
-
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    document.getElementById('canvas-container').appendChild(renderer.domElement);
-
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.35);
-    scene.add(ambientLight);
-
-    const mainLight = new THREE.DirectionalLight(0xffffff, 0.7);
-    mainLight.position.set(5, 8, 5);
-    mainLight.castShadow = true;
-    mainLight.shadow.mapSize.width = 2048;
-    mainLight.shadow.mapSize.height = 2048;
-    mainLight.shadow.camera.near = 0.5;
-    mainLight.shadow.camera.far = 50;
-    scene.add(mainLight);
-
-    const leftLight = new THREE.PointLight(0xff8866, 0.4, 20);
-    leftLight.position.set(-3, 4, 0);
-    scene.add(leftLight);
-
-    const rightLight = new THREE.PointLight(0x6688ff, 0.3, 20);
-    rightLight.position.set(3, 4, 0);
-    scene.add(rightLight);
-
-    const monitorLight = new THREE.PointLight(0x44aaff, 0.5, 8);
-    monitorLight.position.set(0, 2.5, 0);
-    scene.add(monitorLight);
-
-    createFloor();
-    createStuccoWall();
-    createDesk();
-    createMonitor();
-    createKeyboard();
-    createMouse();
-    createSmallDecorations();
-    createLamp();
-    createTallPlant();
-    createCoffeeMug();
-    createTablet();
-    createKeyboardBacklight();
-    createFloatingParticles();
-    createWallPoster();
-    createJukebox();
-    createFloorMat();
-    createOfficeChair();
-    createLobbyChair();
+  function applyHybridCamera() {
+    if (typeof camera === 'undefined' || typeof controls === 'undefined' || !camera || !controls) {
+      setTimeout(applyHybridCamera, 150);
+      return;
+    }
+    if (window.__hybridCamApplied) return;
+    window.__hybridCamApplied = true;
 
     camera.position.set(0, 6.4, 13.2);
     camera.lookAt(0, 1.2, 0.3);
-
-    controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.target.set(0, 1.2, 0.3);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
-    controls.enableZoom = true;
     controls.minDistance = 9;
     controls.maxDistance = 22;
-    controls.enablePan = false;
     controls.minPolarAngle = Math.PI / 5;
     controls.maxPolarAngle = Math.PI / 2.35;
     controls.minAzimuthAngle = -Math.PI / 3.2;
     controls.maxAzimuthAngle = Math.PI / 3.2;
-    controls.autoRotate = true;
     controls.autoRotateSpeed = 0.35;
+    controls.update();
+  }
 
-    window.addEventListener('resize', onWindowResize);
-    window.addEventListener('pointermove', onPointerMove);
-    renderer.domElement.addEventListener('pointerdown', onPointerDown, { passive: false });
-    renderer.domElement.addEventListener('pointerup', onPointerUp, { passive: false });
-    renderer.domElement.addEventListener('pointercancel', onPointerCancel, { passive: false });
+  function loadFurniture() {
+    if (typeof scene === 'undefined' || !scene) {
+      setTimeout(loadFurniture, 200);
+      return;
+    }
+    if (window.__furnitureAdded) return;
+    // furniture.js defines createFloorMat / createOfficeChair / createLobbyChair
+    if (typeof createFloorMat === 'function') {
+      window.__furnitureAdded = true;
+      try {
+        createFloorMat();
+        createOfficeChair();
+        createLobbyChair();
+      } catch (e) {
+        console.warn('Furniture create failed', e);
+      }
+    } else {
+      // Load furniture.js if not already present
+      var s = document.createElement('script');
+      s.src = 'furniture.js?v=1';
+      s.onload = function () {
+        setTimeout(loadFurniture, 50);
+      };
+      document.body.appendChild(s);
+    }
+  }
 
-    setTimeout(() => {
-        console.log('Hiding loading screen');
-        loadingScreen.style.opacity = '0';
-        setTimeout(() => {
-            loadingScreen.style.display = 'none';
-            console.log('Scene fully loaded!');
-        }, 500);
-    }, 1000);
+  fetch(GOOD_SCENE_URL, { cache: 'no-cache' })
+    .then(function (r) {
+      if (!r.ok) throw new Error('Failed to fetch good scene: ' + r.status);
+      return r.text();
+    })
+    .then(function (code) {
+      // Prevent double window.load init conflicts by running immediately
+      var script = document.createElement('script');
+      script.textContent = code;
+      document.body.appendChild(script);
 
-    animate();
-}
+      // Apply upgrades after scene init starts
+      setTimeout(applyHybridCamera, 900);
+      setTimeout(loadFurniture, 1200);
+    })
+    .catch(function (err) {
+      console.error(err);
+      var el = document.getElementById('loadingScreen');
+      if (el) {
+        el.innerHTML =
+          '<div style="color:#fff;padding:2rem;font-family:monospace">Scene restore failed. Hard refresh or contact support.</div>';
+      }
+    });
+})();
