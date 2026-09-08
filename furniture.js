@@ -1,4 +1,4 @@
-// Desk chair only — no sofa/rug
+// Desk chair — pulled slightly back from desk but desk is against back wall
 
 function createFloorMat() {}
 
@@ -51,8 +51,10 @@ function createOfficeChair() {
     chair.add(armTop);
   });
 
-  chair.position.set(0.15, 0, 1.55);
+  // At desk which sits tight to back wall
+  chair.position.set(0.1, 0, -0.55);
   chair.rotation.y = Math.PI + 0.08;
+  chair.name = 'office-chair';
   scene.add(chair);
 }
 

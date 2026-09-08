@@ -1,8 +1,6 @@
 /*
- * Wall + floor color only (ambience locked from previous balanced pass):
- * - Walls: deep formal black/charcoal like paneled reference
- * - Floor: rich dark hardwood planks
- * - Lights / exposure unchanged
+ * Floor edge cleanup + desk flush to back wall + balloon at right edge
+ * Ambience / wall color / dark wood floor kept
  */
 (function () {
   var GOOD_SCENE_URL =
@@ -10,8 +8,13 @@
 
   var H = 5.8;
   var T = 0.22;
-  // Deep formal black wall (paneled-room reference)
   var WALL_COLOR = 0x141416;
+
+  // Room bounds (shared by build + placeProps)
+  var xL = -4.8;
+  var xR = 4.4;
+  var zB = -2.7;
+  var zF = 4.2;
 
   function removeOriginalWalls() {
     if (typeof scene === 'undefined' || !scene) return;
@@ -61,7 +64,6 @@
   }
 
   function createRichDarkWoodFloor() {
-    // Match dark espresso hardwood reference — near-black brown, subtle grain only
     var canvas = document.createElement('canvas');
     canvas.width = 1024;
     canvas.height = 1024;
@@ -74,12 +76,10 @@
 
     for (var i = 0; i < planks; i++) {
       var y = i * plankH;
-      // Tight variation around deep espresso (avoids rainbow under warm light)
       var v = 16 + ((i * 3) % 5);
       ctx.fillStyle = 'rgb(' + (v + 4) + ',' + (v + 1) + ',' + v + ')';
       ctx.fillRect(0, y + 1, 1024, plankH - 2);
 
-      // Soft longitudinal grain (like stained ash)
       for (var gLine = 0; gLine < 28; gLine++) {
         var gy = y + 2 + Math.random() * (plankH - 4);
         var alpha = 0.04 + Math.random() * 0.07;
@@ -93,7 +93,6 @@
         ctx.stroke();
       }
 
-      // Dark seam between planks
       ctx.fillStyle = '#050403';
       ctx.fillRect(0, y, 1024, 1.5);
     }
@@ -131,7 +130,6 @@
     return new THREE.CanvasTexture(c);
   }
 
-  // SAME balanced lighting as last approved pass — do not brighten
   function applyBalancedLighting() {
     if (typeof scene === 'undefined' || !scene) return;
 
@@ -181,7 +179,7 @@
 
     var screenLight = new THREE.PointLight(0x00c4e8, 0.7, 3.5);
     screenLight.name = 'amb-screen';
-    screenLight.position.set(0, 2.0, 0.15);
+    screenLight.position.set(0, 2.0, -1.6);
     scene.add(screenLight);
 
     if (scene.background) scene.background = new THREE.Color(0x0a0a0c);
@@ -203,10 +201,93 @@
 
   function placeProps() {
     if (typeof scene === 'undefined' || !scene) return;
-    if (typeof jukebox !== 'undefined' && jukebox) {
-      jukebox.position.set(2.6, 0, -1.85);
-      jukebox.rotation.y = Math.PI;
+
+    // Target: desk tight against back wall (zB = -2.7)
+    // Desk depth ~1.2, so desk.z ≈ -1.95 keeps back edge near wall
+    var deskZ = -1.95;
+    var deskX = 0.15;
+
+    // desk group (keyboard, mouse, mug, papers on desk are children)
+    if (typeof desk !== 'undefined' && desk) {
+      desk.position.set(deskX, 0, deskZ);
     }
+
+    // monitor is separate group in original scene
+    if (typeof monitor !== 'undefined' && monitor) {
+      monitor.position.set(deskX, 0, deskZ);
+    }
+
+    // floor lamp (right of desk)
+    scene.traverse(function (obj) {
+      if (!obj.isGroup) return;
+      if (obj.userData && obj.userData.name === 'lamp') {
+        obj.position.set(deskX + 1.55, 0, deskZ + 0.35);
+      }
+    });
+    // fallback by approx original lamp position
+    scene.traverse(function (obj) {
+      if (!obj.isGroup || !obj.position) return;
+      if (
+        Math.abs(obj.position.x - 1.55) < 0.15 &&
+        Math.abs(obj.position.z - 0.55) < 0.15 &&
+        Math.abs(obj.position.y) < 0.05
+      ) {
+        obj.position.set(deskX + 1.55, 0, deskZ + 0.35);
+      }
+    });
+
+    // decorations / papers group if separate
+    if (typeof decorations !== 'undefined' && decorations) {
+      decorations.position.z = deskZ - 0.15;
+    }
+
+    // tablet on desk area
+    scene.traverse(function (obj) {
+      if (!obj.isGroup || !obj.position) return;
+      if (
+        Math.abs(obj.position.x - 0.85) < 0.1 &&
+        Math.abs(obj.position.y - 1.2) < 0.15 &&
+        Math.abs(obj.position.z + 0.25) < 0.15
+      ) {
+        obj.position.set(deskX + 0.85, 1.2, deskZ - 0.25);
+      }
+    });
+
+    // Jukebox — right of desk, still near back wall
+    if (typeof jukebox !== 'undefined' && jukebox) {
+      jukebox.position.set(2.55, 0, -2.0);
+      jukebox.rotation.y = Math.PI;
+    } else {
+      scene.traverse(function (obj) {
+        if (!obj.isGroup) return;
+        if (
+          Math.abs(obj.position.x - 2.15) < 0.4 &&
+          Math.abs(obj.position.z + 1.75) < 0.5
+        ) {
+          obj.position.set(2.55, 0, -2.0);
+          obj.rotation.y = Math.PI;
+        }
+      });
+    }
+
+    // Balloon → near right wall edge (front of window bench area)
+    scene.traverse(function (obj) {
+      if (!obj.isGroup) return;
+      var isBalloon =
+        (obj.userData && obj.userData.name === 'balloon') ||
+        (Math.abs(obj.position.x + 1.85) < 0.3 && Math.abs(obj.position.z - 0.4) < 0.3);
+      if (isBalloon) {
+        obj.position.set(3.55, 0, 2.6);
+      }
+    });
+
+    // Office chair from furniture.js
+    scene.traverse(function (obj) {
+      if (obj.name === 'office-chair') {
+        obj.position.set(deskX + 0.05, 0, deskZ + 1.35);
+        obj.rotation.y = Math.PI + 0.08;
+      }
+    });
   }
 
   function buildRoom() {
@@ -257,15 +338,12 @@
       return m;
     }
 
-    var xL = -4.8;
-    var xR = 4.4;
-    var zB = -2.7;
-    var zF = 4.2;
-
-    // Dark espresso hardwood floor only
+    // Single clean floor slab — flush to walls, no separate lip pieces that misalign
+    var floorW = xR - xL;
+    var floorD = zF - zB;
     var woodTex = createRichDarkWoodFloor();
     var floor = new THREE.Mesh(
-      new THREE.BoxGeometry(xR - xL + 0.6, 0.18, zF - zB + 0.4),
+      new THREE.BoxGeometry(floorW, 0.16, floorD),
       new THREE.MeshStandardMaterial({
         map: woodTex,
         color: 0x1a1614,
@@ -273,12 +351,20 @@
         metalness: 0.05
       })
     );
-    floor.position.set((xL + xR) / 2, -0.09, (zB + zF) / 2);
+    floor.position.set((xL + xR) / 2, -0.08, (zB + zF) / 2);
     floor.receiveShadow = true;
     root.add(floor);
 
-    box(xR - xL + 0.6, 0.18, 0.08, (xL + xR) / 2, -0.09, zF + 0.16, wallMat);
-    box(0.08, 0.18, zF - zB + 0.4, xL - 0.26, -0.09, (zB + zF) / 2, wallMat);
+    // Thin underside edge only on open front + open left (visible cutaway rim)
+    var rimMat = new THREE.MeshStandardMaterial({
+      color: 0x0c0c0e,
+      roughness: 0.9,
+      metalness: 0.02
+    });
+    // Front rim
+    box(floorW, 0.16, 0.06, (xL + xR) / 2, -0.08, zF + 0.03, rimMat);
+    // Left rim
+    box(0.06, 0.16, floorD + 0.06, xL - 0.03, -0.08, (zB + zF) / 2 + 0.03, rimMat);
 
     var doorW = 1.6;
     var doorH = 3.8;
@@ -383,11 +469,16 @@
       buildRoom();
       placeProps();
       applyBalancedLighting();
+      // Re-run place after furniture loads
+      setTimeout(placeProps, 600);
     }, 280);
   }
 
   function loadFurniture() {
-    if (typeof scene === 'undefined' || !scene) return;
+    if (typeof scene === 'undefined' || !scene) {
+      setTimeout(loadFurniture, 200);
+      return;
+    }
     if (window.__furnitureAdded) return;
 
     function runCreates() {
@@ -399,6 +490,7 @@
       window.__furnitureAdded = true;
       try {
         createOfficeChair();
+        placeProps();
       } catch (e) {
         console.warn(e);
       }
@@ -406,7 +498,7 @@
 
     if (!document.querySelector('script[data-furniture]')) {
       var s = document.createElement('script');
-      s.src = 'furniture.js?v=floor2';
+      s.src = 'furniture.js?v=deskback1';
       s.setAttribute('data-furniture', '1');
       s.onload = runCreates;
       document.body.appendChild(s);
