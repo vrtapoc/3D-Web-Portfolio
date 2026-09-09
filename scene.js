@@ -1,10 +1,6 @@
 /*
- * Diorama room + acoustic wood slat wall + lounge daybed (right wall only)
- * - Desk: move group only (monitor/papers stay visible as children)
- * - Balloon: front-right edge
- * - Right wall: felt + InstancedMesh walnut slats + warm LED + neon accent
- * - Bench: cushion, pillows, blanket, plant, books
- * - Ambience otherwise unchanged
+ * Acoustic wall polish: </> neon with front PointLight, top grazing spots,
+ * thicker oatmeal cushion, pillows left / books+plant right
  */
 (function () {
   var GOOD_SCENE_URL =
@@ -19,7 +15,6 @@
   var zB = -2.7;
   var zF = 4.2;
 
-  // Neon pulse ref for animation
   var __neonLight = null;
 
   function removeOriginalWalls() {
@@ -76,20 +71,16 @@
     var ctx = canvas.getContext('2d');
     var planks = 12;
     var plankH = canvas.height / planks;
-
     ctx.fillStyle = '#0a0908';
     ctx.fillRect(0, 0, 1024, 1024);
-
     for (var i = 0; i < planks; i++) {
       var y = i * plankH;
       var v = 16 + ((i * 3) % 5);
       ctx.fillStyle = 'rgb(' + (v + 4) + ',' + (v + 1) + ',' + v + ')';
       ctx.fillRect(0, y + 1, 1024, plankH - 2);
-
       for (var gLine = 0; gLine < 28; gLine++) {
         var gy = y + 2 + Math.random() * (plankH - 4);
-        var alpha = 0.04 + Math.random() * 0.07;
-        ctx.strokeStyle = 'rgba(0,0,0,' + alpha + ')';
+        ctx.strokeStyle = 'rgba(0,0,0,' + (0.04 + Math.random() * 0.07) + ')';
         ctx.lineWidth = 0.8 + Math.random();
         ctx.beginPath();
         ctx.moveTo(0, gy);
@@ -98,11 +89,9 @@
         }
         ctx.stroke();
       }
-
       ctx.fillStyle = '#050403';
       ctx.fillRect(0, y, 1024, 1.5);
     }
-
     var tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.repeat.set(2.2, 2.2);
@@ -112,18 +101,17 @@
 
   function applyBalancedLighting() {
     if (typeof scene === 'undefined' || !scene) return;
-
     var toRemove = [];
     scene.traverse(function (obj) {
       if (!obj.isLight) return;
       var n = obj.name || '';
-      if (n.indexOf('amb-') === 0 || n.indexOf('locked-') === 0 || n.indexOf('window-') === 0 || n.indexOf('slat-') === 0 || n.indexOf('neon-') === 0) {
+      if (n.indexOf('amb-') === 0 || n.indexOf('locked-') === 0) {
         toRemove.push(obj);
         return;
       }
       if (obj.isAmbientLight || obj.isHemisphereLight) obj.intensity = 0.08;
       if (obj.isDirectionalLight) obj.intensity = Math.min(obj.intensity, 0.18);
-      if (obj.isPointLight && obj.intensity > 1.5) obj.intensity *= 0.4;
+      if (obj.isPointLight && obj.intensity > 1.5 && n.indexOf('neon') < 0) obj.intensity *= 0.4;
     });
     toRemove.forEach(function (l) {
       if (l.parent) l.parent.remove(l);
@@ -132,24 +120,19 @@
     var amb = new THREE.AmbientLight(0xa8b0c0, 0.26);
     amb.name = 'amb-ambient';
     scene.add(amb);
-
     var hemi = new THREE.HemisphereLight(0xc8d0e0, 0x121218, 0.3);
     hemi.name = 'amb-hemi';
     scene.add(hemi);
-
     var cameraFill = new THREE.DirectionalLight(0xd0d4e0, 0.32);
     cameraFill.name = 'amb-camera-fill';
     cameraFill.position.set(-5, 5.5, 7);
     scene.add(cameraFill);
-
     var windowKey = new THREE.DirectionalLight(0xffc090, 0.35);
     windowKey.name = 'amb-window-key';
     windowKey.position.set(8, 4, 1);
     windowKey.target.position.set(0, 0.4, 0.5);
-    windowKey.castShadow = false;
     scene.add(windowKey);
     scene.add(windowKey.target);
-
     var screenLight = new THREE.PointLight(0x00c4e8, 0.85, 4);
     screenLight.name = 'amb-screen';
     screenLight.position.set(0.15, 2.0, -1.7);
@@ -161,23 +144,18 @@
       scene.fog.near = 28;
       scene.fog.far = 55;
     }
-
     if (typeof renderer !== 'undefined' && renderer) {
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 0.9;
-      if (renderer.outputColorSpace !== undefined) {
-        renderer.outputColorSpace = THREE.SRGBColorSpace;
-      }
+      if (renderer.outputColorSpace !== undefined) renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.shadowMap.enabled = true;
     }
   }
 
   function placeProps() {
     if (typeof scene === 'undefined' || !scene) return;
-
     var deskZ = -1.8;
     var deskX = 0.15;
-
     if (typeof desk !== 'undefined' && desk) {
       desk.position.set(deskX, 0, deskZ);
       if (typeof monitor !== 'undefined' && monitor && monitor.parent === desk) {
@@ -189,7 +167,6 @@
         decorations.visible = true;
       }
     }
-
     scene.traverse(function (obj) {
       if (!obj.isGroup) return;
       if (obj.userData && obj.userData.name === 'lamp') {
@@ -208,23 +185,18 @@
         }
       }
     });
-
     if (typeof jukebox !== 'undefined' && jukebox) {
       jukebox.position.set(2.6, 0, -2.05);
       jukebox.rotation.y = Math.PI;
     } else {
       scene.traverse(function (obj) {
         if (!obj.isGroup) return;
-        if (
-          Math.abs(obj.position.x - 2.15) < 0.5 &&
-          Math.abs(obj.position.z + 1.75) < 0.6
-        ) {
+        if (Math.abs(obj.position.x - 2.15) < 0.5 && Math.abs(obj.position.z + 1.75) < 0.6) {
           obj.position.set(2.6, 0, -2.05);
           obj.rotation.y = Math.PI;
         }
       });
     }
-
     scene.traverse(function (obj) {
       if (!obj.isGroup) return;
       var isBalloon = obj.userData && obj.userData.name === 'balloon';
@@ -242,11 +214,8 @@
           isBalloon = true;
         }
       }
-      if (isBalloon) {
-        obj.position.set(3.7, 0, 3.5);
-      }
+      if (isBalloon) obj.position.set(3.7, 0, 3.5);
     });
-
     scene.traverse(function (obj) {
       if (obj.name === 'office-chair') {
         obj.position.set(deskX + 0.05, 0, deskZ + 1.4);
@@ -263,31 +232,11 @@
     var root = new THREE.Group();
     root.name = 'diorama-walls';
 
-    var wallMat = new THREE.MeshStandardMaterial({
-      color: WALL_COLOR,
-      roughness: 0.92,
-      metalness: 0.02
-    });
-    var frameMat = new THREE.MeshStandardMaterial({
-      color: 0x1a1a1c,
-      roughness: 0.55,
-      metalness: 0.2
-    });
-    var doorMat = new THREE.MeshStandardMaterial({
-      color: 0x101012,
-      roughness: 0.78,
-      metalness: 0.04
-    });
-    var metalMat = new THREE.MeshStandardMaterial({
-      color: 0x9a9aa0,
-      roughness: 0.3,
-      metalness: 0.8
-    });
-    var benchMat = new THREE.MeshStandardMaterial({
-      color: 0x121214,
-      roughness: 0.88,
-      metalness: 0.03
-    });
+    var wallMat = new THREE.MeshStandardMaterial({ color: WALL_COLOR, roughness: 0.92, metalness: 0.02 });
+    var frameMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.55, metalness: 0.2 });
+    var doorMat = new THREE.MeshStandardMaterial({ color: 0x101012, roughness: 0.78, metalness: 0.04 });
+    var metalMat = new THREE.MeshStandardMaterial({ color: 0x9a9aa0, roughness: 0.3, metalness: 0.8 });
+    var benchMat = new THREE.MeshStandardMaterial({ color: 0x121214, roughness: 0.88, metalness: 0.03 });
 
     function box(w, h, d, x, y, z, mat) {
       var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat || wallMat);
@@ -303,22 +252,13 @@
     var woodTex = createRichDarkWoodFloor();
     var floor = new THREE.Mesh(
       new THREE.BoxGeometry(floorW, 0.16, floorD),
-      new THREE.MeshStandardMaterial({
-        map: woodTex,
-        color: 0x1a1614,
-        roughness: 0.55,
-        metalness: 0.05
-      })
+      new THREE.MeshStandardMaterial({ map: woodTex, color: 0x1a1614, roughness: 0.55, metalness: 0.05 })
     );
     floor.position.set((xL + xR) / 2, -0.08, (zB + zF) / 2);
     floor.receiveShadow = true;
     root.add(floor);
 
-    var rimMat = new THREE.MeshStandardMaterial({
-      color: 0x0c0c0e,
-      roughness: 0.9,
-      metalness: 0.02
-    });
+    var rimMat = new THREE.MeshStandardMaterial({ color: 0x0c0c0e, roughness: 0.9, metalness: 0.02 });
     box(floorW, 0.16, 0.06, (xL + xR) / 2, -0.08, zF + 0.03, rimMat);
     box(0.06, 0.16, floorD + 0.06, xL - 0.03, -0.08, (zB + zF) / 2 + 0.03, rimMat);
 
@@ -327,20 +267,14 @@
     var doorX = -3.2;
     var doorX0 = doorX - doorW / 2;
     var doorX1 = doorX + doorW / 2;
-
     if (doorX0 > xL) box(doorX0 - xL, H, T, (xL + doorX0) / 2, H / 2, zB);
     box(doorW, H - doorH, T, doorX, doorH + (H - doorH) / 2, zB);
     if (xR > doorX1) box(xR - doorX1, H, T, (doorX1 + xR) / 2, H / 2, zB);
     box(T, H, T, xR, H / 2, zB);
 
-    var panelMat = new THREE.MeshStandardMaterial({
-      color: 0x1c1c1e,
-      roughness: 0.85,
-      metalness: 0.03
-    });
+    var panelMat = new THREE.MeshStandardMaterial({ color: 0x1c1c1e, roughness: 0.85, metalness: 0.03 });
     box(xR - xL - 0.3, 0.06, 0.04, (xL + xR) / 2, 1.4, zB + T / 2 + 0.02, panelMat);
     box(xR - xL - 0.3, 0.04, 0.04, (xL + xR) / 2, 0.35, zB + T / 2 + 0.02, panelMat);
-
     box(0.06, doorH + 0.08, T + 0.02, doorX0, doorH / 2, zB, frameMat);
     box(0.06, doorH + 0.08, T + 0.02, doorX1, doorH / 2, zB, frameMat);
     box(doorW, 0.06, T + 0.02, doorX, doorH, zB, frameMat);
@@ -358,8 +292,6 @@
     box(T, benchH, winLen, xR, benchH / 2, (winZ0 + winZ1) / 2);
     box(T, H, winZ0 - zB, xR, H / 2, (zB + winZ0) / 2);
     box(T, H, zF - winZ1, xR, H / 2, (winZ1 + zF) / 2);
-
-    // Inward bench platform
     box(1.15, benchH, winLen - 0.15, xR - 0.6, benchH / 2, (winZ0 + winZ1) / 2, benchMat);
 
     var winBottom = benchH + 0.02;
@@ -368,157 +300,156 @@
     var winCY = winBottom + winH / 2;
     var winCZ = (winZ0 + winZ1) / 2;
 
-    // ========== ACOUSTIC WOOD SLAT WALL ==========
-    var feltMat = new THREE.MeshStandardMaterial({
-      color: 0x0c0c0e,
-      roughness: 0.98,
-      metalness: 0.0
-    });
+    // --- Acoustic felt + slats ---
     var felt = new THREE.Mesh(
       new THREE.BoxGeometry(0.04, winH - 0.06, winLen - 0.1),
-      feltMat
+      new THREE.MeshStandardMaterial({ color: 0x0c0c0e, roughness: 0.98, metalness: 0 })
     );
     felt.position.set(xR - 0.02, winCY, winCZ);
     felt.receiveShadow = true;
     root.add(felt);
 
     var slatCount = 28;
-    var slatW = 0.07;
-    var slatD = 0.045;
     var usableZ = winLen - 0.25;
     var gap = usableZ / slatCount;
-    var woodMat = new THREE.MeshStandardMaterial({
-      color: 0x3a2a1c,
-      roughness: 0.72,
-      metalness: 0.04
-    });
-    var slatGeo = new THREE.BoxGeometry(slatD, winH - 0.12, slatW);
+    var woodMat = new THREE.MeshStandardMaterial({ color: 0x3a2a1c, roughness: 0.7, metalness: 0.05 });
+    var slatGeo = new THREE.BoxGeometry(0.05, winH - 0.12, 0.07);
     var slats = new THREE.InstancedMesh(slatGeo, woodMat, slatCount);
+    slats.castShadow = true;
     slats.receiveShadow = true;
     var dummy = new THREE.Object3D();
     for (var si = 0; si < slatCount; si++) {
-      var sz = winZ0 + 0.12 + gap * (si + 0.5);
-      dummy.position.set(xR - 0.06, winCY, sz);
+      dummy.position.set(xR - 0.07, winCY, winZ0 + 0.12 + gap * (si + 0.5));
       dummy.updateMatrix();
       slats.setMatrixAt(si, dummy.matrix);
     }
     slats.instanceMatrix.needsUpdate = true;
     root.add(slats);
 
-    var ledStrip = new THREE.PointLight(0xffb070, 0.55, 7, 1.6);
-    ledStrip.name = 'slat-led';
-    ledStrip.position.set(xR - 0.35, winTop - 0.15, winCZ);
-    root.add(ledStrip);
-    var ledStrip2 = new THREE.PointLight(0xffa060, 0.28, 5, 1.5);
-    ledStrip2.position.set(xR - 0.3, winCY, winCZ);
-    root.add(ledStrip2);
+    // Top grazing spots
+    var topSpot1 = new THREE.SpotLight(0xffc090, 1.4, 8, Math.PI / 5, 0.55, 1.2);
+    topSpot1.position.set(xR - 0.9, winTop - 0.05, winCZ - winLen * 0.22);
+    topSpot1.target.position.set(xR - 0.05, winCY - 0.5, winCZ - winLen * 0.22);
+    root.add(topSpot1);
+    root.add(topSpot1.target);
+    var topSpot2 = new THREE.SpotLight(0xffb070, 1.2, 8, Math.PI / 5, 0.55, 1.2);
+    topSpot2.position.set(xR - 0.9, winTop - 0.05, winCZ + winLen * 0.22);
+    topSpot2.target.position.set(xR - 0.05, winCY - 0.5, winCZ + winLen * 0.22);
+    root.add(topSpot2);
+    root.add(topSpot2.target);
+    var edgeFill = new THREE.PointLight(0xffa060, 0.35, 6, 1.5);
+    edgeFill.position.set(xR - 0.4, winTop - 0.2, winCZ);
+    root.add(edgeFill);
 
+    // Neon </> sign
+    var neonColor = 0xff2a6a;
     var neonMat = new THREE.MeshStandardMaterial({
-      color: 0xff3344,
-      emissive: 0xff2030,
-      emissiveIntensity: 1.2,
-      roughness: 0.35,
-      metalness: 0.1
+      color: neonColor,
+      emissive: neonColor,
+      emissiveIntensity: 2.0,
+      roughness: 0.25,
+      metalness: 0.15
     });
-    var neonTube = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.03, 0.03, 1.1, 12),
-      neonMat
-    );
-    neonTube.rotation.z = Math.PI / 2;
-    neonTube.position.set(xR - 0.1, winCY + 0.15, winCZ);
-    root.add(neonTube);
-    var capMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1e, roughness: 0.5, metalness: 0.3 });
-    [-0.58, 0.58].forEach(function (ox) {
-      var cap = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.08, 0.08), capMat);
-      cap.position.set(xR - 0.1, winCY + 0.15, winCZ + ox);
-      root.add(cap);
-    });
-    var neonLight = new THREE.PointLight(0xff3040, 0.45, 5, 1.4);
+    var neonGroup = new THREE.Group();
+    neonGroup.position.set(xR - 0.14, winCY + 0.1, winCZ);
+    function neonSeg(len, rx, ry, rz, px, py, pz) {
+      var m = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, len, 10), neonMat);
+      m.rotation.set(rx, ry, rz);
+      m.position.set(px, py, pz);
+      neonGroup.add(m);
+    }
+    neonSeg(0.55, 0, 0, Math.PI / 2.6, 0, 0.12, -0.55);
+    neonSeg(0.55, 0, 0, -Math.PI / 2.6, 0, -0.12, -0.55);
+    neonSeg(0.85, 0, 0, -0.45, 0, 0, -0.05);
+    neonSeg(0.55, 0, 0, -Math.PI / 2.6, 0, 0.12, 0.5);
+    neonSeg(0.55, 0, 0, Math.PI / 2.6, 0, -0.12, 0.5);
+    root.add(neonGroup);
+
+    var neonLight = new THREE.PointLight(neonColor, 1.8, 5.5, 1.3);
     neonLight.name = 'neon-accent';
-    neonLight.position.set(xR - 0.45, winCY + 0.15, winCZ);
+    neonLight.position.set(xR - 0.55, winCY + 0.1, winCZ);
     root.add(neonLight);
     __neonLight = neonLight;
+    var neonFill = new THREE.PointLight(0xff6090, 0.5, 4, 1.4);
+    neonFill.position.set(xR - 0.35, winCY - 0.2, winCZ);
+    root.add(neonFill);
 
-    // ========== LOUNGE DAYBED ==========
-    var fabricMat = new THREE.MeshStandardMaterial({
-      color: 0x3a3a40,
-      roughness: 0.9,
-      metalness: 0.02
-    });
-    var cushionTop = new THREE.Mesh(
-      new THREE.BoxGeometry(1.05, 0.12, winLen - 0.28),
-      fabricMat
-    );
-    cushionTop.position.set(xR - 0.62, benchH + 0.08, winCZ);
+    // Daybed — thick oatmeal cushion
+    var fabricMat = new THREE.MeshStandardMaterial({ color: 0xc4b8a8, roughness: 0.88, metalness: 0.02 });
+    var cushionTop = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.18, winLen - 0.28), fabricMat);
+    cushionTop.position.set(xR - 0.62, benchH + 0.11, winCZ);
     cushionTop.castShadow = true;
     cushionTop.receiveShadow = true;
     root.add(cushionTop);
-
-    var cushionEdge = new THREE.Mesh(
-      new THREE.BoxGeometry(1.02, 0.04, winLen - 0.32),
-      new THREE.MeshStandardMaterial({ color: 0x2e2e34, roughness: 0.92, metalness: 0.02 })
+    var cushionBevel = new THREE.Mesh(
+      new THREE.BoxGeometry(1.0, 0.04, winLen - 0.34),
+      new THREE.MeshStandardMaterial({ color: 0xb0a498, roughness: 0.9, metalness: 0.02 })
     );
-    cushionEdge.position.set(xR - 0.62, benchH + 0.15, winCZ);
-    root.add(cushionEdge);
+    cushionBevel.position.set(xR - 0.62, benchH + 0.21, winCZ);
+    root.add(cushionBevel);
+    var cushionY = benchH + 0.22;
 
-    var pillowMat1 = new THREE.MeshStandardMaterial({ color: 0x4a4540, roughness: 0.88, metalness: 0.02 });
-    var pillowMat2 = new THREE.MeshStandardMaterial({ color: 0x2a3038, roughness: 0.88, metalness: 0.02 });
-    var pillow1 = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.32, 0.14), pillowMat1);
-    pillow1.position.set(xR - 0.55, benchH + 0.32, winCZ - winLen * 0.28);
-    pillow1.rotation.y = 0.35;
+    // Pillows left
+    var pillow1 = new THREE.Mesh(
+      new THREE.BoxGeometry(0.42, 0.36, 0.14),
+      new THREE.MeshStandardMaterial({ color: 0x5a554c, roughness: 0.9, metalness: 0.02 })
+    );
+    pillow1.position.set(xR - 0.55, cushionY + 0.2, winCZ - winLen * 0.3);
+    pillow1.rotation.y = 0.28;
     pillow1.rotation.z = -0.12;
     pillow1.castShadow = true;
     root.add(pillow1);
-    var pillow2 = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.28, 0.12), pillowMat2);
-    pillow2.position.set(xR - 0.52, benchH + 0.3, winCZ - winLen * 0.22);
-    pillow2.rotation.y = -0.25;
+    var pillow2 = new THREE.Mesh(
+      new THREE.BoxGeometry(0.36, 0.3, 0.12),
+      new THREE.MeshStandardMaterial({ color: 0x3a4048, roughness: 0.88, metalness: 0.02 })
+    );
+    pillow2.position.set(xR - 0.5, cushionY + 0.18, winCZ - winLen * 0.24);
+    pillow2.rotation.y = -0.18;
+    pillow2.rotation.z = 0.08;
     pillow2.castShadow = true;
     root.add(pillow2);
 
-    var blanketMat = new THREE.MeshStandardMaterial({ color: 0x5a4030, roughness: 0.85, metalness: 0.02 });
-    var blanket = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.06, 0.4), blanketMat);
-    blanket.position.set(xR - 0.55, benchH + 0.2, winCZ + winLen * 0.32);
-    blanket.rotation.y = 0.15;
-    root.add(blanket);
-    var blanketFold = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.18), blanketMat);
-    blanketFold.position.set(xR - 0.55, benchH + 0.26, winCZ + winLen * 0.32);
-    root.add(blanketFold);
-
-    var potMat = new THREE.MeshStandardMaterial({ color: 0xd8d0c4, roughness: 0.55, metalness: 0.05 });
-    var pot = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.07, 0.16, 12), potMat);
-    pot.position.set(xR - 0.45, benchH + 0.26, winCZ + winLen * 0.12);
+    // Books + plant on top (right)
+    var bookColors = [0x2a3040, 0x5a3020, 0x1e3a2a];
+    var bookBaseZ = winCZ + winLen * 0.28;
+    var bookBaseX = xR - 0.5;
+    var bookTopY = cushionY;
+    for (var bi = 0; bi < 3; bi++) {
+      var book = new THREE.Mesh(
+        new THREE.BoxGeometry(0.26, 0.04, 0.18),
+        new THREE.MeshStandardMaterial({ color: bookColors[bi], roughness: 0.65, metalness: 0.06 })
+      );
+      book.position.set(bookBaseX, cushionY + 0.03 + bi * 0.042, bookBaseZ);
+      book.rotation.y = 0.06 * (bi - 1);
+      book.castShadow = true;
+      root.add(book);
+      bookTopY = cushionY + 0.03 + bi * 0.042 + 0.02;
+    }
+    var pot = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.07, 0.055, 0.12, 12),
+      new THREE.MeshStandardMaterial({ color: 0xe8e0d4, roughness: 0.5, metalness: 0.05 })
+    );
+    pot.position.set(bookBaseX, bookTopY + 0.08, bookBaseZ);
     pot.castShadow = true;
     root.add(pot);
     var soil = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.08, 0.08, 0.02, 10),
+      new THREE.CylinderGeometry(0.06, 0.06, 0.015, 10),
       new THREE.MeshStandardMaterial({ color: 0x2a2018, roughness: 0.95 })
     );
-    soil.position.set(xR - 0.45, benchH + 0.34, winCZ + winLen * 0.12);
+    soil.position.set(bookBaseX, bookTopY + 0.14, bookBaseZ);
     root.add(soil);
-    var leafMat = new THREE.MeshStandardMaterial({ color: 0x2d5a3a, roughness: 0.75, metalness: 0.02 });
-    for (var li = 0; li < 5; li++) {
-      var leaf = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.28, 0.01), leafMat);
-      var ang = (li / 5) * Math.PI * 2;
+    var leafMat = new THREE.MeshStandardMaterial({ color: 0x2d6a3a, roughness: 0.7, metalness: 0.02 });
+    for (var li = 0; li < 6; li++) {
+      var leaf = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.16, 0.012), leafMat);
+      var ang = (li / 6) * Math.PI * 2;
       leaf.position.set(
-        xR - 0.45 + Math.cos(ang) * 0.03,
-        benchH + 0.48,
-        winCZ + winLen * 0.12 + Math.sin(ang) * 0.03
+        bookBaseX + Math.cos(ang) * 0.025,
+        bookTopY + 0.22,
+        bookBaseZ + Math.sin(ang) * 0.025
       );
-      leaf.rotation.z = Math.cos(ang) * 0.35;
-      leaf.rotation.x = Math.sin(ang) * 0.25;
+      leaf.rotation.z = Math.cos(ang) * 0.4;
+      leaf.rotation.x = Math.sin(ang) * 0.3;
       root.add(leaf);
-    }
-
-    var bookColors = [0x2a3040, 0x4a3020, 0x1e3a2a];
-    for (var bi = 0; bi < 3; bi++) {
-      var book = new THREE.Mesh(
-        new THREE.BoxGeometry(0.22, 0.035, 0.16),
-        new THREE.MeshStandardMaterial({ color: bookColors[bi], roughness: 0.7, metalness: 0.05 })
-      );
-      book.position.set(xR - 0.5, benchH + 0.2 + bi * 0.038, winCZ + winLen * 0.22);
-      book.rotation.y = 0.08 * (bi - 1);
-      book.castShadow = true;
-      root.add(book);
     }
 
     scene.add(root);
@@ -531,7 +462,7 @@
       requestAnimationFrame(tick);
       var t = performance.now() * 0.001;
       if (__neonLight) {
-        __neonLight.intensity = 0.4 + 0.08 * Math.sin(t * 2.2) + 0.04 * Math.sin(t * 5.1);
+        __neonLight.intensity = 1.6 + 0.25 * Math.sin(t * 2.2) + 0.12 * Math.sin(t * 5.1);
       }
     }
     tick();
@@ -544,11 +475,9 @@
     }
     if (window.__isoViewApplied) return;
     window.__isoViewApplied = true;
-
     controls.target.set(0.3, 1.1, 0.4);
     camera.position.set(-7.5, 6.8, 8.5);
     camera.lookAt(0.3, 1.1, 0.4);
-
     controls.enablePan = false;
     controls.minDistance = 10;
     controls.maxDistance = 18;
@@ -559,7 +488,6 @@
     controls.autoRotate = true;
     controls.autoRotateSpeed = 0.1;
     if (controls.update) controls.update();
-
     setTimeout(function () {
       window.__dioramaBuilt = false;
       removeOriginalWalls();
@@ -579,7 +507,6 @@
       return;
     }
     if (window.__furnitureAdded) return;
-
     function runCreates() {
       if (window.__furnitureAdded) return;
       if (typeof createOfficeChair !== 'function') {
@@ -594,10 +521,9 @@
         console.warn(e);
       }
     }
-
     if (!document.querySelector('script[data-furniture]')) {
       var s = document.createElement('script');
-      s.src = 'furniture.js?v=acoustic1';
+      s.src = 'furniture.js?v=acoustic2';
       s.setAttribute('data-furniture', '1');
       s.onload = runCreates;
       document.body.appendChild(s);
