@@ -1,5 +1,5 @@
 /*
- * Floating media console under </bosst> neon + soundbar + underglow
+ * Interactive neon + floating console decor (plant, books, candle)
  */
 (function () {
   var GOOD_SCENE_URL =
@@ -292,7 +292,6 @@
     box(T, benchH, winLen, xR, benchH / 2, (winZ0 + winZ1) / 2);
     box(T, H, winZ0 - zB, xR, H / 2, (zB + winZ0) / 2);
     box(T, H, zF - winZ1, xR, H / 2, (winZ1 + zF) / 2);
-    // full-length daybed removed — floating console only
 
     var winBottom = benchH + 0.02;
     var winTop = headerBottom;
@@ -339,60 +338,74 @@
     edgeFill.position.set(xR - 0.4, winTop - 0.2, winCZ);
     root.add(edgeFill);
 
-    function makeNeonLogoTexture() {
-      var c = document.createElement('canvas');
-      c.width = 1536;
-      c.height = 512;
-      var ctx = c.getContext('2d');
-      ctx.clearRect(0, 0, 1536, 512);
-      ctx.font = '900 200px "JetBrains Mono", Consolas, "Courier New", monospace';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.shadowColor = '#00f5ff';
-      ctx.shadowBlur = 36;
-      ctx.fillStyle = '#00c8e0';
-      ctx.fillText('</bosst>', 768, 270);
-      ctx.shadowBlur = 18;
-      ctx.fillStyle = '#00f5ff';
-      ctx.fillText('</bosst>', 768, 270);
-      ctx.shadowBlur = 6;
-      ctx.fillStyle = '#e8ffff';
-      ctx.fillText('</bosst>', 768, 270);
-      var tex = new THREE.CanvasTexture(c);
-      if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
-      tex.anisotropy = 8;
-      return tex;
+    // Interactive neon
+    var NEON_PALETTE = [
+      { hex: 0x00f5ff, str: '#00f5ff' },
+      { hex: 0xff007f, str: '#ff007f' },
+      { hex: 0xa855f7, str: '#a855f7' },
+      { hex: 0x39ff14, str: '#39ff14' },
+      { hex: 0xffa600, str: '#ffa600' },
+      { hex: 0xf8fafc, str: '#f8fafc' }
+    ];
+    var neonColorIndex = 0;
+    var neonCanvas = document.createElement('canvas');
+    neonCanvas.width = 1024;
+    neonCanvas.height = 384;
+    var neonCtx = neonCanvas.getContext('2d');
+    var neonTex = new THREE.CanvasTexture(neonCanvas);
+    if (THREE.SRGBColorSpace) neonTex.colorSpace = THREE.SRGBColorSpace;
+    neonTex.anisotropy = 8;
+
+    function drawNeonText(colorStr) {
+      neonCtx.clearRect(0, 0, 1024, 384);
+      neonCtx.font = '900 160px "JetBrains Mono", Consolas, "Courier New", monospace';
+      neonCtx.textAlign = 'center';
+      neonCtx.textBaseline = 'middle';
+      neonCtx.shadowColor = colorStr;
+      neonCtx.shadowBlur = 36;
+      neonCtx.fillStyle = colorStr;
+      neonCtx.fillText('</bosst>', 512, 200);
+      neonCtx.shadowBlur = 16;
+      neonCtx.fillStyle = colorStr;
+      neonCtx.fillText('</bosst>', 512, 200);
+      neonCtx.shadowBlur = 4;
+      neonCtx.fillStyle = '#ffffff';
+      neonCtx.fillText('</bosst>', 512, 200);
+      neonTex.needsUpdate = true;
     }
+    drawNeonText(NEON_PALETTE[0].str);
 
     var neonGroup = new THREE.Group();
     neonGroup.rotation.y = -Math.PI / 2;
     neonGroup.position.set(xR - 0.13, winCY + 0.15, winCZ);
 
-    var plateW = 4.0;
-    var plateH = 1.5;
+    var plateW = 3.8;
+    var plateH = 1.4;
     var plateMat;
     try {
       plateMat = new THREE.MeshPhysicalMaterial({
         color: 0x12141a,
-        roughness: 0.12,
+        roughness: 0.1,
         metalness: 0.08,
-        transmission: 0.45,
+        transmission: 0.75,
         transparent: true,
-        opacity: 0.48,
+        opacity: 0.35,
         thickness: 0.02,
         side: THREE.DoubleSide
       });
     } catch (e) {
       plateMat = new THREE.MeshStandardMaterial({
         color: 0x12141a,
-        roughness: 0.15,
+        roughness: 0.12,
         metalness: 0.1,
         transparent: true,
-        opacity: 0.45,
+        opacity: 0.35,
         side: THREE.DoubleSide
       });
     }
-    neonGroup.add(new THREE.Mesh(new THREE.BoxGeometry(plateW, plateH, 0.025), plateMat));
+    var plate = new THREE.Mesh(new THREE.BoxGeometry(plateW, plateH, 0.025), plateMat);
+    plate.userData = { interactive: true, name: 'neonSign' };
+    neonGroup.add(plate);
 
     var chromeMat = new THREE.MeshStandardMaterial({ color: 0xc0c4cc, roughness: 0.25, metalness: 0.9 });
     [[-plateW * 0.46, plateH * 0.4], [plateW * 0.46, plateH * 0.4], [-plateW * 0.46, -plateH * 0.4], [plateW * 0.46, -plateH * 0.4]].forEach(function (xy) {
@@ -409,7 +422,7 @@
     var logo = new THREE.Mesh(
       new THREE.PlaneGeometry(plateW * 0.9, plateH * 0.75),
       new THREE.MeshBasicMaterial({
-        map: makeNeonLogoTexture(),
+        map: neonTex,
         transparent: true,
         toneMapped: false,
         side: THREE.DoubleSide,
@@ -417,16 +430,34 @@
       })
     );
     logo.position.set(0, 0, 0.015);
+    logo.userData = { interactive: true, name: 'neonSign' };
     neonGroup.add(logo);
 
-    var neonLight = new THREE.PointLight(0x00f5ff, 2.4, 7.5, 1.2);
+    var neonLight = new THREE.PointLight(NEON_PALETTE[0].hex, 2.4, 7.5, 1.2);
     neonLight.name = 'neon-accent';
     neonLight.position.set(0, 0, 0.55);
     neonGroup.add(neonLight);
     __neonLight = neonLight;
+
+    function cycleNeonColor() {
+      neonColorIndex = (neonColorIndex + 1) % NEON_PALETTE.length;
+      var c = NEON_PALETTE[neonColorIndex];
+      drawNeonText(c.str);
+      if (__neonLight) {
+        __neonLight.color.setHex(c.hex);
+        __neonLight.intensity = 3.8;
+        setTimeout(function () {
+          if (__neonLight) __neonLight.intensity = 2.2;
+        }, 120);
+      }
+      if (window.showToast) window.showToast('Neon: ' + c.str);
+      if (window.playUiSound) window.playUiSound('click');
+    }
+    window.__cycleNeonColor = cycleNeonColor;
+    neonGroup.userData = { interactive: true, name: 'neonSign' };
     root.add(neonGroup);
 
-    // Floating media console under neon
+    // Floating media console
     var consoleW = 2.8;
     var consoleH = 0.45;
     var consoleD = 0.55;
@@ -434,15 +465,8 @@
     var consoleX = xR - consoleD / 2 - 0.05;
     var consoleZ = winCZ;
 
-    var consoleMat = new THREE.MeshStandardMaterial({
-      color: 0x18181b,
-      roughness: 0.4,
-      metalness: 0.1
-    });
-    var consoleBody = new THREE.Mesh(
-      new THREE.BoxGeometry(consoleD, consoleH, consoleW),
-      consoleMat
-    );
+    var consoleMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.4, metalness: 0.1 });
+    var consoleBody = new THREE.Mesh(new THREE.BoxGeometry(consoleD, consoleH, consoleW), consoleMat);
     consoleBody.position.set(consoleX, consoleY, consoleZ);
     consoleBody.castShadow = true;
     consoleBody.receiveShadow = true;
@@ -457,15 +481,8 @@
 
     var seamMat = new THREE.MeshBasicMaterial({ color: 0x09090b });
     [-1, 0, 1].forEach(function (si) {
-      var seam = new THREE.Mesh(
-        new THREE.BoxGeometry(0.012, consoleH * 0.85, 0.01),
-        seamMat
-      );
-      seam.position.set(
-        consoleX - consoleD / 2 - 0.002,
-        consoleY,
-        consoleZ + si * (consoleW / 6)
-      );
+      var seam = new THREE.Mesh(new THREE.BoxGeometry(0.012, consoleH * 0.85, 0.01), seamMat);
+      seam.position.set(consoleX - consoleD / 2 - 0.002, consoleY, consoleZ + si * (consoleW / 6));
       root.add(seam);
     });
 
@@ -500,14 +517,118 @@
         roughness: 0.3
       })
     );
-    led.position.set(
-      soundbar.position.x - barD / 2 - 0.01,
-      soundbar.position.y,
-      soundbar.position.z
-    );
+    led.position.set(soundbar.position.x - barD / 2 - 0.01, soundbar.position.y, soundbar.position.z);
     root.add(led);
 
+    // Decor: planter left, books + candle right
+    var topSurfaceY = consoleY + consoleH / 2 + 0.02;
+    var pot = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.12, 0.12, 0.22, 24),
+      new THREE.MeshStandardMaterial({ color: 0xe8e4dc, roughness: 0.45, metalness: 0.05 })
+    );
+    pot.position.set(consoleX - 0.05, topSurfaceY + 0.11, consoleZ - consoleW * 0.32);
+    pot.castShadow = true;
+    root.add(pot);
+    var soil = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.1, 0.1, 0.02, 16),
+      new THREE.MeshStandardMaterial({ color: 0x2a2018, roughness: 0.95 })
+    );
+    soil.position.set(pot.position.x, topSurfaceY + 0.21, pot.position.z);
+    root.add(soil);
+    var leafMat = new THREE.MeshStandardMaterial({ color: 0x1e5a32, roughness: 0.5, metalness: 0.05 });
+    for (var li = 0; li < 4; li++) {
+      var leaf = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.38, 0.012), leafMat);
+      var ang = (li / 4) * Math.PI * 2 + 0.3;
+      leaf.position.set(
+        pot.position.x + Math.cos(ang) * 0.04,
+        topSurfaceY + 0.38,
+        pot.position.z + Math.sin(ang) * 0.04
+      );
+      leaf.rotation.z = Math.cos(ang) * 0.28;
+      leaf.rotation.x = Math.sin(ang) * 0.22;
+      leaf.castShadow = true;
+      root.add(leaf);
+    }
+
+    var bookZ = consoleZ + consoleW * 0.28;
+    var book1 = new THREE.Mesh(
+      new THREE.BoxGeometry(0.28, 0.04, 0.4),
+      new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.7, metalness: 0.05 })
+    );
+    book1.position.set(consoleX - 0.05, topSurfaceY + 0.02, bookZ);
+    book1.castShadow = true;
+    root.add(book1);
+    var book2 = new THREE.Mesh(
+      new THREE.BoxGeometry(0.26, 0.035, 0.36),
+      new THREE.MeshStandardMaterial({ color: 0xd4c4a8, roughness: 0.75, metalness: 0.03 })
+    );
+    book2.position.set(consoleX - 0.05, topSurfaceY + 0.06, bookZ);
+    book2.rotation.y = 0.09;
+    book2.castShadow = true;
+    root.add(book2);
+
+    var candleMat;
+    try {
+      candleMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffaa44,
+        roughness: 0.15,
+        metalness: 0.05,
+        transmission: 0.55,
+        transparent: true,
+        opacity: 0.7,
+        thickness: 0.05
+      });
+    } catch (e) {
+      candleMat = new THREE.MeshStandardMaterial({
+        color: 0xffaa44,
+        roughness: 0.2,
+        metalness: 0.05,
+        transparent: true,
+        opacity: 0.65
+      });
+    }
+    var candle = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.08, 16), candleMat);
+    candle.position.set(consoleX - 0.05, topSurfaceY + 0.12, bookZ);
+    root.add(candle);
+    var candleLight = new THREE.PointLight(0xffaa44, 0.4, 0.8, 1.5);
+    candleLight.position.set(consoleX - 0.05, topSurfaceY + 0.14, bookZ);
+    root.add(candleLight);
+
     scene.add(root);
+  }
+
+  function patchNeonClick() {
+    if (window.__neonClickPatched) return;
+    if (typeof onPointerDown !== 'function' || typeof raycaster === 'undefined') {
+      setTimeout(patchNeonClick, 250);
+      return;
+    }
+    window.__neonClickPatched = true;
+    var _origPointerDown = onPointerDown;
+    onPointerDown = function (event) {
+      try {
+        if (typeof raycaster !== 'undefined' && typeof camera !== 'undefined' && scene) {
+          var rect = renderer.domElement.getBoundingClientRect();
+          var mouse = new THREE.Vector2(
+            ((event.clientX - rect.left) / rect.width) * 2 - 1,
+            -((event.clientY - rect.top) / rect.height) * 2 + 1
+          );
+          raycaster.setFromCamera(mouse, camera);
+          var hits = raycaster.intersectObjects(scene.children, true);
+          for (var i = 0; i < hits.length; i++) {
+            var o = hits[i].object;
+            while (o && o !== scene) {
+              if (o.userData && o.userData.name === 'neonSign') {
+                if (window.__cycleNeonColor) window.__cycleNeonColor();
+                return;
+              }
+              o = o.parent;
+            }
+          }
+        }
+      } catch (err) {}
+      return _origPointerDown.apply(this, arguments);
+    };
   }
 
   function startNeonLoop() {
@@ -517,7 +638,8 @@
       requestAnimationFrame(tick);
       var t = performance.now() * 0.001;
       if (__neonLight) {
-        __neonLight.intensity = 2.2 + 0.25 * Math.sin(t * 2.2) + 0.12 * Math.sin(t * 5.1);
+        __neonLight.intensity = Math.min(__neonLight.intensity, 2.4) * 0.98 +
+          (2.2 + 0.2 * Math.sin(t * 2.2) + 0.1 * Math.sin(t * 5.1)) * 0.02;
       }
     }
     tick();
@@ -551,6 +673,7 @@
       placeProps();
       applyBalancedLighting();
       startNeonLoop();
+      patchNeonClick();
       setTimeout(placeProps, 500);
       setTimeout(placeProps, 1200);
     }, 280);
@@ -578,7 +701,7 @@
     }
     if (!document.querySelector('script[data-furniture]')) {
       var s = document.createElement('script');
-      s.src = 'furniture.js?v=console1';
+      s.src = 'furniture.js?v=neon2';
       s.setAttribute('data-furniture', '1');
       s.onload = runCreates;
       document.body.appendChild(s);
