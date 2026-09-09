@@ -1,5 +1,5 @@
 /*
- * Layout: back-wall workstation (slats + floating desk + neon)
+ * Layout: clean back wall + floating shelf + neon + desk bias + rug
  *         right-wall architectural window + curtains + sun
  * Interactive meshes from original scene are ONLY repositioned.
  */
@@ -9,13 +9,13 @@
 
   var H = 5.8;
   var T = 0.22;
-  var WALL = 0x141416;
+  var WALL = 0x1d1e22;
   var xL = -4.8;
   var xR = 4.4;
   var zB = -2.7;
   var zF = 4.2;
 
-  var DESK_X = 0.85;
+  var DESK_X = 0.2;
   var DESK_Z = zB + 0.85;
   var CONSOLE_W = 2.9;
   var CONSOLE_D = 0.75;
@@ -168,7 +168,6 @@
     });
 
     if (typeof jukebox !== 'undefined' && jukebox) {
-      // Front-left, facing into the room (clears back-right corner)
       jukebox.position.set(-3.55, 0, 2.9);
       jukebox.rotation.y = Math.PI / 2;
     }
@@ -194,7 +193,7 @@
     var root = new THREE.Group();
     root.name = 'diorama-walls';
 
-    var wallMat = new THREE.MeshStandardMaterial({ color: WALL, roughness: 0.92, metalness: 0.02 });
+    var wallMat = new THREE.MeshStandardMaterial({ color: WALL, roughness: 0.85, metalness: 0.02 });
     var frameMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.55, metalness: 0.2 });
     var doorMat = new THREE.MeshStandardMaterial({ color: 0x101012, roughness: 0.78, metalness: 0.04 });
     var metalMat = new THREE.MeshStandardMaterial({ color: 0x9a9aa0, roughness: 0.3, metalness: 0.8 });
@@ -218,78 +217,42 @@
     floor.receiveShadow = true;
     root.add(floor);
 
-    // ---- Full-wall wood slats + concealed jib door ----
+    // ---- Clean matte back wall + flush door ----
     var doorW = 1.0;
     var doorH = 2.4;
     var doorX = -3.15;
     var doorX0 = doorX - doorW / 2;
     var doorX1 = doorX + doorW / 2;
-    var doorBottom = 0.0;
-    var doorTop = doorH;
 
     box(xR - xL, H, T, (xL + xR) / 2, H / 2, zB);
 
-    var feltW = xR - xL - 0.04;
-    var feltH = H - 0.04;
-    var felt = new THREE.Mesh(
-      new THREE.BoxGeometry(feltW, feltH, 0.04),
-      new THREE.MeshStandardMaterial({ color: 0x0c0c0e, roughness: 0.98, metalness: 0 })
-    );
-    felt.position.set((xL + xR) / 2, H / 2, zB + T / 2 + 0.03);
-    root.add(felt);
+    var doorPanelMat = new THREE.MeshStandardMaterial({ color: 0x1a1b1f, roughness: 0.82, metalness: 0.04 });
+    box(doorW - 0.04, doorH - 0.04, 0.04, doorX, doorH / 2, zB + T / 2 + 0.025, doorPanelMat);
 
-    var slatCount = 52;
-    var margin = 0.08;
-    var usableW = feltW - margin * 2;
-    var gap = usableW / slatCount;
-    var woodMat = new THREE.MeshStandardMaterial({ color: 0x3a2a1c, roughness: 0.7, metalness: 0.05 });
-    var slatGeo = new THREE.BoxGeometry(0.065, feltH - 0.06, 0.05);
-    var slats = new THREE.InstancedMesh(slatGeo, woodMat, slatCount);
-    var dummy = new THREE.Object3D();
-    var slatZ = zB + T / 2 + 0.08;
-    for (var si = 0; si < slatCount; si++) {
-      dummy.position.set(xL + margin + gap * (si + 0.5), H / 2, slatZ);
-      dummy.updateMatrix();
-      slats.setMatrixAt(si, dummy.matrix);
-    }
-    slats.instanceMatrix.needsUpdate = true;
-    root.add(slats);
-
-    var seamMat = new THREE.MeshStandardMaterial({ color: 0x050506, roughness: 0.9, metalness: 0.1 });
-    var seam = 0.015;
-    var seamZ = slatZ + 0.028;
-    var topSeam = new THREE.Mesh(new THREE.BoxGeometry(doorW + seam * 2, seam, 0.02), seamMat);
-    topSeam.position.set(doorX, doorTop + seam / 2, seamZ);
-    root.add(topSeam);
-    var botSeam = new THREE.Mesh(new THREE.BoxGeometry(doorW + seam * 2, seam, 0.02), seamMat);
-    botSeam.position.set(doorX, doorBottom + seam / 2, seamZ);
-    root.add(botSeam);
-    var leftSeam = new THREE.Mesh(new THREE.BoxGeometry(seam, doorH, 0.02), seamMat);
-    leftSeam.position.set(doorX0 - seam / 2, doorH / 2, seamZ);
-    root.add(leftSeam);
-    var rightSeam = new THREE.Mesh(new THREE.BoxGeometry(seam, doorH, 0.02), seamMat);
-    rightSeam.position.set(doorX1 + seam / 2, doorH / 2, seamZ);
-    root.add(rightSeam);
+    var frameSlim = new THREE.MeshStandardMaterial({ color: 0x2a2b30, roughness: 0.5, metalness: 0.25 });
+    box(0.03, doorH + 0.04, 0.05, doorX0, doorH / 2, zB + T / 2 + 0.02, frameSlim);
+    box(0.03, doorH + 0.04, 0.05, doorX1, doorH / 2, zB + T / 2 + 0.02, frameSlim);
+    box(doorW + 0.06, 0.03, 0.05, doorX, doorH, zB + T / 2 + 0.02, frameSlim);
 
     var handleMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.35, metalness: 0.7 });
-    var handle = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.32, 0.025), handleMat);
-    handle.position.set(doorX1 - 0.04, doorH * 0.48, seamZ + 0.02);
+    var handle = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.28, 0.025), handleMat);
+    handle.position.set(doorX1 - 0.06, doorH * 0.48, zB + T / 2 + 0.06);
     root.add(handle);
 
-    var doorLight = new THREE.SpotLight(0xffeedd, 1.5, 4.0, Math.PI / 3.5, 0.85, 1.4);
+    var doorLight = new THREE.SpotLight(0xffeedd, 1.4, 3.8, Math.PI / 3.5, 0.85, 1.4);
     doorLight.position.set(doorX, 0.04, zB + 0.06);
     doorLight.target.position.set(doorX, 0, zB + 1.5);
     root.add(doorLight);
     root.add(doorLight.target);
-    var doorFill = new THREE.PointLight(0xffeedd, 0.4, 2.2, 1.6);
+    var doorFill = new THREE.PointLight(0xffeedd, 0.35, 2.0, 1.6);
     doorFill.position.set(doorX, 0.06, zB + 0.18);
     root.add(doorFill);
     var crack = new THREE.Mesh(
-      new THREE.PlaneGeometry(doorW * 0.92, 0.03),
+      new THREE.PlaneGeometry(doorW * 0.9, 0.028),
       new THREE.MeshBasicMaterial({
         color: 0xffeedd,
         transparent: true,
-        opacity: 0.5,
+        opacity: 0.45,
         side: THREE.DoubleSide,
         depthWrite: false
       })
@@ -297,6 +260,15 @@
     crack.rotation.x = -Math.PI / 2;
     crack.position.set(doorX, 0.012, zB + T / 2 + 0.1);
     root.add(crack);
+
+    // Plush workspace rug
+    var rug = new THREE.Mesh(
+      new THREE.BoxGeometry(3.4, 0.015, 2.6),
+      new THREE.MeshStandardMaterial({ color: 0xc8baa7, roughness: 1.0, metalness: 0.0 })
+    );
+    rug.position.set(DESK_X, 0.01, DESK_Z + 0.55);
+    rug.receiveShadow = true;
+    root.add(rug);
 
     var consoleMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.4, metalness: 0.1 });
     var consoleBody = new THREE.Mesh(new THREE.BoxGeometry(CONSOLE_W, CONSOLE_H, CONSOLE_D), consoleMat);
@@ -449,6 +421,67 @@
     markNeon(logo);
     neonGroup.userData = { interactive: true, name: 'neonSign', onClick: cycleNeonColor };
     root.add(neonGroup);
+
+    // ---- Floating wood shelf above neon ----
+    var shelfW = 2.4;
+    var shelfH = 0.08;
+    var shelfD = 0.26;
+    var shelfY = 4.55;
+    var shelfZ = zB + T / 2 + shelfD / 2 + 0.04;
+    var oakMat = new THREE.MeshStandardMaterial({ color: 0x9a6b43, roughness: 0.5, metalness: 0.05 });
+    var shelf = new THREE.Mesh(new THREE.BoxGeometry(shelfW, shelfH, shelfD), oakMat);
+    shelf.position.set(DESK_X, shelfY, shelfZ);
+    shelf.castShadow = true;
+    shelf.receiveShadow = true;
+    root.add(shelf);
+    var shelfLip = new THREE.Mesh(
+      new THREE.BoxGeometry(shelfW + 0.02, 0.02, shelfD + 0.02),
+      new THREE.MeshStandardMaterial({ color: 0x8a5c38, roughness: 0.45, metalness: 0.08 })
+    );
+    shelfLip.position.set(DESK_X, shelfY + shelfH / 2 + 0.01, shelfZ);
+    root.add(shelfLip);
+
+    var potMat = new THREE.MeshStandardMaterial({ color: 0xf2f0ea, roughness: 0.7, metalness: 0.0 });
+    var leafMat = new THREE.MeshStandardMaterial({ color: 0x3d6b45, roughness: 0.55, metalness: 0.0 });
+    function makePot(px) {
+      var g = new THREE.Group();
+      var pot = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.1, 16), potMat);
+      pot.position.y = 0.05;
+      g.add(pot);
+      for (var li = 0; li < 4; li++) {
+        var leaf = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.12, 0.04), leafMat);
+        leaf.position.set((li - 1.5) * 0.025, 0.14, 0);
+        leaf.rotation.z = (li - 1.5) * 0.15;
+        g.add(leaf);
+      }
+      g.position.set(px, shelfY + shelfH / 2, shelfZ);
+      root.add(g);
+    }
+    makePot(DESK_X - shelfW * 0.38);
+    makePot(DESK_X + shelfW * 0.38);
+
+    var clockFace = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.09, 0.09, 0.03, 24),
+      new THREE.MeshStandardMaterial({ color: 0xf5f2eb, roughness: 0.6, metalness: 0.1 })
+    );
+    clockFace.rotation.x = Math.PI / 2;
+    clockFace.position.set(DESK_X, shelfY + shelfH / 2 + 0.05, shelfZ);
+    root.add(clockFace);
+    var clockRim = new THREE.Mesh(
+      new THREE.TorusGeometry(0.09, 0.008, 8, 24),
+      new THREE.MeshStandardMaterial({ color: 0x2a2a2e, roughness: 0.4, metalness: 0.5 })
+    );
+    clockRim.position.set(DESK_X, shelfY + shelfH / 2 + 0.05, shelfZ + 0.01);
+    root.add(clockRim);
+
+    var shelfWash = new THREE.PointLight(0xffeedd, 1.0, 2.2, 1.4);
+    shelfWash.position.set(DESK_X, shelfY - 0.15, shelfZ - 0.05);
+    root.add(shelfWash);
+
+    // Amber bias light behind monitor
+    var biasLight = new THREE.PointLight(0xff9922, 2.2, 3.2, 1.3);
+    biasLight.position.set(DESK_X, CONSOLE_Y + CONSOLE_H / 2 + 0.15, DESK_Z - CONSOLE_D * 0.35);
+    root.add(biasLight);
 
     // RIGHT WALL WINDOW
     var winZ0 = zB + 0.4;
