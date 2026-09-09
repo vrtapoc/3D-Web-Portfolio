@@ -1,6 +1,7 @@
 /*
- * Floor edge cleanup + desk flush to back wall + balloon at right edge
- * Ambience / wall color / dark wood floor kept
+ * Fix: monitor/papers are desk children — only move desk group
+ * Balloon → front-right edge of room (not blocking chair)
+ * Floor edges clean; dark wood + charcoal walls; balanced lighting
  */
 (function () {
   var GOOD_SCENE_URL =
@@ -10,7 +11,6 @@
   var T = 0.22;
   var WALL_COLOR = 0x141416;
 
-  // Room bounds (shared by build + placeProps)
   var xL = -4.8;
   var xR = 4.4;
   var zB = -2.7;
@@ -177,9 +177,10 @@
     windowBounce.position.set(4.0, 2.0, 1.5);
     scene.add(windowBounce);
 
-    var screenLight = new THREE.PointLight(0x00c4e8, 0.7, 3.5);
+    var screenLight = new THREE.PointLight(0x00c4e8, 0.85, 4);
     screenLight.name = 'amb-screen';
-    screenLight.position.set(0, 2.0, -1.6);
+    // Near desk after it's moved to back wall
+    screenLight.position.set(0.15, 2.0, -1.7);
     scene.add(screenLight);
 
     if (scene.background) scene.background = new THREE.Color(0x0a0a0c);
@@ -202,89 +203,97 @@
   function placeProps() {
     if (typeof scene === 'undefined' || !scene) return;
 
-    // Target: desk tight against back wall (zB = -2.7)
-    // Desk depth ~1.2, so desk.z ≈ -1.95 keeps back edge near wall
-    var deskZ = -1.95;
+    // Desk depth 1.2; back edge near wall front (~-2.59)
+    // desk.z - 0.6 ≈ -2.4 → desk.z ≈ -1.8
+    var deskZ = -1.8;
     var deskX = 0.15;
 
-    // desk group (keyboard, mouse, mug, papers on desk are children)
+    // ONLY move the desk group. monitor, keyboard, mouse, mug, papers
+    // are children of desk — moving them separately breaks local positions.
     if (typeof desk !== 'undefined' && desk) {
       desk.position.set(deskX, 0, deskZ);
+      // Ensure monitor local pose is original (0,0,0 on desk)
+      if (typeof monitor !== 'undefined' && monitor && monitor.parent === desk) {
+        monitor.position.set(0, 0, 0);
+        monitor.visible = true;
+      }
+      if (typeof decorations !== 'undefined' && decorations && decorations.parent === desk) {
+        decorations.position.set(0, 0, 0);
+        decorations.visible = true;
+      }
     }
 
-    // monitor is separate group in original scene
-    if (typeof monitor !== 'undefined' && monitor) {
-      monitor.position.set(deskX, 0, deskZ);
-    }
-
-    // floor lamp (right of desk)
+    // Floor lamp is NOT a desk child — move with desk offset
     scene.traverse(function (obj) {
       if (!obj.isGroup) return;
       if (obj.userData && obj.userData.name === 'lamp') {
-        obj.position.set(deskX + 1.55, 0, deskZ + 0.35);
+        obj.position.set(deskX + 1.55, 0, deskZ + 0.4);
       }
     });
-    // fallback by approx original lamp position
     scene.traverse(function (obj) {
       if (!obj.isGroup || !obj.position) return;
       if (
-        Math.abs(obj.position.x - 1.55) < 0.15 &&
-        Math.abs(obj.position.z - 0.55) < 0.15 &&
-        Math.abs(obj.position.y) < 0.05
+        Math.abs(obj.position.x - 1.55) < 0.2 &&
+        Math.abs(obj.position.z - 0.55) < 0.25 &&
+        Math.abs(obj.position.y) < 0.05 &&
+        !(obj.userData && obj.userData.name === 'balloon')
       ) {
-        obj.position.set(deskX + 1.55, 0, deskZ + 0.35);
+        // likely original lamp still at spawn
+        if (obj.children && obj.children.length > 3) {
+          obj.position.set(deskX + 1.55, 0, deskZ + 0.4);
+        }
       }
     });
 
-    // decorations / papers group if separate
-    if (typeof decorations !== 'undefined' && decorations) {
-      decorations.position.z = deskZ - 0.15;
-    }
-
-    // tablet on desk area
-    scene.traverse(function (obj) {
-      if (!obj.isGroup || !obj.position) return;
-      if (
-        Math.abs(obj.position.x - 0.85) < 0.1 &&
-        Math.abs(obj.position.y - 1.2) < 0.15 &&
-        Math.abs(obj.position.z + 0.25) < 0.15
-      ) {
-        obj.position.set(deskX + 0.85, 1.2, deskZ - 0.25);
-      }
-    });
-
-    // Jukebox — right of desk, still near back wall
+    // Jukebox right of desk, near back wall
     if (typeof jukebox !== 'undefined' && jukebox) {
-      jukebox.position.set(2.55, 0, -2.0);
+      jukebox.position.set(2.6, 0, -2.05);
       jukebox.rotation.y = Math.PI;
     } else {
       scene.traverse(function (obj) {
         if (!obj.isGroup) return;
         if (
-          Math.abs(obj.position.x - 2.15) < 0.4 &&
-          Math.abs(obj.position.z + 1.75) < 0.5
+          Math.abs(obj.position.x - 2.15) < 0.5 &&
+          Math.abs(obj.position.z + 1.75) < 0.6
         ) {
-          obj.position.set(2.55, 0, -2.0);
+          obj.position.set(2.6, 0, -2.05);
           obj.rotation.y = Math.PI;
         }
       });
     }
 
-    // Balloon → near right wall edge (front of window bench area)
+    // Balloon → front-right edge of the room (arrow in reference)
+    // Away from chair, near open front of right wall / bench end
     scene.traverse(function (obj) {
       if (!obj.isGroup) return;
       var isBalloon =
         (obj.userData && obj.userData.name === 'balloon') ||
-        (Math.abs(obj.position.x + 1.85) < 0.3 && Math.abs(obj.position.z - 0.4) < 0.3);
-      if (isBalloon) {
-        obj.position.set(3.55, 0, 2.6);
+        (Math.abs(obj.position.x + 1.85) < 0.35 && Math.abs(obj.position.z - 0.4) < 0.35);
+      // also catch already-moved balloon near window
+      if (
+        isBalloon ||
+        (Math.abs(obj.position.x - 3.55) < 0.4 && Math.abs(obj.position.z - 2.6) < 0.5)
+      ) {
+        if (obj.userData && obj.userData.name === 'balloon') {
+          obj.position.set(3.7, 0, 3.5);
+        } else if (
+          Math.abs(obj.position.x + 1.85) < 0.35 ||
+          Math.abs(obj.position.x - 3.55) < 0.4
+        ) {
+          // plantGroup / balloon group
+          var hasSphere = false;
+          obj.traverse(function (c) {
+            if (c.isMesh && c.geometry && c.geometry.type === 'SphereGeometry') hasSphere = true;
+          });
+          if (hasSphere) obj.position.set(3.7, 0, 3.5);
+        }
       }
     });
 
-    // Office chair from furniture.js
+    // Office chair in front of desk
     scene.traverse(function (obj) {
       if (obj.name === 'office-chair') {
-        obj.position.set(deskX + 0.05, 0, deskZ + 1.35);
+        obj.position.set(deskX + 0.05, 0, deskZ + 1.4);
         obj.rotation.y = Math.PI + 0.08;
       }
     });
@@ -338,7 +347,6 @@
       return m;
     }
 
-    // Single clean floor slab — flush to walls, no separate lip pieces that misalign
     var floorW = xR - xL;
     var floorD = zF - zB;
     var woodTex = createRichDarkWoodFloor();
@@ -355,15 +363,12 @@
     floor.receiveShadow = true;
     root.add(floor);
 
-    // Thin underside edge only on open front + open left (visible cutaway rim)
     var rimMat = new THREE.MeshStandardMaterial({
       color: 0x0c0c0e,
       roughness: 0.9,
       metalness: 0.02
     });
-    // Front rim
     box(floorW, 0.16, 0.06, (xL + xR) / 2, -0.08, zF + 0.03, rimMat);
-    // Left rim
     box(0.06, 0.16, floorD + 0.06, xL - 0.03, -0.08, (zB + zF) / 2 + 0.03, rimMat);
 
     var doorW = 1.6;
@@ -469,8 +474,8 @@
       buildRoom();
       placeProps();
       applyBalancedLighting();
-      // Re-run place after furniture loads
-      setTimeout(placeProps, 600);
+      setTimeout(placeProps, 500);
+      setTimeout(placeProps, 1200);
     }, 280);
   }
 
@@ -498,7 +503,7 @@
 
     if (!document.querySelector('script[data-furniture]')) {
       var s = document.createElement('script');
-      s.src = 'furniture.js?v=deskback1';
+      s.src = 'furniture.js?v=deskfix2';
       s.setAttribute('data-furniture', '1');
       s.onload = runCreates;
       document.body.appendChild(s);
