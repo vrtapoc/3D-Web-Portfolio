@@ -191,10 +191,12 @@
       }
     });
 
+    // Relocate jukebox to LEFT foreground area, clear of desk and door path
     if (typeof jukebox !== 'undefined' && jukebox) {
-      jukebox.position.set(-3.55, 0, 2.9);
-      jukebox.rotation.y = Math.PI / 2;
+      jukebox.position.set(-4.0, 0, 2.5);
+      jukebox.rotation.y = Math.PI * 0.38;
     }
+    buildModernOfficeChair();
 
     scene.traverse(function (obj) {
       if (!obj.isGroup) return;
@@ -370,6 +372,107 @@
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.repeat.set(3, 2);
     return tex;
+  }
+  function buildModernOfficeChair() {
+    var existing = scene.getObjectByName('office-chair');
+    if (existing) {
+      scene.remove(existing);
+    }
+
+    var chair = new THREE.Group();
+    chair.name = 'office-chair';
+
+    var gunmetalMat = new THREE.MeshStandardMaterial({
+      color: 0x181a1f,
+      metalness: 0.8,
+      roughness: 0.3
+    });
+    var leatherMat = new THREE.MeshStandardMaterial({
+      color: 0x14161a,
+      roughness: 0.65,
+      metalness: 0.08
+    });
+    var wheelMat = new THREE.MeshStandardMaterial({
+      color: 0x0c0d0f,
+      roughness: 0.6,
+      metalness: 0.1
+    });
+
+    // 5-Star Caster Base
+    var stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.42, 16), gunmetalMat);
+    stem.position.y = 0.26;
+    stem.castShadow = true;
+    chair.add(stem);
+
+    var hub = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.06, 16), gunmetalMat);
+    hub.position.y = 0.1;
+    chair.add(hub);
+
+    for (var i = 0; i < 5; i++) {
+      var angle = (i / 5) * Math.PI * 2;
+      var legLen = 0.42;
+      var leg = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.03, legLen), gunmetalMat);
+      leg.position.set(Math.sin(angle) * (legLen / 2 + 0.04), 0.09, Math.cos(angle) * (legLen / 2 + 0.04));
+      leg.rotation.y = angle;
+      leg.castShadow = true;
+      chair.add(leg);
+
+      var wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.04, 12), wheelMat);
+      wheel.rotation.z = Math.PI / 2;
+      wheel.position.set(Math.sin(angle) * (legLen + 0.04), 0.04, Math.cos(angle) * (legLen + 0.04));
+      wheel.castShadow = true;
+      chair.add(wheel);
+    }
+
+    // Seat mechanism & Contoured Cushion
+    var seatBase = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.04, 0.35), gunmetalMat);
+    seatBase.position.y = 0.48;
+    chair.add(seatBase);
+
+    var seatCushion = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.09, 0.64), leatherMat);
+    seatCushion.position.set(0, 0.54, -0.02);
+    seatCushion.castShadow = true;
+    seatCushion.receiveShadow = true;
+    chair.add(seatCushion);
+
+    // Contoured Backrest with 3 horizontal ribbed segments
+    var spine = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.68, 0.04), gunmetalMat);
+    spine.position.set(0, 0.92, -0.32);
+    spine.rotation.x = -0.1;
+    spine.castShadow = true;
+    chair.add(spine);
+
+    for (var s = 0; s < 3; s++) {
+      var ribW = 0.62 - s * 0.03;
+      var ribH = 0.18;
+      var rib = new THREE.Mesh(new THREE.BoxGeometry(ribW, ribH, 0.07), leatherMat);
+      var ribY = 0.72 + s * 0.22;
+      var ribZ = -0.31 - s * 0.025;
+      rib.position.set(0, ribY, ribZ);
+      rib.rotation.x = -0.1;
+      rib.castShadow = true;
+      rib.receiveShadow = true;
+      chair.add(rib);
+    }
+
+    // Slim Architectural Steel Armrests
+    [-1, 1].forEach(function (side) {
+      var armPost = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.24, 10), gunmetalMat);
+      armPost.position.set(side * 0.34, 0.66, 0.04);
+      armPost.castShadow = true;
+      chair.add(armPost);
+
+      var armPad = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.03, 0.32), leatherMat);
+      armPad.position.set(side * 0.34, 0.78, 0.02);
+      armPad.castShadow = true;
+      chair.add(armPad);
+    });
+
+    // Position tucked behind desk on the rug, rotated ~13 deg toward camera
+    chair.position.set(0.18, 0, -1.08);
+    chair.rotation.y = Math.PI + 0.22;
+    scene.add(chair);
+    return chair;
   }
   function buildRoom() {
     if (!scene || window.__dioramaBuilt) return;
@@ -718,13 +821,22 @@
         try {
           oldMap.dispose();
         } catch (e) {}
+
+      // Realistic neon ignition flicker: 0.2 -> 1.5 -> 0.4 -> 2.4
       if (__neonLight) {
         __neonLight.color.setHex(c.hex);
-        __neonLight.intensity = 3.5;
+        __neonLight.intensity = 0.2;
         setTimeout(function () {
-          if (__neonLight) __neonLight.intensity = 2.2;
-        }, 100);
+          if (__neonLight) __neonLight.intensity = 1.5;
+          setTimeout(function () {
+            if (__neonLight) __neonLight.intensity = 0.4;
+            setTimeout(function () {
+              if (__neonLight) __neonLight.intensity = 2.4;
+            }, 60);
+          }, 60);
+        }, 50);
       }
+
       if (__consoleUnderglow) __consoleUnderglow.color.setHex(c.hex);
       if (__consoleUnderglow2) __consoleUnderglow2.color.setHex(c.hex);
       if (window.showToast) window.showToast('Neon: ' + c.str);
@@ -1068,43 +1180,62 @@
     scene.add(root);
   }
 
-  function patchNeonClick() {
+    function patchNeonClick() {
     if (window.__neonClickPatched) return;
     if (typeof renderer === 'undefined' || !renderer || !renderer.domElement) {
       setTimeout(patchNeonClick, 200);
       return;
     }
     window.__neonClickPatched = true;
+
     var ray = new THREE.Raycaster();
     var mouse = new THREE.Vector2();
-    var last = 0;
-    renderer.domElement.addEventListener(
-      'pointerdown',
-      function (event) {
-        if (!window.__cycleNeonColor) return;
-        if (performance.now() - last < 280) return;
-        try {
-          var rect = renderer.domElement.getBoundingClientRect();
-          mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-          mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-          ray.setFromCamera(mouse, camera);
-          var hits = ray.intersectObjects(scene.children, true);
-          for (var i = 0; i < hits.length; i++) {
-            var t = hits[i].object;
-            while (t && t !== scene) {
-              if (t.userData && t.userData.name === 'neonSign') {
-                last = performance.now();
-                event.stopImmediatePropagation();
-                window.__cycleNeonColor();
-                return;
-              }
-              t = t.parent;
-            }
-          }
-        } catch (e) {}
-      },
-      true
-    );
+    var isHovered = false;
+    var pointerStartPos = new THREE.Vector2();
+
+    function isHitNeon(clientX, clientY) {
+      var rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+      ray.setFromCamera(mouse, camera);
+      var hits = ray.intersectObjects(scene.children, true);
+      for (var i = 0; i < hits.length; i++) {
+        var t = hits[i].object;
+        while (t && t !== scene) {
+          if (t.userData && t.userData.name === 'neonSign') return true;
+          t = t.parent;
+        }
+      }
+      return false;
+    }
+
+    // Hover detection for pointer cursor
+    renderer.domElement.addEventListener('pointermove', function (e) {
+      if (!camera || !scene) return;
+      var hit = isHitNeon(e.clientX, e.clientY);
+      if (hit) {
+        document.body.style.cursor = 'pointer';
+        isHovered = true;
+      } else if (isHovered) {
+        document.body.style.cursor = 'default';
+        isHovered = false;
+      }
+    });
+
+    renderer.domElement.addEventListener('pointerdown', function (e) {
+      pointerStartPos.set(e.clientX, e.clientY);
+    });
+
+    // Reliable click with flicker trigger
+    renderer.domElement.addEventListener('pointerup', function (e) {
+      var dist = Math.hypot(e.clientX - pointerStartPos.x, e.clientY - pointerStartPos.y);
+      if (dist > 8) return; // ignore orbit drags
+      if (isHitNeon(e.clientX, e.clientY)) {
+        if (window.__cycleNeonColor) {
+          window.__cycleNeonColor();
+        }
+      }
+    });
   }
 
   function applyView() {
@@ -1115,11 +1246,12 @@
     if (window.__isoViewApplied) return;
     window.__isoViewApplied = true;
     controls.target.set(0.3, 1.1, 0.4);
-    camera.position.set(-7.5, 6.8, 8.5);
+    // Pulled back by ~22% for wider isometric diorama framing with full negative space
+    camera.position.set(-9.25, 8.05, 10.3);
     camera.lookAt(0.3, 1.1, 0.4);
     controls.enablePan = false;
-    controls.minDistance = 10;
-    controls.maxDistance = 18;
+    controls.minDistance = 12;
+    controls.maxDistance = 26;
     controls.minAzimuthAngle = -Math.PI / 8;
     controls.maxAzimuthAngle = Math.PI / 6;
     controls.minPolarAngle = Math.PI / 3.8;
@@ -1201,6 +1333,7 @@
           window.__dioramaBuilt = false;
           removeOriginalWallsAndFloor();
           buildRoom();
+          buildModernOfficeChair();
           removeLegacyFloorMat();
           placeWorkstation();
           applyLighting();
