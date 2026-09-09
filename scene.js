@@ -116,14 +116,15 @@
     var fill = new THREE.DirectionalLight(0xd0d4e0, 0.35);
     fill.position.set(-5, 5.5, 7);
     scene.add(fill);
-    var sun = new THREE.DirectionalLight(0xffeedd, 2.5);
-    sun.name = 'window-sun';
-    sun.position.set(9, 5, 1);
-    sun.target.position.set(0, 0.5, 0.5);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    scene.add(sun);
-    scene.add(sun.target);
+        var moonlight = new THREE.DirectionalLight(0x4a6a8a, 0.45);
+    moonlight.name = 'window-moonlight';
+    moonlight.position.set(8.5, 4.5, 1.2);
+    moonlight.target.position.set(0, 0.5, 0.5);
+    moonlight.castShadow = true;
+    moonlight.shadow.mapSize.set(2048, 2048);
+    moonlight.shadow.bias = -0.0005;
+    scene.add(moonlight);
+    scene.add(moonlight.target);
     if (renderer) {
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 0.95;
@@ -204,6 +205,43 @@
     });
   }
 
+  function createMidnightSkyTexture() {
+    var canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    var ctx = canvas.getContext('2d');
+    var grad = ctx.createLinearGradient(0, 0, 0, 512);
+    grad.addColorStop(0, '#040711');
+    grad.addColorStop(0.5, '#070f20');
+    grad.addColorStop(1, '#0d172e');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    for (var i = 0; i < 65; i++) {
+      var sx = Math.random() * 512;
+      var sy = Math.random() * 340;
+      var r = Math.random() * 0.9 + 0.3;
+      var a = Math.random() * 0.45 + 0.15;
+      ctx.fillStyle = 'rgba(185, 210, 245, ' + a + ')';
+      ctx.beginPath();
+      ctx.arc(sx, sy, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    var tex = new THREE.CanvasTexture(canvas);
+    return tex;
+  }
+
+  function createRippledCurtainGeo(width, height, waves, amp) {
+    var geo = new THREE.PlaneGeometry(width, height, 36, 16);
+    var pos = geo.attributes.position;
+    for (var i = 0; i < pos.count; i++) {
+      var x = pos.getX(i);
+      var z = Math.sin((x / width) * Math.PI * 2 * waves) * amp;
+      pos.setZ(i, z);
+    }
+    geo.computeVertexNormals();
+    return geo;
+  }
   function createMicroCementBump() {
     var canvas = document.createElement('canvas');
     canvas.width = 512;
@@ -694,48 +732,66 @@
     box(0.05, headerBottom - sillH, 0.05, xR - 0.04, sillH + (headerBottom - sillH) / 2, (winZ0 + winZ1) / 2, winFrameMat);
     box(0.05, 0.05, winLen, xR - 0.04, sillH + (headerBottom - sillH) / 2, (winZ0 + winZ1) / 2, winFrameMat);
 
+        // Midnight sky exterior backdrop (0x040711 with subtle 0x060c1c emissive)
+    var skyTex = createMidnightSkyTexture();
+    var exteriorMat = new THREE.MeshStandardMaterial({
+      color: 0x040711,
+      map: skyTex,
+      emissive: 0x060c1c,
+      emissiveIntensity: 0.45,
+      roughness: 0.92,
+      metalness: 0.0,
+      side: THREE.DoubleSide
+    });
     var exterior = new THREE.Mesh(
-      new THREE.PlaneGeometry(winLen - 0.1, headerBottom - sillH - 0.1),
-      new THREE.MeshBasicMaterial({
-        color: 0xffb070,
-        transparent: true,
-        opacity: 0.85,
-        side: THREE.DoubleSide,
-        toneMapped: false
-      })
+      new THREE.PlaneGeometry(winLen - 0.05, headerBottom - sillH - 0.05),
+      exteriorMat
     );
     exterior.rotation.y = Math.PI / 2;
     exterior.position.set(xR + 0.15, sillH + (headerBottom - sillH) / 2, (winZ0 + winZ1) / 2);
     root.add(exterior);
 
-    var exteriorGlow = new THREE.PointLight(0xffb070, 1.4, 8, 1.2);
-    exteriorGlow.position.set(xR - 0.5, 2.2, (winZ0 + winZ1) / 2);
-    root.add(exteriorGlow);
+    // Subtle cool moonlight interior rim
+    var exteriorMoonRim = new THREE.PointLight(0x4a6a8a, 0.4, 6.0, 1.4);
+    exteriorMoonRim.position.set(xR - 0.25, headerBottom - 0.4, (winZ0 + winZ1) / 2);
+    root.add(exteriorMoonRim);
 
+    // Sleek minimal black ceiling track for curtains
+    var trackMat = new THREE.MeshStandardMaterial({
+      color: 0x0a0a0c,
+      roughness: 0.45,
+      metalness: 0.2
+    });
+    var track = new THREE.Mesh(
+      new THREE.BoxGeometry(0.06, 0.04, winLen + 0.5),
+      trackMat
+    );
+    track.position.set(xR - 0.22, H - 0.03, (winZ0 + winZ1) / 2);
+    root.add(track);
+
+    // Rippled linen curtains with natural drapery S-waves
     var curtainMat = new THREE.MeshStandardMaterial({
-      color: 0xa89880,
-      roughness: 0.95,
+      color: 0x1c1e24,
+      roughness: 0.92,
       metalness: 0.0,
       side: THREE.DoubleSide
     });
-    function makeCurtain(zCenter, w) {
-      var panels = 5;
-      for (var i = 0; i < panels; i++) {
-        var fold = new THREE.Mesh(new THREE.BoxGeometry(0.08, H - 0.3, w / panels - 0.02), curtainMat);
-        fold.position.set(xR - 0.25 - (i % 2) * 0.04, (H - 0.3) / 2, zCenter - w / 2 + (i + 0.5) * (w / panels));
-        fold.castShadow = true;
-        root.add(fold);
-      }
-      var rod = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.02, 0.02, w + 0.1, 10),
-        new THREE.MeshStandardMaterial({ color: 0xb08d57, metalness: 0.8, roughness: 0.3 })
-      );
-      rod.rotation.x = Math.PI / 2;
-      rod.position.set(xR - 0.28, H - 0.2, zCenter);
-      root.add(rod);
+
+    var curtainW = 1.35;
+    var curtainH = H - 0.06;
+
+    function makeRippledCurtain(zCenter) {
+      var geo = createRippledCurtainGeo(curtainW, curtainH, 4.0, 0.045);
+      var cMesh = new THREE.Mesh(geo, curtainMat);
+      cMesh.rotation.y = Math.PI / 2;
+      cMesh.position.set(xR - 0.22, curtainH / 2, zCenter);
+      cMesh.castShadow = true;
+      cMesh.receiveShadow = true;
+      root.add(cMesh);
     }
-    makeCurtain(winZ0 + 0.55, 1.0);
-    makeCurtain(winZ1 - 0.55, 1.0);
+
+    makeRippledCurtain(winZ0 + 0.65);
+    makeRippledCurtain(winZ1 - 0.65);
 
     scene.add(root);
   }
