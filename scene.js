@@ -284,68 +284,59 @@
     crack.position.set(doorX, 0.012, zB + T / 2 + 0.1);
     root.add(crack);
 
-    // Dark studio rug (rounded + border)
-    var rugW = 3.2, rugD = 2.4, rugT = 0.015, cornerR = 0.18;
-    var rugShape = new THREE.Shape();
-    (function () {
-      var w = rugW / 2, d = rugD / 2, r = cornerR;
-      rugShape.moveTo(-w + r, -d);
-      rugShape.lineTo(w - r, -d);
-      rugShape.quadraticCurveTo(w, -d, w, -d + r);
-      rugShape.lineTo(w, d - r);
-      rugShape.quadraticCurveTo(w, d, w - r, d);
-      rugShape.lineTo(-w + r, d);
-      rugShape.quadraticCurveTo(-w, d, -w, d - r);
-      rugShape.lineTo(-w, -d + r);
-      rugShape.quadraticCurveTo(-w, -d, -w + r, -d);
-    })();
-    var rugGeo = new THREE.ExtrudeGeometry(rugShape, { depth: rugT, bevelEnabled: false });
-    rugGeo.rotateX(-Math.PI / 2);
-    var rug = new THREE.Mesh(
-      rugGeo,
-      new THREE.MeshStandardMaterial({ color: 0x0a0b0d, roughness: 0.95, metalness: 0.0 })
-    );
-    rug.position.set(DESK_X, 0.008, DESK_Z + 0.55);
-    rug.userData.isStudioRug = true;
-    rug.receiveShadow = true;
-    root.add(rug);
-    // Layer the border and center rather than relying on an extruded shape
-    // hole, which can triangulate as a filled panel in Three.js r128.
-    var borderShape = rugShape.clone();
-    var borderGeo = new THREE.ExtrudeGeometry(borderShape, { depth: rugT + 0.002, bevelEnabled: false });
+        // Dark studio rug (rounded rectangle with woven border)
+    var rugW = 3.2, rugD = 2.4, rugT = 0.015, cornerR = 0.22;
+    var rugX = DESK_X, rugZ = DESK_Z + 0.55;
+
+    function createRoundedRect(w, d, r) {
+      var s = new THREE.Shape();
+      var hw = w / 2, hd = d / 2;
+      s.moveTo(-hw + r, -hd);
+      s.lineTo(hw - r, -hd);
+      s.quadraticCurveTo(hw, -hd, hw, -hd + r);
+      s.lineTo(hw, hd - r);
+      s.quadraticCurveTo(hw, hd, hw - r, hd);
+      s.lineTo(-hw + r, hd);
+      s.quadraticCurveTo(-hw, hd, -hw, hd - r);
+      s.lineTo(-hw, -hd + r);
+      s.quadraticCurveTo(-hw, -hd, -hw + r, -hd);
+      return s;
+    }
+
+    // Lighter woven border edge (~0.04 thickness)
+    var borderGeo = new THREE.ExtrudeGeometry(createRoundedRect(rugW, rugD, cornerR), {
+      depth: rugT,
+      bevelEnabled: false
+    });
     borderGeo.rotateX(-Math.PI / 2);
-    var border = new THREE.Mesh(
-      borderGeo,
-      new THREE.MeshBasicMaterial({ color: 0x343842 })
-    );
-    border.position.set(DESK_X, 0.009, DESK_Z + 0.55);
+    var borderMat = new THREE.MeshStandardMaterial({
+      color: 0x343842,
+      roughness: 0.95,
+      metalness: 0.0
+    });
+    var border = new THREE.Mesh(borderGeo, borderMat);
+    border.position.set(rugX, 0.008, rugZ);
     border.userData.isStudioRug = true;
+    border.receiveShadow = true;
     root.add(border);
 
-    var inset = 0.04;
-    var innerW = rugW - inset * 2;
-    var innerD = rugD - inset * 2;
-    var innerR = cornerR - inset;
-    var innerShape = new THREE.Shape();
-    (function () {
-      var w = innerW / 2, d = innerD / 2, r = innerR;
-      innerShape.moveTo(-w + r, -d);
-      innerShape.lineTo(w - r, -d);
-      innerShape.quadraticCurveTo(w, -d, w, -d + r);
-      innerShape.lineTo(w, d - r);
-      innerShape.quadraticCurveTo(w, d, w - r, d);
-      innerShape.lineTo(-w + r, d);
-      innerShape.quadraticCurveTo(-w, d, -w, d - r);
-      innerShape.lineTo(-w, -d + r);
-      innerShape.quadraticCurveTo(-w, -d, -w + r, -d);
-    })();
-    var innerGeo = new THREE.ExtrudeGeometry(innerShape, { depth: 0.004, bevelEnabled: false });
+    // Deep heather graphite / dark charcoal inner rug surface
+    var borderInset = 0.04;
+    var innerW = rugW - borderInset * 2;
+    var innerD = rugD - borderInset * 2;
+    var innerR = Math.max(0.04, cornerR - borderInset);
+    var innerGeo = new THREE.ExtrudeGeometry(createRoundedRect(innerW, innerD, innerR), {
+      depth: 0.004,
+      bevelEnabled: false
+    });
     innerGeo.rotateX(-Math.PI / 2);
-    var innerRug = new THREE.Mesh(
-      innerGeo,
-      new THREE.MeshBasicMaterial({ color: 0x22242a })
-    );
-    innerRug.position.set(DESK_X, 0.028, DESK_Z + 0.55);
+    var innerRugMat = new THREE.MeshStandardMaterial({
+      color: 0x22242a,
+      roughness: 0.95,
+      metalness: 0.0
+    });
+    var innerRug = new THREE.Mesh(innerGeo, innerRugMat);
+    innerRug.position.set(rugX, 0.008 + rugT, rugZ);
     innerRug.userData.isStudioRug = true;
     innerRug.receiveShadow = true;
     root.add(innerRug);
@@ -548,13 +539,13 @@
       new THREE.MeshStandardMaterial({ color: 0xf5f2eb, roughness: 0.6, metalness: 0.1 })
     );
     clockFace.rotation.x = Math.PI / 2;
-    clockFace.position.set(DESK_X, shelfY + shelfH / 2 + 0.05, shelfZ);
+    clockFace.position.set(DESK_X, shelfY + shelfH / 2 + 0.09, shelfZ);
     root.add(clockFace);
     var clockRim = new THREE.Mesh(
       new THREE.TorusGeometry(0.09, 0.008, 8, 24),
       new THREE.MeshStandardMaterial({ color: 0x2a2a2e, roughness: 0.4, metalness: 0.5 })
     );
-    clockRim.position.set(DESK_X, shelfY + shelfH / 2 + 0.05, shelfZ + 0.01);
+    clockRim.position.set(DESK_X, shelfY + shelfH / 2 + 0.09, shelfZ + 0.01);
     root.add(clockRim);
 
     var shelfWash = new THREE.PointLight(0xffeedd, 0.8, 2.0, 1.4);
