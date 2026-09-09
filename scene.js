@@ -205,6 +205,24 @@
     });
   }
 
+  function createFiddleLeafGeo(w, l) {
+    var shape = new THREE.Shape();
+    shape.moveTo(0, 0);
+    shape.bezierCurveTo(w * 0.4, l * 0.2, w * 0.6, l * 0.6, w * 0.5, l * 0.85);
+    shape.bezierCurveTo(w * 0.35, l * 0.98, w * 0.12, l, 0, l);
+    shape.bezierCurveTo(-w * 0.12, l, -w * 0.35, l * 0.98, -w * 0.5, l * 0.85);
+    shape.bezierCurveTo(-w * 0.6, l * 0.6, -w * 0.4, l * 0.2, 0, 0);
+    var geo = new THREE.ShapeGeometry(shape, 12);
+    var pos = geo.attributes.position;
+    for (var i = 0; i < pos.count; i++) {
+      var lx = pos.getX(i);
+      var ly = pos.getY(i);
+      var cup = -Math.sin((ly / l) * Math.PI) * 0.04 - (lx * lx / (w * w)) * 0.03;
+      pos.setZ(i, cup);
+    }
+    geo.computeVertexNormals();
+    return geo;
+  }
   function createSkylineBackdropTex() {
     var canvas = document.createElement('canvas');
     canvas.width = 512;
@@ -318,17 +336,6 @@
     return tex;
   }
 
-  function createRippledCurtainGeo(width, height, waves, amp) {
-    var geo = new THREE.PlaneGeometry(width, height, 36, 16);
-    var pos = geo.attributes.position;
-    for (var i = 0; i < pos.count; i++) {
-      var x = pos.getX(i);
-      var z = Math.sin((x / width) * Math.PI * 2 * waves) * amp;
-      pos.setZ(i, z);
-    }
-    geo.computeVertexNormals();
-    return geo;
-  }
   function createMicroCementBump() {
     var canvas = document.createElement('canvas');
     canvas.width = 512;
@@ -811,13 +818,47 @@
     box(T, headerH, winLen, xR, headerBottom + headerH / 2, (winZ0 + winZ1) / 2);
     box(T, sillH, winLen, xR, sillH / 2, (winZ0 + winZ1) / 2);
 
-    var winFrameMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.4, metalness: 0.35 });
-    box(0.08, headerBottom - sillH, 0.08, xR - 0.04, sillH + (headerBottom - sillH) / 2, winZ0, winFrameMat);
-    box(0.08, headerBottom - sillH, 0.08, xR - 0.04, sillH + (headerBottom - sillH) / 2, winZ1, winFrameMat);
-    box(0.08, 0.08, winLen, xR - 0.04, headerBottom, (winZ0 + winZ1) / 2, winFrameMat);
-    box(0.08, 0.08, winLen, xR - 0.04, sillH, (winZ0 + winZ1) / 2, winFrameMat);
-    box(0.05, headerBottom - sillH, 0.05, xR - 0.04, sillH + (headerBottom - sillH) / 2, (winZ0 + winZ1) / 2, winFrameMat);
-    box(0.05, 0.05, winLen, xR - 0.04, sillH + (headerBottom - sillH) / 2, (winZ0 + winZ1) / 2, winFrameMat);
+        // Industrial Loft Window: crisp matte-black anodized steel mullions
+    var winFrameMat = new THREE.MeshStandardMaterial({
+      color: 0x0c0d10,
+      roughness: 0.35,
+      metalness: 0.7
+    });
+
+    // Outer framing
+    box(0.06, headerBottom - sillH, 0.06, xR - 0.03, sillH + (headerBottom - sillH) / 2, winZ0, winFrameMat);
+    box(0.06, headerBottom - sillH, 0.06, xR - 0.03, sillH + (headerBottom - sillH) / 2, winZ1, winFrameMat);
+    box(0.06, 0.06, winLen, xR - 0.03, headerBottom, (winZ0 + winZ1) / 2, winFrameMat);
+    box(0.06, 0.06, winLen, xR - 0.03, sillH, (winZ0 + winZ1) / 2, winFrameMat);
+
+    // Vertical interior mullions dividing into 3 tall bays
+    var bay1Z = winZ0 + winLen * 0.33;
+    var bay2Z = winZ0 + winLen * 0.67;
+    box(0.045, headerBottom - sillH, 0.045, xR - 0.03, sillH + (headerBottom - sillH) / 2, bay1Z, winFrameMat);
+    box(0.045, headerBottom - sillH, 0.045, xR - 0.03, sillH + (headerBottom - sillH) / 2, bay2Z, winFrameMat);
+
+    // Horizontal transom bars
+    var transom1Y = sillH + (headerBottom - sillH) * 0.45;
+    var transom2Y = sillH + (headerBottom - sillH) * 0.85;
+    box(0.04, 0.04, winLen, xR - 0.03, transom1Y, (winZ0 + winZ1) / 2, winFrameMat);
+    box(0.04, 0.04, winLen, xR - 0.03, transom2Y, (winZ0 + winZ1) / 2, winFrameMat);
+
+    // Clear floor-to-ceiling glass pane
+    var glass = new THREE.Mesh(
+      new THREE.PlaneGeometry(winLen - 0.02, headerBottom - sillH - 0.02),
+      new THREE.MeshPhysicalMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.12,
+        roughness: 0.08,
+        metalness: 0.1,
+        reflectivity: 0.85,
+        side: THREE.DoubleSide
+      })
+    );
+    glass.rotation.y = Math.PI / 2;
+    glass.position.set(xR - 0.02, sillH + (headerBottom - sillH) / 2, (winZ0 + winZ1) / 2);
+    root.add(glass);
 
                 // ---- Confined Procedural Night City Skyline strictly framed behind window ----
     var cityGroup = new THREE.Group();
@@ -924,49 +965,93 @@
 
     root.add(cityGroup);
 
-    // 5. Sleek minimal black ceiling track for curtains
-    var trackMat = new THREE.MeshStandardMaterial({
-      color: 0x0a0a0c,
-      roughness: 0.45,
-      metalness: 0.2
-    });
-    var track = new THREE.Mesh(
-      new THREE.BoxGeometry(0.06, 0.04, winLen + 0.2),
-      trackMat
+        // 5. Recessed Ceiling Linear Graze (Top of window)
+    var grazeBar = new THREE.Mesh(
+      new THREE.BoxGeometry(0.04, 0.025, winLen),
+      new THREE.MeshStandardMaterial({
+        color: 0x14161a,
+        emissive: 0xffeedd,
+        emissiveIntensity: 0.6,
+        roughness: 0.4
+      })
     );
-    track.position.set(xR - 0.22, H - 0.03, (winZ0 + winZ1) / 2);
-    root.add(track);
+    grazeBar.position.set(xR - 0.06, headerBottom + 0.015, (winZ0 + winZ1) / 2);
+    root.add(grazeBar);
 
-    // 6. Sheer Rim-Lit Linen Curtains (transparent, subtle transmission of city light)
-    var curtainMat = new THREE.MeshStandardMaterial({
-      color: 0x16181f,
-      roughness: 0.85,
-      metalness: 0.04,
-      transparent: true,
-      opacity: 0.88,
+    var windowGrazeLight = new THREE.SpotLight(0xffeedd, 0.65, 5.5, Math.PI / 3.0, 0.85, 1.3);
+    windowGrazeLight.position.set(xR - 0.1, headerBottom, (winZ0 + winZ1) / 2);
+    windowGrazeLight.target.position.set(xR - 0.05, 0, (winZ0 + winZ1) / 2);
+    root.add(windowGrazeLight);
+    root.add(windowGrazeLight.target);
+
+    // 6. Tall Architectural Plant (Corner Focal Piece where curtain was bunched)
+    var plantGroup = new THREE.Group();
+    plantGroup.name = 'corner-architectural-plant';
+
+    // Minimalist matte black / raw concrete cylinder planter
+    var potMat = new THREE.MeshStandardMaterial({
+      color: 0x141518,
+      roughness: 0.9,
+      metalness: 0.05
+    });
+    var pot = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.20, 0.55, 32), potMat);
+    pot.position.y = 0.275;
+    pot.castShadow = true;
+    pot.receiveShadow = true;
+    plantGroup.add(pot);
+
+    // Soil inside pot
+    var soil = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.21, 0.21, 0.03, 24),
+      new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.98 })
+    );
+    soil.position.y = 0.54;
+    plantGroup.add(soil);
+
+    // Foliage: broad leaves branching gracefully on slender stalks reaching ~1.4 - 1.8 units high
+    var leafMat = new THREE.MeshStandardMaterial({
+      color: 0x182c1f,
+      roughness: 0.45,
+      metalness: 0.05,
       side: THREE.DoubleSide
     });
+    var stalkMat = new THREE.MeshStandardMaterial({
+      color: 0x122218,
+      roughness: 0.6
+    });
 
-    var curtainW = 1.35;
-    var curtainH = H - 0.06;
+    var leafConfigs = [
+      { stalkH: 1.15, angleY: 0.3, leanZ: 0.22, leanX: -0.15, leafW: 0.38, leafL: 0.58, pitch: -0.4 },
+      { stalkH: 1.45, angleY: 1.6, leanZ: -0.18, leanX: -0.25, leafW: 0.42, leafL: 0.64, pitch: -0.35 },
+      { stalkH: 1.65, angleY: 2.8, leanZ: -0.22, leanX: 0.12, leafW: 0.44, leafL: 0.68, pitch: -0.3 },
+      { stalkH: 1.35, angleY: 4.1, leanZ: 0.20, leanX: 0.22, leafW: 0.40, leafL: 0.62, pitch: -0.4 },
+      { stalkH: 1.75, angleY: 5.3, leanZ: 0.05, leanX: -0.18, leafW: 0.45, leafL: 0.72, pitch: -0.25 },
+      { stalkH: 0.95, angleY: 2.2, leanZ: 0.18, leanX: 0.08, leafW: 0.35, leafL: 0.52, pitch: -0.55 }
+    ];
 
-    function makeRippledCurtain(zCenter) {
-      var geo = createRippledCurtainGeo(curtainW, curtainH, 4.0, 0.045);
-      var cMesh = new THREE.Mesh(geo, curtainMat);
-      cMesh.rotation.y = Math.PI / 2;
-      cMesh.position.set(xR - 0.22, curtainH / 2, zCenter);
-      cMesh.castShadow = true;
-      cMesh.receiveShadow = true;
-      root.add(cMesh);
-    }
+    leafConfigs.forEach(function (cfg) {
+      var stalkCurve = new THREE.QuadraticBezierCurve3(
+        new THREE.Vector3(0, 0.54, 0),
+        new THREE.Vector3(cfg.leanX * 0.4, 0.54 + cfg.stalkH * 0.5, cfg.leanZ * 0.4),
+        new THREE.Vector3(cfg.leanX, 0.54 + cfg.stalkH, cfg.leanZ)
+      );
+      var stalkGeo = new THREE.TubeGeometry(stalkCurve, 12, 0.012, 8, false);
+      var stalkMesh = new THREE.Mesh(stalkGeo, stalkMat);
+      stalkMesh.castShadow = true;
+      plantGroup.add(stalkMesh);
 
-    makeRippledCurtain(winZ0 + 0.65);
-    makeRippledCurtain(winZ1 - 0.65);
+      var leafGeo = createFiddleLeafGeo(cfg.leafW, cfg.leafL);
+      var leafMesh = new THREE.Mesh(leafGeo, leafMat);
+      leafMesh.position.set(cfg.leanX, 0.54 + cfg.stalkH, cfg.leanZ);
+      leafMesh.rotation.y = cfg.angleY;
+      leafMesh.rotation.x = cfg.pitch;
+      leafMesh.castShadow = true;
+      leafMesh.receiveShadow = true;
+      plantGroup.add(leafMesh);
+    });
 
-    // Subtle cool rim-light placed just outside the window facing inward to accentuate curtain edges
-    var curtainRimLight = new THREE.PointLight(0x507095, 0.55, 4.5, 1.6);
-    curtainRimLight.position.set(xR + 0.08, headerBottom - 0.5, (winZ0 + winZ1) / 2);
-    root.add(curtainRimLight);
+    plantGroup.position.set(xR - 0.42, 0, winZ1 - 0.58);
+    root.add(plantGroup);
 
     scene.add(root);
   }
