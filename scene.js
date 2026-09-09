@@ -1,5 +1,5 @@
 /*
- * Neon single-fire click + corrected console prop positions
+ * Console centered under neon; underglow syncs to neon color; balloon lowered
  */
 (function () {
   var GOOD_SCENE_URL =
@@ -214,7 +214,7 @@
           isBalloon = true;
         }
       }
-      if (isBalloon) obj.position.set(3.9, 0, 3.6);
+      if (isBalloon) obj.position.set(3.9, -0.28, 3.55);
     });
     scene.traverse(function (obj) {
       if (obj.name === 'office-chair') {
@@ -475,6 +475,8 @@
           if (__neonLight) __neonLight.intensity = 2.2;
         }, 100);
       }
+      if (window.__consoleUnderglow) window.__consoleUnderglow.color.setHex(c.hex);
+      if (window.__consoleUnderglow2) window.__consoleUnderglow2.color.setHex(c.hex);
 
       if (window.showToast) window.showToast('Neon: ' + c.str);
       if (window.playUiSound) window.playUiSound('click');
@@ -497,7 +499,7 @@
     var consoleD = 0.55;
     var consoleY = 0.3 + consoleH / 2;
     var consoleX = xR - consoleD / 2 - 0.05;
-    var consoleZ = winCZ;
+    var consoleZ = winCZ - 0.4;
 
     var consoleMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.4, metalness: 0.1 });
     var consoleBody = new THREE.Mesh(new THREE.BoxGeometry(consoleD, consoleH, consoleW), consoleMat);
@@ -520,16 +522,19 @@
       root.add(seam);
     });
 
-    var underGlow = new THREE.PointLight(0xffa060, 1.0, 2.0, 1.4);
+    var underGlow = new THREE.PointLight(0x00f5ff, 1.0, 2.0, 1.4);
+    underGlow.name = 'console-underglow';
     underGlow.position.set(consoleX - 0.1, 0.15, consoleZ);
     root.add(underGlow);
-    var underGlow2 = new THREE.PointLight(0x00f5ff, 0.25, 1.8, 1.5);
+    var underGlow2 = new THREE.PointLight(0x00f5ff, 0.35, 1.8, 1.5);
+    underGlow2.name = 'console-underglow-2';
     underGlow2.position.set(consoleX - 0.05, 0.12, consoleZ);
     root.add(underGlow2);
+    window.__consoleUnderglow = underGlow;
+    window.__consoleUnderglow2 = underGlow2;
 
     var topSurfaceY = consoleY + consoleH / 2 + 0.02;
 
-    // Centered soundbar
     var barW = 1.15;
     var barH = 0.055;
     var barD = 0.11;
@@ -553,7 +558,6 @@
     led.position.set(soundbar.position.x - barD / 2 - 0.006, soundbar.position.y, soundbar.position.z);
     root.add(led);
 
-    // Left ceramic ring (right stays empty)
     var leftZ = consoleZ - consoleW * 0.32;
     var ringMat = new THREE.MeshStandardMaterial({ color: 0xd6c7b2, roughness: 0.9, metalness: 0.0 });
     var ringBase = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 0.018, 20), ringMat);
@@ -687,7 +691,7 @@
     }
     if (!document.querySelector('script[data-furniture]')) {
       var s = document.createElement('script');
-      s.src = 'furniture.js?v=single1';
+      s.src = 'furniture.js?v=polish3';
       s.setAttribute('data-furniture', '1');
       s.onload = runCreates;
       document.body.appendChild(s);
