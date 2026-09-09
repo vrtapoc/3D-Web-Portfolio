@@ -290,31 +290,9 @@
     rug.position.set(DESK_X, 0.008, DESK_Z + 0.55);
     rug.receiveShadow = true;
     root.add(rug);
-    var borderShape = new THREE.Shape();
-    (function () {
-      var w = rugW / 2, d = rugD / 2, r = cornerR, inset = 0.04;
-      borderShape.moveTo(-w + r, -d);
-      borderShape.lineTo(w - r, -d);
-      borderShape.quadraticCurveTo(w, -d, w, -d + r);
-      borderShape.lineTo(w, d - r);
-      borderShape.quadraticCurveTo(w, d, w - r, d);
-      borderShape.lineTo(-w + r, d);
-      borderShape.quadraticCurveTo(-w, d, -w, d - r);
-      borderShape.lineTo(-w, -d + r);
-      borderShape.quadraticCurveTo(-w, -d, -w + r, -d);
-      var hole = new THREE.Path();
-      var iw = w - inset, id = d - inset, ir = Math.max(0.08, r - inset * 0.5);
-      hole.moveTo(-iw + ir, -id);
-      hole.lineTo(iw - ir, -id);
-      hole.quadraticCurveTo(iw, -id, iw, -id + ir);
-      hole.lineTo(iw, id - ir);
-      hole.quadraticCurveTo(iw, id, iw - ir, id);
-      hole.lineTo(-iw + ir, id);
-      hole.quadraticCurveTo(-iw, id, -iw, id - ir);
-      hole.lineTo(-iw, -id + ir);
-      hole.quadraticCurveTo(-iw, -id, -iw + ir, -id);
-      borderShape.holes.push(hole);
-    })();
+    // Layer the border and center rather than relying on an extruded shape
+    // hole, which can triangulate as a filled panel in Three.js r128.
+    var borderShape = rugShape.clone();
     var borderGeo = new THREE.ExtrudeGeometry(borderShape, { depth: rugT + 0.002, bevelEnabled: false });
     borderGeo.rotateX(-Math.PI / 2);
     var border = new THREE.Mesh(
@@ -323,6 +301,33 @@
     );
     border.position.set(DESK_X, 0.009, DESK_Z + 0.55);
     root.add(border);
+
+    var inset = 0.04;
+    var innerW = rugW - inset * 2;
+    var innerD = rugD - inset * 2;
+    var innerR = cornerR - inset;
+    var innerShape = new THREE.Shape();
+    (function () {
+      var w = innerW / 2, d = innerD / 2, r = innerR;
+      innerShape.moveTo(-w + r, -d);
+      innerShape.lineTo(w - r, -d);
+      innerShape.quadraticCurveTo(w, -d, w, -d + r);
+      innerShape.lineTo(w, d - r);
+      innerShape.quadraticCurveTo(w, d, w - r, d);
+      innerShape.lineTo(-w + r, d);
+      innerShape.quadraticCurveTo(-w, d, -w, d - r);
+      innerShape.lineTo(-w, -d + r);
+      innerShape.quadraticCurveTo(-w, -d, -w + r, -d);
+    })();
+    var innerGeo = new THREE.ExtrudeGeometry(innerShape, { depth: 0.004, bevelEnabled: false });
+    innerGeo.rotateX(-Math.PI / 2);
+    var innerRug = new THREE.Mesh(
+      innerGeo,
+      new THREE.MeshStandardMaterial({ color: 0x22242a, roughness: 0.95, metalness: 0.0 })
+    );
+    innerRug.position.set(DESK_X, 0.028, DESK_Z + 0.55);
+    innerRug.receiveShadow = true;
+    root.add(innerRug);
 
     var consoleMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.4, metalness: 0.1 });
     var consoleBody = new THREE.Mesh(new THREE.BoxGeometry(CONSOLE_W, CONSOLE_H, CONSOLE_D), consoleMat);
