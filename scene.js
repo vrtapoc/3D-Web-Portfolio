@@ -1,6 +1,5 @@
 /*
- * Soft sphere pillows + draped throw + ceramic plant & coffee (bench)
- * Large cyan </bosst> neon on acoustic wall
+ * Bench: square cushions, draped throw, open laptop with IDE screen
  */
 (function () {
   var GOOD_SCENE_URL =
@@ -443,110 +442,123 @@
     var cushionY = benchH + 0.22;
     var cx = xR - 0.58;
 
-    // Cluster 1: soft sphere pillows + draped throw (left)
-    var pillowGeo = new THREE.SphereGeometry(0.32, 16, 16);
+    // Square cushions (back-left)
+    var pillowGeo = new THREE.BoxGeometry(0.55, 0.55, 0.14);
     var pillow1 = new THREE.Mesh(
       pillowGeo,
-      new THREE.MeshStandardMaterial({ color: 0x3a3a40, roughness: 0.95, metalness: 0.02 })
+      new THREE.MeshStandardMaterial({ color: 0x2d3748, roughness: 0.95, metalness: 0 })
     );
-    pillow1.scale.set(1.15, 1.05, 0.38);
-    pillow1.position.set(cx, cushionY + 0.14, winCZ - winLen * 0.32);
-    pillow1.rotation.y = 0.22;
-    pillow1.rotation.z = -0.12;
+    pillow1.position.set(cx, cushionY + 0.22, winCZ - winLen * 0.3);
+    pillow1.rotation.x = -0.2;
+    pillow1.rotation.y = 0.12;
     pillow1.castShadow = true;
     root.add(pillow1);
 
     var pillow2 = new THREE.Mesh(
       pillowGeo.clone(),
-      new THREE.MeshStandardMaterial({ color: 0xb8956e, roughness: 0.95, metalness: 0.02 })
+      new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.95, metalness: 0 })
     );
-    pillow2.scale.set(1.05, 0.95, 0.36);
-    pillow2.position.set(cx + 0.08, cushionY + 0.13, winCZ - winLen * 0.24);
-    pillow2.rotation.y = -0.45;
-    pillow2.rotation.z = 0.08;
+    pillow2.position.set(cx + 0.12, cushionY + 0.2, winCZ - winLen * 0.22);
+    pillow2.rotation.x = -0.15;
+    pillow2.rotation.y = -0.35;
     pillow2.castShadow = true;
     root.add(pillow2);
 
-    var throwMat = new THREE.MeshStandardMaterial({ color: 0x8b6b4a, roughness: 0.92, metalness: 0.02 });
-    var throwBase = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.04, 0.36), throwMat);
-    throwBase.position.set(cx - 0.05, cushionY + 0.025, winCZ - winLen * 0.14);
-    throwBase.rotation.y = 0.18;
-    throwBase.castShadow = true;
-    root.add(throwBase);
-    var throwFold = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.035, 0.18), throwMat);
-    throwFold.position.set(cx - 0.05, cushionY + 0.06, winCZ - winLen * 0.14);
-    throwFold.rotation.y = 0.18;
-    root.add(throwFold);
-    var throwDroop = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.03, 0.12), throwMat);
-    throwDroop.position.set(cx - 0.35, cushionY - 0.02, winCZ - winLen * 0.14);
-    throwDroop.rotation.z = 0.35;
-    throwDroop.rotation.y = 0.1;
-    root.add(throwDroop);
+    // Draped throw
+    var throwMat = new THREE.MeshStandardMaterial({ color: 0xd4cfc6, roughness: 1.0, metalness: 0 });
+    var throwTop = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.04, 0.65), throwMat);
+    throwTop.position.set(cx - 0.05, cushionY + 0.025, winCZ - winLen * 0.12);
+    throwTop.rotation.y = 0.15;
+    throwTop.castShadow = true;
+    root.add(throwTop);
+    var throwLip = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.03, 0.16), throwMat);
+    throwLip.position.set(cx - 0.32, cushionY - 0.04, winCZ - winLen * 0.12);
+    throwLip.rotation.z = 0.55;
+    throwLip.rotation.y = 0.1;
+    root.add(throwLip);
 
-    // Cluster 2: book + mug + plant (right)
-    var rightZ = winCZ + winLen * 0.18;
-    var book = new THREE.Mesh(
-      new THREE.BoxGeometry(0.34, 0.032, 0.26),
-      new THREE.MeshStandardMaterial({ color: 0x2a3548, roughness: 0.7, metalness: 0.05 })
-    );
-    book.position.set(cx + 0.05, cushionY + 0.02, rightZ);
-    book.rotation.y = 0.1;
-    book.castShadow = true;
-    root.add(book);
+    // Open laptop with code screen (right)
+    var laptopGroup = new THREE.Group();
+    laptopGroup.position.set(cx + 0.05, cushionY + 0.015, winCZ + winLen * 0.15);
+    laptopGroup.rotation.y = 0.3;
 
-    var mugMat = new THREE.MeshStandardMaterial({ color: 0xf0ebe3, roughness: 0.35, metalness: 0.05 });
-    var mugGroup = new THREE.Group();
-    mugGroup.add(new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.045, 0.11, 16), mugMat));
-    var mugInner = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.038, 0.038, 0.1, 16),
-      new THREE.MeshStandardMaterial({ color: 0x2a2018, roughness: 0.8 })
+    var aluMat = new THREE.MeshStandardMaterial({ color: 0x2a2c30, roughness: 0.35, metalness: 0.55 });
+    var laptopBase = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.02, 0.48), aluMat);
+    laptopBase.castShadow = true;
+    laptopGroup.add(laptopBase);
+    var kb = new THREE.Mesh(
+      new THREE.BoxGeometry(0.58, 0.006, 0.28),
+      new THREE.MeshStandardMaterial({ color: 0x1a1a1e, roughness: 0.5, metalness: 0.3 })
     );
-    mugInner.position.y = 0.008;
-    mugGroup.add(mugInner);
-    var coffee = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.036, 0.036, 0.008, 16),
-      new THREE.MeshStandardMaterial({ color: 0x3d2314, roughness: 0.4, metalness: 0.1 })
+    kb.position.set(0, 0.012, -0.02);
+    laptopGroup.add(kb);
+    var pad = new THREE.Mesh(
+      new THREE.BoxGeometry(0.18, 0.004, 0.12),
+      new THREE.MeshStandardMaterial({ color: 0x3a3a40, roughness: 0.4, metalness: 0.4 })
     );
-    coffee.position.y = 0.048;
-    mugGroup.add(coffee);
-    var handle = new THREE.Mesh(new THREE.TorusGeometry(0.038, 0.01, 8, 14, Math.PI), mugMat);
-    handle.rotation.y = Math.PI / 2;
-    handle.position.set(0.055, 0, 0);
-    mugGroup.add(handle);
-    mugGroup.position.set(cx + 0.28, cushionY + 0.06, rightZ + 0.12);
-    root.add(mugGroup);
+    pad.position.set(0, 0.012, 0.16);
+    laptopGroup.add(pad);
 
-    var pot = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.09, 0.075, 0.18, 16),
-      new THREE.MeshStandardMaterial({ color: 0xe8e0d6, roughness: 0.25, metalness: 0.05 })
-    );
-    pot.position.set(cx + 0.1, cushionY + 0.1, rightZ + 0.32);
-    pot.castShadow = true;
-    root.add(pot);
-    var soil = new THREE.Mesh(
-      new THREE.CylinderGeometry(0.078, 0.078, 0.02, 12),
-      new THREE.MeshStandardMaterial({ color: 0x2a2018, roughness: 0.95 })
-    );
-    soil.position.set(cx + 0.1, cushionY + 0.19, rightZ + 0.32);
-    root.add(soil);
+    var lidPivot = new THREE.Group();
+    lidPivot.position.set(0, 0.01, -0.24);
+    lidPivot.rotation.x = -1.85;
+    laptopGroup.add(lidPivot);
+    var lidBack = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.45, 0.012), aluMat);
+    lidBack.position.set(0, 0.225, 0);
+    lidPivot.add(lidBack);
 
-    var leafMat = new THREE.MeshStandardMaterial({ color: 0x1e5a32, roughness: 0.55, metalness: 0.05 });
-    var potX = cx + 0.1;
-    var potZ = rightZ + 0.32;
-    for (var li = 0; li < 6; li++) {
-      var leaf = new THREE.Mesh(new THREE.BoxGeometry(0.045, 0.42, 0.012), leafMat);
-      var ang = (li / 6) * Math.PI * 2 + 0.2;
-      var lean = 0.25 + (li % 3) * 0.08;
-      leaf.position.set(
-        potX + Math.cos(ang) * 0.04,
-        cushionY + 0.38,
-        potZ + Math.sin(ang) * 0.04
-      );
-      leaf.rotation.z = Math.cos(ang) * lean;
-      leaf.rotation.x = Math.sin(ang) * lean * 0.7;
-      leaf.castShadow = true;
-      root.add(leaf);
+    function makeLaptopScreenTex() {
+      var c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 320;
+      var ctx = c.getContext('2d');
+      ctx.fillStyle = '#0a1520';
+      ctx.fillRect(0, 0, 512, 320);
+      ctx.fillStyle = '#0d1a28';
+      ctx.fillRect(0, 0, 48, 320);
+      ctx.font = '11px monospace';
+      var lines = [
+        '  const scene = new THREE.Scene();',
+        '  camera.position.set(-7.5, 6.8, 8.5);',
+        '  // acoustic wall + neon',
+        '  const neon = createNeonSign();',
+        '  root.add(neon);',
+        '',
+        '  function animate() {',
+        '    requestAnimationFrame(animate);',
+        '    controls.update();',
+        '    renderer.render(scene, camera);',
+        '  }',
+        '  animate();'
+      ];
+      lines.forEach(function (line, i) {
+        ctx.fillStyle = i % 3 === 0 ? '#7dd3fc' : i % 3 === 1 ? '#e2e8f0' : '#94a3b8';
+        ctx.fillText(line, 58, 28 + i * 22);
+      });
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(200, 260, 8, 14);
+      var tex = new THREE.CanvasTexture(c);
+      if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
     }
+    var screen = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.64, 0.4),
+      new THREE.MeshStandardMaterial({
+        map: makeLaptopScreenTex(),
+        emissive: 0x0a2540,
+        emissiveIntensity: 0.65,
+        roughness: 0.25,
+        metalness: 0.1
+      })
+    );
+    screen.position.set(0, 0.225, 0.008);
+    lidPivot.add(screen);
+
+    var screenGlow = new THREE.PointLight(0x38bdf8, 0.6, 1.5, 1.5);
+    screenGlow.position.set(0, 0.2, 0.15);
+    lidPivot.add(screenGlow);
+
+    root.add(laptopGroup);
 
     scene.add(root);
   }
@@ -619,7 +631,7 @@
     }
     if (!document.querySelector('script[data-furniture]')) {
       var s = document.createElement('script');
-      s.src = 'furniture.js?v=soft1';
+      s.src = 'furniture.js?v=laptop1';
       s.setAttribute('data-furniture', '1');
       s.onload = runCreates;
       document.body.appendChild(s);
