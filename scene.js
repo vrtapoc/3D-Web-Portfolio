@@ -58,6 +58,24 @@
     });
   }
 
+  function removeLegacyFloorMat() {
+    if (!scene) return;
+    var kill = [];
+    scene.traverse(function (obj) {
+      if (!obj.isMesh || (obj.userData && obj.userData.isStudioRug)) return;
+      var bounds = new THREE.Box3().setFromObject(obj);
+      var size = bounds.getSize(new THREE.Vector3());
+      var center = bounds.getCenter(new THREE.Vector3());
+      var isLowProfile = center.y < 0.08 && size.y < 0.12;
+      var isDeskSized = size.x > 2.6 && size.x < 3.8 && size.z > 1.8 && size.z < 3.0;
+      if (isLowProfile && isDeskSized) kill.push(obj);
+    });
+    kill.forEach(function (obj) {
+      obj.visible = false;
+      if (obj.parent) obj.parent.remove(obj);
+    });
+  }
+
   function createWoodFloor() {
     var canvas = document.createElement('canvas');
     canvas.width = 1024;
@@ -288,6 +306,7 @@
       new THREE.MeshStandardMaterial({ color: 0x0a0b0d, roughness: 0.95, metalness: 0.0 })
     );
     rug.position.set(DESK_X, 0.008, DESK_Z + 0.55);
+    rug.userData.isStudioRug = true;
     rug.receiveShadow = true;
     root.add(rug);
     // Layer the border and center rather than relying on an extruded shape
@@ -300,6 +319,7 @@
       new THREE.MeshStandardMaterial({ color: 0x1a1c22, roughness: 0.9, metalness: 0.0 })
     );
     border.position.set(DESK_X, 0.009, DESK_Z + 0.55);
+    border.userData.isStudioRug = true;
     root.add(border);
 
     var inset = 0.04;
@@ -326,6 +346,7 @@
       new THREE.MeshStandardMaterial({ color: 0x0a0b0d, roughness: 0.95, metalness: 0.0 })
     );
     innerRug.position.set(DESK_X, 0.028, DESK_Z + 0.55);
+    innerRug.userData.isStudioRug = true;
     innerRug.receiveShadow = true;
     root.add(innerRug);
 
@@ -744,12 +765,19 @@
           window.__dioramaBuilt = false;
           removeOriginalWallsAndFloor();
           buildRoom();
+          removeLegacyFloorMat();
           placeWorkstation();
           applyLighting();
           patchNeonClick();
           loadFurniture();
-          setTimeout(placeWorkstation, 500);
-          setTimeout(placeWorkstation, 1400);
+          setTimeout(function () {
+            removeLegacyFloorMat();
+            placeWorkstation();
+          }, 500);
+          setTimeout(function () {
+            removeLegacyFloorMat();
+            placeWorkstation();
+          }, 1400);
         }, 300);
       }
       setTimeout(boot, 50);
