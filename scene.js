@@ -1,5 +1,5 @@
 /*
- * Bench: square cushions, draped throw, open laptop with IDE screen
+ * Studio bench: dark top, speakers, laptop with code, headphone stand
  */
 (function () {
   var GOOD_SCENE_URL =
@@ -425,87 +425,92 @@
     __neonLight = neonLight;
     root.add(neonGroup);
 
-    // Daybed cushion
-    var fabricMat = new THREE.MeshStandardMaterial({ color: 0xc4b8a8, roughness: 0.88, metalness: 0.02 });
-    var cushionTop = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.18, winLen - 0.28), fabricMat);
-    cushionTop.position.set(xR - 0.62, benchH + 0.11, winCZ);
-    cushionTop.castShadow = true;
-    cushionTop.receiveShadow = true;
-    root.add(cushionTop);
-    var cushionBevel = new THREE.Mesh(
-      new THREE.BoxGeometry(1.0, 0.04, winLen - 0.34),
-      new THREE.MeshStandardMaterial({ color: 0xb0a498, roughness: 0.9, metalness: 0.02 })
-    );
-    cushionBevel.position.set(xR - 0.62, benchH + 0.21, winCZ);
-    root.add(cushionBevel);
+    // Studio bench top + decor
+    var topMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.4, metalness: 0.2 });
+    var benchTopW = 1.05;
+    var benchTopD = winLen - 0.28;
+    var topPlate = new THREE.Mesh(new THREE.BoxGeometry(benchTopW, 0.06, benchTopD), topMat);
+    topPlate.position.set(xR - 0.62, benchH + 0.03, winCZ);
+    topPlate.castShadow = true;
+    topPlate.receiveShadow = true;
+    root.add(topPlate);
 
-    var cushionY = benchH + 0.22;
-    var cx = xR - 0.58;
+    var seamMat = new THREE.MeshBasicMaterial({ color: 0x09090b });
+    for (var s = -1; s <= 1; s++) {
+      var seam = new THREE.Mesh(new THREE.BoxGeometry(0.015, benchH * 0.7, 0.02), seamMat);
+      seam.position.set(xR - 0.62 - benchTopW * 0.5 + 0.01, benchH * 0.4, winCZ + s * (benchTopD / 3.2));
+      root.add(seam);
+    }
 
-    // Square cushions (back-left)
-    var pillowGeo = new THREE.BoxGeometry(0.55, 0.55, 0.14);
-    var pillow1 = new THREE.Mesh(
-      pillowGeo,
-      new THREE.MeshStandardMaterial({ color: 0x2d3748, roughness: 0.95, metalness: 0 })
-    );
-    pillow1.position.set(cx, cushionY + 0.22, winCZ - winLen * 0.3);
-    pillow1.rotation.x = -0.2;
-    pillow1.rotation.y = 0.12;
-    pillow1.castShadow = true;
-    root.add(pillow1);
+    var surfaceY = benchH + 0.06;
 
-    var pillow2 = new THREE.Mesh(
-      pillowGeo.clone(),
-      new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.95, metalness: 0 })
-    );
-    pillow2.position.set(cx + 0.12, cushionY + 0.2, winCZ - winLen * 0.22);
-    pillow2.rotation.x = -0.15;
-    pillow2.rotation.y = -0.35;
-    pillow2.castShadow = true;
-    root.add(pillow2);
+    function createStudioSpeaker() {
+      var g = new THREE.Group();
+      var cab = new THREE.Mesh(
+        new THREE.BoxGeometry(0.38, 0.58, 0.34),
+        new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.5 })
+      );
+      cab.position.y = 0.29;
+      cab.castShadow = true;
+      g.add(cab);
+      var tweetRim = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.06, 0.06, 0.018, 20),
+        new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 })
+      );
+      tweetRim.rotation.x = Math.PI / 2;
+      tweetRim.position.set(0, 0.44, 0.175);
+      g.add(tweetRim);
+      var wooferRim = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.12, 0.12, 0.018, 20),
+        new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.3, metalness: 0.1 })
+      );
+      wooferRim.rotation.x = Math.PI / 2;
+      wooferRim.position.set(0, 0.22, 0.175);
+      g.add(wooferRim);
+      var dustCap = new THREE.Mesh(
+        new THREE.SphereGeometry(0.035, 12, 12),
+        new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 })
+      );
+      dustCap.position.set(0, 0.22, 0.19);
+      g.add(dustCap);
+      return g;
+    }
 
-    // Draped throw
-    var throwMat = new THREE.MeshStandardMaterial({ color: 0xd4cfc6, roughness: 1.0, metalness: 0 });
-    var throwTop = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.04, 0.65), throwMat);
-    throwTop.position.set(cx - 0.05, cushionY + 0.025, winCZ - winLen * 0.12);
-    throwTop.rotation.y = 0.15;
-    throwTop.castShadow = true;
-    root.add(throwTop);
-    var throwLip = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.03, 0.16), throwMat);
-    throwLip.position.set(cx - 0.32, cushionY - 0.04, winCZ - winLen * 0.12);
-    throwLip.rotation.z = 0.55;
-    throwLip.rotation.y = 0.1;
-    root.add(throwLip);
+    var leftSpeaker = createStudioSpeaker();
+    leftSpeaker.position.set(xR - 0.55, surfaceY, winCZ - benchTopD * 0.32);
+    leftSpeaker.rotation.y = Math.PI / 2 + 0.25;
+    root.add(leftSpeaker);
 
-    // Open laptop with code screen (right)
+    var rightSpeaker = createStudioSpeaker();
+    rightSpeaker.position.set(xR - 0.55, surfaceY, winCZ + benchTopD * 0.32);
+    rightSpeaker.rotation.y = Math.PI / 2 - 0.25;
+    root.add(rightSpeaker);
+
     var laptopGroup = new THREE.Group();
-    laptopGroup.position.set(cx + 0.05, cushionY + 0.015, winCZ + winLen * 0.15);
-    laptopGroup.rotation.y = 0.3;
-
-    var aluMat = new THREE.MeshStandardMaterial({ color: 0x2a2c30, roughness: 0.35, metalness: 0.55 });
-    var laptopBase = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.02, 0.48), aluMat);
-    laptopBase.castShadow = true;
-    laptopGroup.add(laptopBase);
+    var lapAlumMat = new THREE.MeshStandardMaterial({ color: 0x27272a, roughness: 0.3, metalness: 0.8 });
+    var lapBase = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.025, 0.48), lapAlumMat);
+    lapBase.position.y = 0.0125;
+    lapBase.castShadow = true;
+    laptopGroup.add(lapBase);
     var kb = new THREE.Mesh(
-      new THREE.BoxGeometry(0.58, 0.006, 0.28),
-      new THREE.MeshStandardMaterial({ color: 0x1a1a1e, roughness: 0.5, metalness: 0.3 })
+      new THREE.BoxGeometry(0.62, 0.005, 0.25),
+      new THREE.MeshStandardMaterial({ color: 0x09090b, roughness: 0.7 })
     );
-    kb.position.set(0, 0.012, -0.02);
+    kb.position.set(0, 0.026, -0.06);
     laptopGroup.add(kb);
-    var pad = new THREE.Mesh(
-      new THREE.BoxGeometry(0.18, 0.004, 0.12),
-      new THREE.MeshStandardMaterial({ color: 0x3a3a40, roughness: 0.4, metalness: 0.4 })
+    var tp = new THREE.Mesh(
+      new THREE.BoxGeometry(0.24, 0.003, 0.14),
+      new THREE.MeshStandardMaterial({ color: 0x3f3f46, roughness: 0.4, metalness: 0.5 })
     );
-    pad.position.set(0, 0.012, 0.16);
-    laptopGroup.add(pad);
+    tp.position.set(0, 0.026, 0.12);
+    laptopGroup.add(tp);
 
-    var lidPivot = new THREE.Group();
-    lidPivot.position.set(0, 0.01, -0.24);
-    lidPivot.rotation.x = -1.85;
-    laptopGroup.add(lidPivot);
-    var lidBack = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.45, 0.012), aluMat);
-    lidBack.position.set(0, 0.225, 0);
-    lidPivot.add(lidBack);
+    var screenLid = new THREE.Group();
+    screenLid.position.set(0, 0.025, -0.24);
+    screenLid.rotation.x = -Math.PI * 0.58;
+    var lidMesh = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.46, 0.018), lapAlumMat);
+    lidMesh.position.set(0, 0.23, 0);
+    screenLid.add(lidMesh);
 
     function makeLaptopScreenTex() {
       var c = document.createElement('canvas');
@@ -541,24 +546,46 @@
       if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
       return tex;
     }
-    var screen = new THREE.Mesh(
+    var screenDisplay = new THREE.Mesh(
       new THREE.PlaneGeometry(0.64, 0.4),
       new THREE.MeshStandardMaterial({
         map: makeLaptopScreenTex(),
-        emissive: 0x0a2540,
-        emissiveIntensity: 0.65,
-        roughness: 0.25,
-        metalness: 0.1
+        emissive: 0x0369a1,
+        emissiveIntensity: 0.85,
+        roughness: 0.2
       })
     );
-    screen.position.set(0, 0.225, 0.008);
-    lidPivot.add(screen);
+    screenDisplay.position.set(0, 0.23, 0.01);
+    screenLid.add(screenDisplay);
+    laptopGroup.add(screenLid);
 
-    var screenGlow = new THREE.PointLight(0x38bdf8, 0.6, 1.5, 1.5);
-    screenGlow.position.set(0, 0.2, 0.15);
-    lidPivot.add(screenGlow);
-
+    laptopGroup.position.set(xR - 0.7, surfaceY, winCZ);
+    laptopGroup.rotation.y = Math.PI / 2 + 0.2;
     root.add(laptopGroup);
+
+    var laptopLight = new THREE.PointLight(0x38bdf8, 0.8, 1.8);
+    laptopLight.position.set(xR - 0.95, surfaceY + 0.3, winCZ);
+    root.add(laptopLight);
+
+    var hpGroup = new THREE.Group();
+    var hpChrome = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.9, roughness: 0.2 });
+    hpGroup.add(new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.018, 18), hpChrome));
+    var hpPole = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.42, 14), hpChrome);
+    hpPole.position.y = 0.21;
+    hpGroup.add(hpPole);
+    var hpHanger = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.014, 0.035), hpChrome);
+    hpHanger.position.y = 0.42;
+    hpGroup.add(hpHanger);
+    var hpBand = new THREE.Mesh(
+      new THREE.TorusGeometry(0.1, 0.018, 10, 20, Math.PI),
+      new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.6 })
+    );
+    hpBand.position.y = 0.4;
+    hpBand.rotation.z = Math.PI;
+    hpGroup.add(hpBand);
+    hpGroup.position.set(xR - 0.5, surfaceY, winCZ + benchTopD * 0.12);
+    hpGroup.rotation.y = -0.3;
+    root.add(hpGroup);
 
     scene.add(root);
   }
@@ -631,7 +658,7 @@
     }
     if (!document.querySelector('script[data-furniture]')) {
       var s = document.createElement('script');
-      s.src = 'furniture.js?v=laptop1';
+      s.src = 'furniture.js?v=studio1';
       s.setAttribute('data-furniture', '1');
       s.onload = runCreates;
       document.body.appendChild(s);
