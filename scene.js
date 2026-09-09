@@ -9,7 +9,7 @@
 
   var H = 5.8;
   var T = 0.22;
-  var WALL = 0x1d1e22;
+  var WALL = 0x141519;
   var xL = -4.8;
   var xR = 4.4;
   var zB = -2.7;
@@ -193,7 +193,7 @@
     var root = new THREE.Group();
     root.name = 'diorama-walls';
 
-    var wallMat = new THREE.MeshStandardMaterial({ color: WALL, roughness: 0.85, metalness: 0.02 });
+    var wallMat = new THREE.MeshStandardMaterial({ color: WALL, roughness: 0.88, metalness: 0.12 });
     var frameMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.55, metalness: 0.2 });
     var doorMat = new THREE.MeshStandardMaterial({ color: 0x101012, roughness: 0.78, metalness: 0.04 });
     var metalMat = new THREE.MeshStandardMaterial({ color: 0x9a9aa0, roughness: 0.3, metalness: 0.8 });
@@ -225,6 +225,11 @@
     var doorX1 = doorX + doorW / 2;
 
     box(xR - xL, H, T, (xL + xR) / 2, H / 2, zB);
+
+    // Baseboard + crown trim framing the back wall
+    var trimMat = new THREE.MeshStandardMaterial({ color: 0x0c0d10, roughness: 0.5, metalness: 0.15 });
+    box(xR - xL, 0.1, 0.04, (xL + xR) / 2, 0.05, zB + T / 2 + 0.02, trimMat);
+    box(xR - xL, 0.08, 0.04, (xL + xR) / 2, H - 0.04, zB + T / 2 + 0.02, trimMat);
 
     var doorPanelMat = new THREE.MeshStandardMaterial({ color: 0x1a1b1f, roughness: 0.82, metalness: 0.04 });
     box(doorW - 0.04, doorH - 0.04, 0.04, doorX, doorH / 2, zB + T / 2 + 0.025, doorPanelMat);
@@ -261,14 +266,63 @@
     crack.position.set(doorX, 0.012, zB + T / 2 + 0.1);
     root.add(crack);
 
-    // Plush workspace rug
+    // Dark studio rug (rounded + border)
+    var rugW = 3.2, rugD = 2.4, rugT = 0.015, cornerR = 0.18;
+    var rugShape = new THREE.Shape();
+    (function () {
+      var w = rugW / 2, d = rugD / 2, r = cornerR;
+      rugShape.moveTo(-w + r, -d);
+      rugShape.lineTo(w - r, -d);
+      rugShape.quadraticCurveTo(w, -d, w, -d + r);
+      rugShape.lineTo(w, d - r);
+      rugShape.quadraticCurveTo(w, d, w - r, d);
+      rugShape.lineTo(-w + r, d);
+      rugShape.quadraticCurveTo(-w, d, -w, d - r);
+      rugShape.lineTo(-w, -d + r);
+      rugShape.quadraticCurveTo(-w, -d, -w + r, -d);
+    })();
+    var rugGeo = new THREE.ExtrudeGeometry(rugShape, { depth: rugT, bevelEnabled: false });
+    rugGeo.rotateX(-Math.PI / 2);
     var rug = new THREE.Mesh(
-      new THREE.BoxGeometry(3.4, 0.015, 2.6),
-      new THREE.MeshStandardMaterial({ color: 0xc8baa7, roughness: 1.0, metalness: 0.0 })
+      rugGeo,
+      new THREE.MeshStandardMaterial({ color: 0x22242a, roughness: 0.95, metalness: 0.0 })
     );
-    rug.position.set(DESK_X, 0.01, DESK_Z + 0.55);
+    rug.position.set(DESK_X, 0.008, DESK_Z + 0.55);
     rug.receiveShadow = true;
     root.add(rug);
+    var borderShape = new THREE.Shape();
+    (function () {
+      var w = rugW / 2, d = rugD / 2, r = cornerR, inset = 0.04;
+      borderShape.moveTo(-w + r, -d);
+      borderShape.lineTo(w - r, -d);
+      borderShape.quadraticCurveTo(w, -d, w, -d + r);
+      borderShape.lineTo(w, d - r);
+      borderShape.quadraticCurveTo(w, d, w - r, d);
+      borderShape.lineTo(-w + r, d);
+      borderShape.quadraticCurveTo(-w, d, -w, d - r);
+      borderShape.lineTo(-w, -d + r);
+      borderShape.quadraticCurveTo(-w, -d, -w + r, -d);
+      var hole = new THREE.Path();
+      var iw = w - inset, id = d - inset, ir = Math.max(0.08, r - inset * 0.5);
+      hole.moveTo(-iw + ir, -id);
+      hole.lineTo(iw - ir, -id);
+      hole.quadraticCurveTo(iw, -id, iw, -id + ir);
+      hole.lineTo(iw, id - ir);
+      hole.quadraticCurveTo(iw, id, iw - ir, id);
+      hole.lineTo(-iw + ir, id);
+      hole.quadraticCurveTo(-iw, id, -iw, id - ir);
+      hole.lineTo(-iw, -id + ir);
+      hole.quadraticCurveTo(-iw, -id, -iw + ir, -id);
+      borderShape.holes.push(hole);
+    })();
+    var borderGeo = new THREE.ExtrudeGeometry(borderShape, { depth: rugT + 0.002, bevelEnabled: false });
+    borderGeo.rotateX(-Math.PI / 2);
+    var border = new THREE.Mesh(
+      borderGeo,
+      new THREE.MeshStandardMaterial({ color: 0x343842, roughness: 0.9, metalness: 0.0 })
+    );
+    border.position.set(DESK_X, 0.009, DESK_Z + 0.55);
+    root.add(border);
 
     var consoleMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.4, metalness: 0.1 });
     var consoleBody = new THREE.Mesh(new THREE.BoxGeometry(CONSOLE_W, CONSOLE_H, CONSOLE_D), consoleMat);
@@ -426,9 +480,9 @@
     var shelfW = 2.4;
     var shelfH = 0.08;
     var shelfD = 0.26;
-    var shelfY = 4.55;
+    var shelfY = 4.28;
     var shelfZ = zB + T / 2 + shelfD / 2 + 0.04;
-    var oakMat = new THREE.MeshStandardMaterial({ color: 0x9a6b43, roughness: 0.5, metalness: 0.05 });
+    var oakMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.55, metalness: 0.08 });
     var shelf = new THREE.Mesh(new THREE.BoxGeometry(shelfW, shelfH, shelfD), oakMat);
     shelf.position.set(DESK_X, shelfY, shelfZ);
     shelf.castShadow = true;
@@ -436,7 +490,7 @@
     root.add(shelf);
     var shelfLip = new THREE.Mesh(
       new THREE.BoxGeometry(shelfW + 0.02, 0.02, shelfD + 0.02),
-      new THREE.MeshStandardMaterial({ color: 0x8a5c38, roughness: 0.45, metalness: 0.08 })
+      new THREE.MeshStandardMaterial({ color: 0x151210, roughness: 0.5, metalness: 0.1 })
     );
     shelfLip.position.set(DESK_X, shelfY + shelfH / 2 + 0.01, shelfZ);
     root.add(shelfLip);
@@ -474,16 +528,15 @@
     clockRim.position.set(DESK_X, shelfY + shelfH / 2 + 0.05, shelfZ + 0.01);
     root.add(clockRim);
 
-    var shelfWash = new THREE.PointLight(0xffeedd, 1.0, 2.2, 1.4);
+    var shelfWash = new THREE.PointLight(0xffeedd, 0.8, 2.0, 1.4);
     shelfWash.position.set(DESK_X, shelfY - 0.15, shelfZ - 0.05);
     root.add(shelfWash);
 
-    // Amber bias light behind monitor
     var biasLight = new THREE.PointLight(0xff9922, 2.2, 3.2, 1.3);
     biasLight.position.set(DESK_X, CONSOLE_Y + CONSOLE_H / 2 + 0.15, DESK_Z - CONSOLE_D * 0.35);
     root.add(biasLight);
 
-    // RIGHT WALL WINDOW
+    // RIGHT WALL WINDOW (unchanged)
     var winZ0 = zB + 0.4;
     var winZ1 = zF - 0.4;
     var winLen = winZ1 - winZ0;
