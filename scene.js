@@ -1,5 +1,5 @@
 /*
- * Studio bench: dark top, speakers, laptop with code, headphone stand
+ * Floating media console under </bosst> neon + soundbar + underglow
  */
 (function () {
   var GOOD_SCENE_URL =
@@ -208,12 +208,13 @@
           hasSphere &&
           (Math.abs(obj.position.x + 1.85) < 0.4 ||
             Math.abs(obj.position.x - 3.55) < 0.5 ||
-            Math.abs(obj.position.x - 3.7) < 0.5)
+            Math.abs(obj.position.x - 3.7) < 0.5 ||
+            Math.abs(obj.position.x - 3.9) < 0.5)
         ) {
           isBalloon = true;
         }
       }
-      if (isBalloon) obj.position.set(3.55, 0, 3.85);
+      if (isBalloon) obj.position.set(3.9, 0, 3.6);
     });
     scene.traverse(function (obj) {
       if (obj.name === 'office-chair') {
@@ -291,7 +292,7 @@
     box(T, benchH, winLen, xR, benchH / 2, (winZ0 + winZ1) / 2);
     box(T, H, winZ0 - zB, xR, H / 2, (zB + winZ0) / 2);
     box(T, H, zF - winZ1, xR, H / 2, (winZ1 + zF) / 2);
-    box(1.15, benchH, winLen - 0.15, xR - 0.6, benchH / 2, (winZ0 + winZ1) / 2, benchMat);
+    // full-length daybed removed — floating console only
 
     var winBottom = benchH + 0.02;
     var winTop = headerBottom;
@@ -425,167 +426,86 @@
     __neonLight = neonLight;
     root.add(neonGroup);
 
-    // Studio bench top + decor
-    var topMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.4, metalness: 0.2 });
-    var benchTopW = 1.05;
-    var benchTopD = winLen - 0.28;
-    var topPlate = new THREE.Mesh(new THREE.BoxGeometry(benchTopW, 0.06, benchTopD), topMat);
-    topPlate.position.set(xR - 0.62, benchH + 0.03, winCZ);
-    topPlate.castShadow = true;
-    topPlate.receiveShadow = true;
-    root.add(topPlate);
+    // Floating media console under neon
+    var consoleW = 2.8;
+    var consoleH = 0.45;
+    var consoleD = 0.55;
+    var consoleY = 0.3 + consoleH / 2;
+    var consoleX = xR - consoleD / 2 - 0.05;
+    var consoleZ = winCZ;
+
+    var consoleMat = new THREE.MeshStandardMaterial({
+      color: 0x18181b,
+      roughness: 0.4,
+      metalness: 0.1
+    });
+    var consoleBody = new THREE.Mesh(
+      new THREE.BoxGeometry(consoleD, consoleH, consoleW),
+      consoleMat
+    );
+    consoleBody.position.set(consoleX, consoleY, consoleZ);
+    consoleBody.castShadow = true;
+    consoleBody.receiveShadow = true;
+    root.add(consoleBody);
+
+    var topCap = new THREE.Mesh(
+      new THREE.BoxGeometry(consoleD + 0.02, 0.02, consoleW + 0.02),
+      new THREE.MeshStandardMaterial({ color: 0x0c0c0e, roughness: 0.35, metalness: 0.15 })
+    );
+    topCap.position.set(consoleX, consoleY + consoleH / 2 + 0.01, consoleZ);
+    root.add(topCap);
 
     var seamMat = new THREE.MeshBasicMaterial({ color: 0x09090b });
-    for (var s = -1; s <= 1; s++) {
-      var seam = new THREE.Mesh(new THREE.BoxGeometry(0.015, benchH * 0.7, 0.02), seamMat);
-      seam.position.set(xR - 0.62 - benchTopW * 0.5 + 0.01, benchH * 0.4, winCZ + s * (benchTopD / 3.2));
+    [-1, 0, 1].forEach(function (si) {
+      var seam = new THREE.Mesh(
+        new THREE.BoxGeometry(0.012, consoleH * 0.85, 0.01),
+        seamMat
+      );
+      seam.position.set(
+        consoleX - consoleD / 2 - 0.002,
+        consoleY,
+        consoleZ + si * (consoleW / 6)
+      );
       root.add(seam);
-    }
+    });
 
-    var surfaceY = benchH + 0.06;
+    var underGlow = new THREE.PointLight(0xffa060, 1.0, 2.0, 1.4);
+    underGlow.position.set(consoleX - 0.1, 0.15, consoleZ);
+    root.add(underGlow);
+    var underGlow2 = new THREE.PointLight(0x00f5ff, 0.25, 1.8, 1.5);
+    underGlow2.position.set(consoleX - 0.05, 0.12, consoleZ);
+    root.add(underGlow2);
 
-    function createStudioSpeaker() {
-      var g = new THREE.Group();
-      var cab = new THREE.Mesh(
-        new THREE.BoxGeometry(0.38, 0.58, 0.34),
-        new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.5 })
-      );
-      cab.position.y = 0.29;
-      cab.castShadow = true;
-      g.add(cab);
-      var tweetRim = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.06, 0.06, 0.018, 20),
-        new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 })
-      );
-      tweetRim.rotation.x = Math.PI / 2;
-      tweetRim.position.set(0, 0.44, 0.175);
-      g.add(tweetRim);
-      var wooferRim = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.12, 0.12, 0.018, 20),
-        new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.3, metalness: 0.1 })
-      );
-      wooferRim.rotation.x = Math.PI / 2;
-      wooferRim.position.set(0, 0.22, 0.175);
-      g.add(wooferRim);
-      var dustCap = new THREE.Mesh(
-        new THREE.SphereGeometry(0.035, 12, 12),
-        new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.2 })
-      );
-      dustCap.position.set(0, 0.22, 0.19);
-      g.add(dustCap);
-      return g;
-    }
-
-    var leftSpeaker = createStudioSpeaker();
-    leftSpeaker.position.set(xR - 0.55, surfaceY, winCZ - benchTopD * 0.32);
-    leftSpeaker.rotation.y = Math.PI / 2 + 0.25;
-    root.add(leftSpeaker);
-
-    var rightSpeaker = createStudioSpeaker();
-    rightSpeaker.position.set(xR - 0.55, surfaceY, winCZ + benchTopD * 0.32);
-    rightSpeaker.rotation.y = Math.PI / 2 - 0.25;
-    root.add(rightSpeaker);
-
-    var laptopGroup = new THREE.Group();
-    var lapAlumMat = new THREE.MeshStandardMaterial({ color: 0x27272a, roughness: 0.3, metalness: 0.8 });
-    var lapBase = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.025, 0.48), lapAlumMat);
-    lapBase.position.y = 0.0125;
-    lapBase.castShadow = true;
-    laptopGroup.add(lapBase);
-    var kb = new THREE.Mesh(
-      new THREE.BoxGeometry(0.62, 0.005, 0.25),
-      new THREE.MeshStandardMaterial({ color: 0x09090b, roughness: 0.7 })
+    var barW = 1.4;
+    var barH = 0.08;
+    var barD = 0.14;
+    var soundbar = new THREE.Mesh(
+      new THREE.BoxGeometry(barD, barH, barW),
+      new THREE.MeshStandardMaterial({ color: 0x27272a, roughness: 0.9, metalness: 0.05 })
     );
-    kb.position.set(0, 0.026, -0.06);
-    laptopGroup.add(kb);
-    var tp = new THREE.Mesh(
-      new THREE.BoxGeometry(0.24, 0.003, 0.14),
-      new THREE.MeshStandardMaterial({ color: 0x3f3f46, roughness: 0.4, metalness: 0.5 })
+    soundbar.position.set(
+      consoleX - consoleD / 2 + barD / 2 + 0.05,
+      consoleY + consoleH / 2 + 0.02 + barH / 2,
+      consoleZ
     );
-    tp.position.set(0, 0.026, 0.12);
-    laptopGroup.add(tp);
+    soundbar.castShadow = true;
+    root.add(soundbar);
 
-    var screenLid = new THREE.Group();
-    screenLid.position.set(0, 0.025, -0.24);
-    screenLid.rotation.x = -Math.PI * 0.58;
-    var lidMesh = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.46, 0.018), lapAlumMat);
-    lidMesh.position.set(0, 0.23, 0);
-    screenLid.add(lidMesh);
-
-    function makeLaptopScreenTex() {
-      var c = document.createElement('canvas');
-      c.width = 512;
-      c.height = 320;
-      var ctx = c.getContext('2d');
-      ctx.fillStyle = '#0a1520';
-      ctx.fillRect(0, 0, 512, 320);
-      ctx.fillStyle = '#0d1a28';
-      ctx.fillRect(0, 0, 48, 320);
-      ctx.font = '11px monospace';
-      var lines = [
-        '  const scene = new THREE.Scene();',
-        '  camera.position.set(-7.5, 6.8, 8.5);',
-        '  // acoustic wall + neon',
-        '  const neon = createNeonSign();',
-        '  root.add(neon);',
-        '',
-        '  function animate() {',
-        '    requestAnimationFrame(animate);',
-        '    controls.update();',
-        '    renderer.render(scene, camera);',
-        '  }',
-        '  animate();'
-      ];
-      lines.forEach(function (line, i) {
-        ctx.fillStyle = i % 3 === 0 ? '#7dd3fc' : i % 3 === 1 ? '#e2e8f0' : '#94a3b8';
-        ctx.fillText(line, 58, 28 + i * 22);
-      });
-      ctx.fillStyle = '#38bdf8';
-      ctx.fillRect(200, 260, 8, 14);
-      var tex = new THREE.CanvasTexture(c);
-      if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
-      return tex;
-    }
-    var screenDisplay = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.64, 0.4),
+    var led = new THREE.Mesh(
+      new THREE.SphereGeometry(0.012, 8, 8),
       new THREE.MeshStandardMaterial({
-        map: makeLaptopScreenTex(),
-        emissive: 0x0369a1,
-        emissiveIntensity: 0.85,
-        roughness: 0.2
+        color: 0x00f5ff,
+        emissive: 0x00f5ff,
+        emissiveIntensity: 2.0,
+        roughness: 0.3
       })
     );
-    screenDisplay.position.set(0, 0.23, 0.01);
-    screenLid.add(screenDisplay);
-    laptopGroup.add(screenLid);
-
-    laptopGroup.position.set(xR - 0.7, surfaceY, winCZ);
-    laptopGroup.rotation.y = Math.PI / 2 + 0.2;
-    root.add(laptopGroup);
-
-    var laptopLight = new THREE.PointLight(0x38bdf8, 0.8, 1.8);
-    laptopLight.position.set(xR - 0.95, surfaceY + 0.3, winCZ);
-    root.add(laptopLight);
-
-    var hpGroup = new THREE.Group();
-    var hpChrome = new THREE.MeshStandardMaterial({ color: 0xd4d4d8, metalness: 0.9, roughness: 0.2 });
-    hpGroup.add(new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.018, 18), hpChrome));
-    var hpPole = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.42, 14), hpChrome);
-    hpPole.position.y = 0.21;
-    hpGroup.add(hpPole);
-    var hpHanger = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.014, 0.035), hpChrome);
-    hpHanger.position.y = 0.42;
-    hpGroup.add(hpHanger);
-    var hpBand = new THREE.Mesh(
-      new THREE.TorusGeometry(0.1, 0.018, 10, 20, Math.PI),
-      new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.6 })
+    led.position.set(
+      soundbar.position.x - barD / 2 - 0.01,
+      soundbar.position.y,
+      soundbar.position.z
     );
-    hpBand.position.y = 0.4;
-    hpBand.rotation.z = Math.PI;
-    hpGroup.add(hpBand);
-    hpGroup.position.set(xR - 0.5, surfaceY, winCZ + benchTopD * 0.12);
-    hpGroup.rotation.y = -0.3;
-    root.add(hpGroup);
+    root.add(led);
 
     scene.add(root);
   }
@@ -658,7 +578,7 @@
     }
     if (!document.querySelector('script[data-furniture]')) {
       var s = document.createElement('script');
-      s.src = 'furniture.js?v=studio1';
+      s.src = 'furniture.js?v=console1';
       s.setAttribute('data-furniture', '1');
       s.onload = runCreates;
       document.body.appendChild(s);
