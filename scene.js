@@ -9,7 +9,7 @@
 
   var H = 5.8;
   var T = 0.22;
-  var WALL = 0x141519;
+  var WALL = 0x0f1013;
   var xL = -4.8;
   var xR = 4.4;
   var zB = -2.7;
@@ -204,6 +204,42 @@
     });
   }
 
+  function createMicroCementBump() {
+    var canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#808080';
+    ctx.fillRect(0, 0, 512, 512);
+
+    var imgData = ctx.getImageData(0, 0, 512, 512);
+    var data = imgData.data;
+    for (var i = 0; i < data.length; i += 4) {
+      var noise = (Math.random() - 0.5) * 44;
+      var val = Math.min(255, Math.max(0, 128 + noise));
+      data[i] = val;
+      data[i + 1] = val;
+      data[i + 2] = val;
+    }
+    ctx.putImageData(imgData, 0, 0);
+
+    for (var j = 0; j < 35; j++) {
+      var x = Math.random() * 512;
+      var y = Math.random() * 512;
+      var radX = Math.random() * 50 + 20;
+      var radY = Math.random() * 25 + 10;
+      var shade = Math.random() > 0.5 ? 170 : 85;
+      ctx.fillStyle = 'rgba(' + shade + ',' + shade + ',' + shade + ', 0.05)';
+      ctx.beginPath();
+      ctx.ellipse(x, y, radX, radY, Math.random() * Math.PI, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    var tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(3, 2);
+    return tex;
+  }
   function buildRoom() {
     if (!scene || window.__dioramaBuilt) return;
     window.__dioramaBuilt = true;
@@ -211,7 +247,14 @@
     var root = new THREE.Group();
     root.name = 'diorama-walls';
 
-    var wallMat = new THREE.MeshStandardMaterial({ color: WALL, roughness: 0.88, metalness: 0.12 });
+    var microCementBump = createMicroCementBump();
+    var wallMat = new THREE.MeshStandardMaterial({
+      color: 0x0f1013,
+      roughness: 0.92,
+      metalness: 0.06,
+      bumpMap: microCementBump,
+      bumpScale: 0.0025
+    });
     var frameMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.55, metalness: 0.2 });
     var doorMat = new THREE.MeshStandardMaterial({ color: 0x101012, roughness: 0.78, metalness: 0.04 });
     var metalMat = new THREE.MeshStandardMaterial({ color: 0x9a9aa0, roughness: 0.3, metalness: 0.8 });
@@ -244,10 +287,14 @@
 
     box(xR - xL, H, T, (xL + xR) / 2, H / 2, zB);
 
-    // Baseboard + crown trim framing the back wall
-    var trimMat = new THREE.MeshStandardMaterial({ color: 0x0c0d10, roughness: 0.5, metalness: 0.15 });
-    box(xR - xL, 0.1, 0.04, (xL + xR) / 2, 0.05, zB + T / 2 + 0.02, trimMat);
-    box(xR - xL, 0.08, 0.04, (xL + xR) / 2, H - 0.04, zB + T / 2 + 0.02, trimMat);
+    // Minimal perimeter baseboard along bottom floor seam + crown trim
+    var trimMat = new THREE.MeshStandardMaterial({
+      color: 0x08090b,
+      roughness: 0.45,
+      metalness: 0.1
+    });
+    box(xR - xL, 0.08, 0.035, (xL + xR) / 2, 0.04, zB + T / 2 + 0.018, trimMat);
+    box(xR - xL, 0.06, 0.035, (xL + xR) / 2, H - 0.03, zB + T / 2 + 0.018, trimMat);
 
     var doorPanelMat = new THREE.MeshStandardMaterial({ color: 0x1a1b1f, roughness: 0.82, metalness: 0.04 });
     box(doorW - 0.04, doorH - 0.04, 0.04, doorX, doorH / 2, zB + T / 2 + 0.025, doorPanelMat);
@@ -493,25 +540,25 @@
     neonGroup.userData = { interactive: true, name: 'neonSign', onClick: cycleNeonColor };
     root.add(neonGroup);
 
-    // ---- Floating wood shelf above neon ----
+        // ---- Floating wood shelf below neon with breathing room ----
     var shelfW = 2.4;
-    var shelfH = 0.08;
-    var shelfD = 0.26;
-    // Keep the shelf close to the neon to tighten the vertical composition.
-    var shelfY = 3.0;
+    var shelfH = 0.05;
+    var shelfD = 0.32;
+    // Lowered assembly downward so decor has clear visual breathing room below neon sign plate
+    var shelfY = 2.62;
     var shelfZ = zB + T / 2 + shelfD / 2 + 0.04;
-    var oakMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.55, metalness: 0.08 });
+    var shelfTopSurface = shelfY + shelfH / 2;
+
+    var oakMat = new THREE.MeshStandardMaterial({
+      color: 0x1a1614,
+      roughness: 0.62,
+      metalness: 0.08
+    });
     var shelf = new THREE.Mesh(new THREE.BoxGeometry(shelfW, shelfH, shelfD), oakMat);
     shelf.position.set(DESK_X, shelfY, shelfZ);
     shelf.castShadow = true;
     shelf.receiveShadow = true;
     root.add(shelf);
-    var shelfLip = new THREE.Mesh(
-      new THREE.BoxGeometry(shelfW + 0.02, 0.02, shelfD + 0.02),
-      new THREE.MeshStandardMaterial({ color: 0x151210, roughness: 0.5, metalness: 0.1 })
-    );
-    shelfLip.position.set(DESK_X, shelfY + shelfH / 2 + 0.01, shelfZ);
-    root.add(shelfLip);
 
     var potMat = new THREE.MeshStandardMaterial({ color: 0xf2f0ea, roughness: 0.7, metalness: 0.0 });
     var leafMat = new THREE.MeshStandardMaterial({ color: 0x3d6b45, roughness: 0.55, metalness: 0.0 });
@@ -526,30 +573,31 @@
         leaf.rotation.z = (li - 1.5) * 0.15;
         g.add(leaf);
       }
-      // The pot geometry begins at the group's origin, so this puts it flush
-      // on the shelf rather than intersecting it.
-      g.position.set(px, shelfY + shelfH / 2, shelfZ);
+      // Succulents sit flush on the top surface of the repositioned shelf
+      g.position.set(px, shelfTopSurface, shelfZ);
       root.add(g);
     }
     makePot(DESK_X - shelfW * 0.38);
     makePot(DESK_X + shelfW * 0.38);
 
+    // Minimal center clock sitting flush on shelf top surface
     var clockFace = new THREE.Mesh(
       new THREE.CylinderGeometry(0.09, 0.09, 0.03, 24),
       new THREE.MeshStandardMaterial({ color: 0xf5f2eb, roughness: 0.6, metalness: 0.1 })
     );
     clockFace.rotation.x = Math.PI / 2;
-    clockFace.position.set(DESK_X, shelfY + shelfH / 2 + 0.09, shelfZ);
+    clockFace.position.set(DESK_X, shelfTopSurface + 0.09, shelfZ);
     root.add(clockFace);
     var clockRim = new THREE.Mesh(
       new THREE.TorusGeometry(0.09, 0.008, 8, 24),
       new THREE.MeshStandardMaterial({ color: 0x2a2a2e, roughness: 0.4, metalness: 0.5 })
     );
-    clockRim.position.set(DESK_X, shelfY + shelfH / 2 + 0.09, shelfZ + 0.01);
+    clockRim.position.set(DESK_X, shelfTopSurface + 0.09, shelfZ + 0.01);
     root.add(clockRim);
 
-    var shelfWash = new THREE.PointLight(0xffeedd, 0.8, 2.0, 1.4);
-    shelfWash.position.set(DESK_X, shelfY - 0.15, shelfZ - 0.05);
+    // Subtle warm downlight washing softly toward desk
+    var shelfWash = new THREE.PointLight(0xffeedb, 0.6, 2.2, 1.4);
+    shelfWash.position.set(DESK_X, shelfY - 0.06, shelfZ - 0.04);
     root.add(shelfWash);
 
     var biasLight = new THREE.PointLight(0xff9922, 2.2, 3.2, 1.3);
