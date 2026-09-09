@@ -1,5 +1,5 @@
 /*
- * Neon fixed: acrylic panel mounted on right wall (faces -X), canvas </> logo
+ * Neon: </bosst> electric cyan on larger acrylic panel
  */
 (function () {
   var GOOD_SCENE_URL =
@@ -338,58 +338,59 @@
     edgeFill.position.set(xR - 0.4, winTop - 0.2, winCZ);
     root.add(edgeFill);
 
-    // Neon </> — wall-mounted acrylic panel on right wall (faces -X into room)
-    var neonColor = 0xff3377;
+    // Neon sign — wall-mounted acrylic panel, text: </bosst>
+    var neonColor = 0x00f5ff;
 
     function makeNeonLogoTexture() {
       var c = document.createElement('canvas');
-      c.width = 512;
-      c.height = 320;
+      c.width = 1024;
+      c.height = 384;
       var ctx = c.getContext('2d');
-      ctx.clearRect(0, 0, 512, 320);
-      ctx.font = 'bold 160px monospace';
+      ctx.clearRect(0, 0, 1024, 384);
+      ctx.font = 'bold 120px "JetBrains Mono", Consolas, "Courier New", monospace';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.shadowColor = '#ff3377';
+      ctx.shadowColor = '#00f5ff';
       ctx.shadowBlur = 28;
-      ctx.fillStyle = '#ff5599';
-      ctx.fillText('</>', 256, 168);
-      ctx.shadowBlur = 10;
-      ctx.fillStyle = '#ff88bb';
-      ctx.fillText('</>', 256, 168);
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = '#ffd0e0';
-      ctx.fillText('</>', 256, 168);
+      ctx.fillStyle = '#00c8e0';
+      ctx.fillText('</bosst>', 512, 200);
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = '#00f5ff';
+      ctx.fillText('</bosst>', 512, 200);
+      ctx.shadowBlur = 4;
+      ctx.fillStyle = '#e0ffff';
+      ctx.fillText('</bosst>', 512, 200);
       var tex = new THREE.CanvasTexture(c);
       if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = 8;
       return tex;
     }
 
     var neonGroup = new THREE.Group();
     neonGroup.rotation.y = -Math.PI / 2;
-    neonGroup.position.set(xR - 0.12, winCY + 0.05, winCZ);
+    neonGroup.position.set(xR - 0.13, winCY + 0.08, winCZ);
 
-    var plateW = 1.15;
-    var plateH = 0.72;
+    var plateW = 2.0;
+    var plateH = 0.8;
     var plateMat;
     try {
       plateMat = new THREE.MeshPhysicalMaterial({
-        color: 0x1a1a22,
+        color: 0x12141a,
         roughness: 0.12,
         metalness: 0.08,
-        transmission: 0.55,
+        transmission: 0.5,
         transparent: true,
-        opacity: 0.55,
+        opacity: 0.5,
         thickness: 0.02,
         side: THREE.DoubleSide
       });
     } catch (e) {
       plateMat = new THREE.MeshStandardMaterial({
-        color: 0x1a1a22,
+        color: 0x12141a,
         roughness: 0.15,
         metalness: 0.1,
         transparent: true,
-        opacity: 0.5,
+        opacity: 0.48,
         side: THREE.DoubleSide
       });
     }
@@ -402,25 +403,25 @@
       metalness: 0.9
     });
     var standOffs = [
-      [-plateW * 0.42, plateH * 0.38],
-      [plateW * 0.42, plateH * 0.38],
-      [-plateW * 0.42, -plateH * 0.38],
-      [plateW * 0.42, -plateH * 0.38]
+      [-plateW * 0.44, plateH * 0.38],
+      [plateW * 0.44, plateH * 0.38],
+      [-plateW * 0.44, -plateH * 0.38],
+      [plateW * 0.44, -plateH * 0.38]
     ];
     standOffs.forEach(function (xy) {
       var stand = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.018, 0.018, 0.04, 10),
+        new THREE.CylinderGeometry(0.02, 0.02, 0.045, 10),
         chromeMat
       );
       stand.rotation.x = Math.PI / 2;
-      stand.position.set(xy[0], xy[1], -0.03);
+      stand.position.set(xy[0], xy[1], -0.032);
       neonGroup.add(stand);
       var disc = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.028, 0.028, 0.006, 12),
+        new THREE.CylinderGeometry(0.032, 0.032, 0.006, 12),
         chromeMat
       );
       disc.rotation.x = Math.PI / 2;
-      disc.position.set(xy[0], xy[1], -0.05);
+      disc.position.set(xy[0], xy[1], -0.055);
       neonGroup.add(disc);
     });
 
@@ -432,13 +433,16 @@
       side: THREE.DoubleSide,
       depthWrite: false
     });
-    var logo = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.55), logoMat);
+    var logo = new THREE.Mesh(
+      new THREE.PlaneGeometry(plateW * 0.88, plateH * 0.72),
+      logoMat
+    );
     logo.position.set(0, 0, 0.012);
     neonGroup.add(logo);
 
-    var neonLight = new THREE.PointLight(neonColor, 1.7, 5.5, 1.3);
+    var neonLight = new THREE.PointLight(0x00f5ff, 2.0, 5.0, 1.25);
     neonLight.name = 'neon-accent';
-    neonLight.position.set(0, 0, 0.35);
+    neonLight.position.set(0, 0, 0.4);
     neonGroup.add(neonLight);
     __neonLight = neonLight;
 
@@ -530,7 +534,7 @@
       requestAnimationFrame(tick);
       var t = performance.now() * 0.001;
       if (__neonLight) {
-        __neonLight.intensity = 1.6 + 0.25 * Math.sin(t * 2.2) + 0.12 * Math.sin(t * 5.1);
+        __neonLight.intensity = 1.85 + 0.2 * Math.sin(t * 2.2) + 0.1 * Math.sin(t * 5.1);
       }
     }
     tick();
@@ -591,7 +595,7 @@
     }
     if (!document.querySelector('script[data-furniture]')) {
       var s = document.createElement('script');
-      s.src = 'furniture.js?v=neonfix1';
+      s.src = 'furniture.js?v=bosst1';
       s.setAttribute('data-furniture', '1');
       s.onload = runCreates;
       document.body.appendChild(s);
