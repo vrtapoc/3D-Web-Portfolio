@@ -480,7 +480,8 @@
     var shelfW = 2.4;
     var shelfH = 0.08;
     var shelfD = 0.26;
-    var shelfY = 4.28;
+    // Keep the shelf close to the neon to tighten the vertical composition.
+    var shelfY = 3.0;
     var shelfZ = zB + T / 2 + shelfD / 2 + 0.04;
     var oakMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.55, metalness: 0.08 });
     var shelf = new THREE.Mesh(new THREE.BoxGeometry(shelfW, shelfH, shelfD), oakMat);
@@ -508,6 +509,8 @@
         leaf.rotation.z = (li - 1.5) * 0.15;
         g.add(leaf);
       }
+      // The pot geometry begins at the group's origin, so this puts it flush
+      // on the shelf rather than intersecting it.
       g.position.set(px, shelfY + shelfH / 2, shelfZ);
       root.add(g);
     }
