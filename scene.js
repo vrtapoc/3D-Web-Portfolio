@@ -697,6 +697,29 @@
       return r.text();
     })
     .then(function (code) {
+      // The original scene uses top-level `let` declarations.  Because it is
+      // loaded dynamically, those bindings are not visible to this layout
+      // controller.  Promote only its scene-state declarations to globals so
+      // the room replacement below can reliably remove the old floor and add
+      // the dark rug, wall, trim, and shelf.
+      [
+        'scene, camera, renderer, controls',
+        'desk, monitor, keyboard, mouse, decorations',
+        'raycaster, pointer',
+        'isAnimating = false',
+        'hoveredObject = null',
+        'pointerStart = null',
+        'pointerStartTime = 0',
+        'lampBulb, lampLight, isLampOn = true',
+        'keyboardLight',
+        'keyboardColorIndex = 0',
+        'steamParticles = []',
+        'tabletScreenMesh, tabletCanvas, tabletCtx, tabletTexture, tabletNoteIndex = 0',
+        'jukebox, jukeboxLight, jukeboxBulb, jukeboxBulbLight, vinylDisc, isJukeboxPlaying = false',
+        'balloonMesh, balloonMaterial, balloonWobbleTime = 0, balloonColorIndex = 0'
+      ].forEach(function (declaration) {
+        code = code.replace('let ' + declaration + ';', 'var ' + declaration + ';');
+      });
       var s = document.createElement('script');
       s.textContent = code;
       document.body.appendChild(s);
