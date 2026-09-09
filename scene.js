@@ -9,7 +9,7 @@
 
   var H = 5.8;
   var T = 0.22;
-  var WALL = 0x0f1013;
+  var WALL = 0x090a0c;
   var xL = -4.8;
   var xR = 4.4;
   var zB = -2.7;
@@ -278,14 +278,20 @@
     floor.receiveShadow = true;
     root.add(floor);
 
-    // ---- Clean matte back wall + flush door ----
+        // ---- Acoustic Felt Backing + Vertical Wood Slat Wall ----
     var doorW = 1.0;
     var doorH = 2.4;
     var doorX = -3.15;
     var doorX0 = doorX - doorW / 2;
     var doorX1 = doorX + doorW / 2;
 
-    box(xR - xL, H, T, (xL + xR) / 2, H / 2, zB);
+    // 1. Acoustic Felt Backing (Base Wall: near-black matte felt 0x090a0c, roughness 0.98)
+    var feltMat = new THREE.MeshStandardMaterial({
+      color: 0x090a0c,
+      roughness: 0.98,
+      metalness: 0.0
+    });
+    box(xR - xL, H, T, (xL + xR) / 2, H / 2, zB, feltMat);
 
     // Minimal perimeter baseboard along bottom floor seam + crown trim
     var trimMat = new THREE.MeshStandardMaterial({
@@ -293,8 +299,71 @@
       roughness: 0.45,
       metalness: 0.1
     });
-    box(xR - xL, 0.08, 0.035, (xL + xR) / 2, 0.04, zB + T / 2 + 0.018, trimMat);
-    box(xR - xL, 0.06, 0.035, (xL + xR) / 2, H - 0.03, zB + T / 2 + 0.018, trimMat);
+    var baseH = 0.08;
+    var crownH = 0.06;
+    box(xR - xL, baseH, 0.035, (xL + xR) / 2, baseH / 2, zB + T / 2 + 0.018, trimMat);
+    box(xR - xL, crownH, 0.035, (xL + xR) / 2, H - crownH / 2, zB + T / 2 + 0.018, trimMat);
+
+    // 2. Vertical Slat Array using THREE.InstancedMesh
+    var slatW = 0.045;
+    var slatD = 0.025;
+    var slatGap = 0.038;
+    var slatPitch = slatW + slatGap;
+    var slatZ = zB + T / 2 + slatD / 2 + 0.002;
+
+    var slatMat = new THREE.MeshStandardMaterial({
+      color: 0x151619,
+      roughness: 0.65,
+      metalness: 0.08
+    });
+
+    var slatGeo = new THREE.BoxGeometry(slatW, 1, slatD);
+    var dummy = new THREE.Object3D();
+
+    var fullSlatH = H - baseH - crownH;
+    var fullSlatY = baseH + fullSlatH / 2;
+
+    var overDoorBottom = doorH + 0.045;
+    var overDoorH = H - crownH - overDoorBottom;
+    var overDoorY = overDoorBottom + overDoorH / 2;
+
+    // Door boundary clearance
+    var doorClearLeft = doorX0 - 0.04;
+    var doorClearRight = doorX1 + 0.04;
+
+    var slatConfigs = [];
+    var startX = xL + 0.08;
+    var endX = xR - 0.08;
+
+    for (var sx = startX; sx <= endX; sx += slatPitch) {
+      if (sx >= doorClearLeft && sx <= doorClearRight) {
+        // Over-door header slats
+        if (overDoorH > 0.2) {
+          slatConfigs.push({ x: sx, y: overDoorY, h: overDoorH });
+        }
+      } else {
+        // Full height slats
+        slatConfigs.push({ x: sx, y: fullSlatY, h: fullSlatH });
+      }
+    }
+
+    if (slatConfigs.length > 0) {
+      var slatInstances = new THREE.InstancedMesh(slatGeo, slatMat, slatConfigs.length);
+      slatInstances.name = 'acoustic-slats';
+      slatInstances.castShadow = true;
+      slatInstances.receiveShadow = true;
+
+      for (var si = 0; si < slatConfigs.length; si++) {
+        var cfg = slatConfigs[si];
+        dummy.position.set(cfg.x, cfg.y, slatZ);
+        dummy.scale.set(1, cfg.h, 1);
+        dummy.rotation.set(0, 0, 0);
+        dummy.updateMatrix();
+        slatInstances.setMatrixAt(si, dummy.matrix);
+      }
+      slatInstances.instanceMatrix.needsUpdate = true;
+      root.add(slatInstances);
+    }
 
     var doorPanelMat = new THREE.MeshStandardMaterial({ color: 0x1a1b1f, roughness: 0.82, metalness: 0.04 });
     box(doorW - 0.04, doorH - 0.04, 0.04, doorX, doorH / 2, zB + T / 2 + 0.025, doorPanelMat);
