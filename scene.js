@@ -1,5 +1,5 @@
 /*
- * Restored scene + polished back wall decor
+ * Back wall: floating shelf + logo + door light (no accent panel)
  */
 (function () {
   var GOOD_SCENE_URL =
@@ -14,71 +14,104 @@
     root.name = 'back-wall-decor';
 
     var doorX = -3.2;
-    var doorW = 1.6;
     var zB = -2.7;
     var T = 0.22;
     var deskX = 0.15;
 
-    // 1. Realistic door light bleed (lights only, no hard geometry)
-    var doorZ = zB;
-    var doorLight = new THREE.SpotLight(0xffeedd, 1.8, 4.0, Math.PI / 4, 0.8, 1.5);
-    doorLight.position.set(doorX, 0.05, doorZ + 0.05);
-    doorLight.target.position.set(doorX, 0, doorZ + 1.5);
+    // ---------- Door crack light (soft fan onto floor) ----------
+    var doorLight = new THREE.SpotLight(0xffeedd, 1.6, 4.0, Math.PI / 3.5, 0.85, 1.4);
+    doorLight.position.set(doorX, 0.04, zB + 0.06);
+    doorLight.target.position.set(doorX, 0, zB + 1.5);
     root.add(doorLight);
     root.add(doorLight.target);
 
-    var doorFill = new THREE.PointLight(0xffeedd, 0.55, 2.5, 1.6);
-    doorFill.position.set(doorX, 0.08, doorZ + 0.15);
+    var doorFill = new THREE.PointLight(0xffeedd, 0.45, 2.2, 1.6);
+    doorFill.position.set(doorX, 0.06, zB + 0.2);
     root.add(doorFill);
 
-    // 2. Desk accent backing panel
-    var panelW = 3.2;
-    var panelH = 3.0;
-    var panelD = 0.02;
-    var panelX = deskX;
-    var panelY = panelH / 2 + 0.12;
-    var panelZ = zB + T / 2 + 0.015;
+    // Soft emissive strip at door threshold (subtle, no hard mat)
+    var crack = new THREE.Mesh(
+      new THREE.PlaneGeometry(1.5, 0.04),
+      new THREE.MeshBasicMaterial({
+        color: 0xffeedd,
+        transparent: true,
+        opacity: 0.55,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      })
+    );
+    crack.rotation.x = -Math.PI / 2;
+    crack.position.set(doorX, 0.012, zB + T / 2 + 0.08);
+    root.add(crack);
 
-    var panelMat = new THREE.MeshStandardMaterial({
-      color: 0x1e1e24,
-      roughness: 0.85,
+    // ---------- Floating shelf (centered above desk, lowered) ----------
+    var shelfW = 2.4;
+    var shelfD = 0.28;
+    var shelfT = 0.05;
+    var shelfY = 2.95;
+    var shelfX = deskX;
+    var shelfZ = zB + T / 2 + shelfD / 2 + 0.02;
+
+    var shelfMat = new THREE.MeshStandardMaterial({
+      color: 0x18181b,
+      roughness: 0.4,
       metalness: 0.1
     });
-    var panel = new THREE.Mesh(new THREE.BoxGeometry(panelW, panelH, panelD), panelMat);
-    panel.position.set(panelX, panelY, panelZ);
-    panel.receiveShadow = true;
-    root.add(panel);
+    var shelf = new THREE.Mesh(new THREE.BoxGeometry(shelfW, shelfT, shelfD), shelfMat);
+    shelf.position.set(shelfX, shelfY, shelfZ);
+    shelf.castShadow = true;
+    shelf.receiveShadow = true;
+    root.add(shelf);
 
-    var frameMat = new THREE.MeshStandardMaterial({
-      color: 0x2a2a30,
-      roughness: 0.3,
-      metalness: 0.8
-    });
-    var border = 0.02;
-    var topF = new THREE.Mesh(new THREE.BoxGeometry(panelW + border * 2, border, panelD + 0.005), frameMat);
-    topF.position.set(panelX, panelY + panelH / 2 + border / 2, panelZ);
-    root.add(topF);
-    var botF = new THREE.Mesh(new THREE.BoxGeometry(panelW + border * 2, border, panelD + 0.005), frameMat);
-    botF.position.set(panelX, panelY - panelH / 2 - border / 2, panelZ);
-    root.add(botF);
-    var leftF = new THREE.Mesh(new THREE.BoxGeometry(border, panelH, panelD + 0.005), frameMat);
-    leftF.position.set(panelX - panelW / 2 - border / 2, panelY, panelZ);
-    root.add(leftF);
-    var rightF = new THREE.Mesh(new THREE.BoxGeometry(border, panelH, panelD + 0.005), frameMat);
-    rightF.position.set(panelX + panelW / 2 + border / 2, panelY, panelZ);
-    root.add(rightF);
+    // Under-shelf warm LED
+    var shelfLight = new THREE.PointLight(0xffeedd, 1.2, 2.2, 1.4);
+    shelfLight.position.set(shelfX, shelfY - 0.1, shelfZ - shelfD * 0.15);
+    root.add(shelfLight);
 
-    // 3. Clean circular logo emblem
-    var logoY = 2.7;
+    var ledStrip = new THREE.Mesh(
+      new THREE.BoxGeometry(shelfW * 0.88, 0.006, 0.018),
+      new THREE.MeshStandardMaterial({
+        color: 0xffeedd,
+        emissive: 0xffe4c4,
+        emissiveIntensity: 1.2,
+        roughness: 0.5
+      })
+    );
+    ledStrip.position.set(shelfX, shelfY - shelfT / 2 - 0.004, shelfZ - shelfD * 0.32);
+    root.add(ledStrip);
+
+    // Shelf decor: 2 books left, dark cylinder right
+    var book1 = new THREE.Mesh(
+      new THREE.BoxGeometry(0.28, 0.035, 0.2),
+      new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.75, metalness: 0.05 })
+    );
+    book1.position.set(shelfX - shelfW * 0.28, shelfY + shelfT / 2 + 0.018, shelfZ - 0.02);
+    root.add(book1);
+
+    var book2 = new THREE.Mesh(
+      new THREE.BoxGeometry(0.26, 0.03, 0.18),
+      new THREE.MeshStandardMaterial({ color: 0x3f3f46, roughness: 0.75, metalness: 0.05 })
+    );
+    book2.position.set(shelfX - shelfW * 0.28, shelfY + shelfT / 2 + 0.05, shelfZ - 0.02);
+    book2.rotation.y = 0.06;
+    root.add(book2);
+
+    var cyl = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.06, 0.06, 0.12, 20),
+      new THREE.MeshStandardMaterial({ color: 0x27272a, roughness: 0.35, metalness: 0.4 })
+    );
+    cyl.position.set(shelfX + shelfW * 0.3, shelfY + shelfT / 2 + 0.06, shelfZ - 0.02);
+    root.add(cyl);
+
+    // ---------- Logo badge (midway between monitor top and shelf) ----------
+    var logoY = 2.5;
     var logoX = deskX;
-    var logoZ = panelZ + panelD / 2 + 0.02;
+    var logoZ = zB + T / 2 + 0.03;
 
-    var badgeMat = new THREE.MeshStandardMaterial({
-      color: 0x18181b,
-      metalness: 0.8,
-      roughness: 0.2
-    });
-    var badge = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.02, 32), badgeMat);
+    var badge = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.24, 0.24, 0.02, 32),
+      new THREE.MeshStandardMaterial({ color: 0x18181b, metalness: 0.8, roughness: 0.2 })
+    );
     badge.rotation.x = Math.PI / 2;
     badge.position.set(logoX, logoY, logoZ);
     badge.userData = {
@@ -96,7 +129,7 @@
       if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
       tex.anisotropy = 8;
       var face = new THREE.Mesh(
-        new THREE.CircleGeometry(0.30, 48),
+        new THREE.CircleGeometry(0.22, 48),
         new THREE.MeshBasicMaterial({
           map: tex,
           transparent: true,
@@ -169,8 +202,9 @@
       function () { makeCanvasLogo(); }
     );
 
-    var halo = new THREE.PointLight(0x38bdf8, 0.8, 1.5, 1.8);
-    halo.position.set(logoX, logoY, panelZ - 0.05);
+    // Soft warm halo behind badge (wide, low intensity)
+    var halo = new THREE.PointLight(0xffeedd, 0.6, 2.5, 1.8);
+    halo.position.set(logoX, logoY, zB + 0.05);
     root.add(halo);
 
     scene.add(root);
