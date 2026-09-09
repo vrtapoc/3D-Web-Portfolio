@@ -285,7 +285,7 @@
     rugGeo.rotateX(-Math.PI / 2);
     var rug = new THREE.Mesh(
       rugGeo,
-      new THREE.MeshStandardMaterial({ color: 0x22242a, roughness: 0.95, metalness: 0.0 })
+      new THREE.MeshStandardMaterial({ color: 0x0a0b0d, roughness: 0.95, metalness: 0.0 })
     );
     rug.position.set(DESK_X, 0.008, DESK_Z + 0.55);
     rug.receiveShadow = true;
@@ -297,7 +297,7 @@
     borderGeo.rotateX(-Math.PI / 2);
     var border = new THREE.Mesh(
       borderGeo,
-      new THREE.MeshStandardMaterial({ color: 0x343842, roughness: 0.9, metalness: 0.0 })
+      new THREE.MeshStandardMaterial({ color: 0x1a1c22, roughness: 0.9, metalness: 0.0 })
     );
     border.position.set(DESK_X, 0.009, DESK_Z + 0.55);
     root.add(border);
@@ -323,7 +323,7 @@
     innerGeo.rotateX(-Math.PI / 2);
     var innerRug = new THREE.Mesh(
       innerGeo,
-      new THREE.MeshStandardMaterial({ color: 0x22242a, roughness: 0.95, metalness: 0.0 })
+      new THREE.MeshStandardMaterial({ color: 0x0a0b0d, roughness: 0.95, metalness: 0.0 })
     );
     innerRug.position.set(DESK_X, 0.028, DESK_Z + 0.55);
     innerRug.receiveShadow = true;
