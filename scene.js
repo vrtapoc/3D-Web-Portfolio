@@ -205,6 +205,75 @@
     });
   }
 
+  function createSkylineBackdropTex() {
+    var canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    var ctx = canvas.getContext('2d');
+    var grad = ctx.createLinearGradient(0, 0, 0, 512);
+    grad.addColorStop(0, '#03060d');
+    grad.addColorStop(0.6, '#060d1b');
+    grad.addColorStop(1, '#0c1728');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 512, 512);
+
+    for (var i = 0; i < 55; i++) {
+      var sx = Math.random() * 512;
+      var sy = Math.random() * 260;
+      var r = Math.random() * 0.8 + 0.3;
+      var a = Math.random() * 0.4 + 0.12;
+      ctx.fillStyle = 'rgba(180, 205, 240, ' + a + ')';
+      ctx.beginPath();
+      ctx.arc(sx, sy, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    return new THREE.CanvasTexture(canvas);
+  }
+
+  function createBuildingFacadeTex(floors, cols) {
+    var canvas = document.createElement('canvas');
+    canvas.width = 128;
+    canvas.height = 256;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#070a10';
+    ctx.fillRect(0, 0, 128, 256);
+
+    var palette = ['#ffc27a', '#ffeed6', '#66ccff'];
+    var floorH = 256 / floors;
+    var colW = 128 / cols;
+    var winPadX = colW * 0.24;
+    var winPadY = floorH * 0.26;
+    var winW = colW - winPadX * 2;
+    var winH = floorH - winPadY * 2;
+
+    for (var f = 0; f < floors; f++) {
+      for (var c = 0; c < cols; c++) {
+        var isLit = Math.random() < 0.22;
+        if (isLit) {
+          var colIndex = Math.random() < 0.65 ? 0 : (Math.random() < 0.88 ? 1 : 2);
+          ctx.fillStyle = palette[colIndex];
+        } else {
+          ctx.fillStyle = '#090d15';
+        }
+        ctx.fillRect(c * colW + winPadX, f * floorH + winPadY, winW, winH);
+      }
+    }
+    return new THREE.CanvasTexture(canvas);
+  }
+
+  function createHazeTex() {
+    var canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 128;
+    var ctx = canvas.getContext('2d');
+    var grad = ctx.createLinearGradient(0, 0, 0, 128);
+    grad.addColorStop(0, 'rgba(12, 23, 40, 0)');
+    grad.addColorStop(0.5, 'rgba(16, 28, 48, 0.4)');
+    grad.addColorStop(1, 'rgba(20, 36, 60, 0.85)');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 256, 128);
+    return new THREE.CanvasTexture(canvas);
+  }
   function createMidnightSkyTexture() {
     var canvas = document.createElement('canvas');
     canvas.width = 512;
@@ -732,29 +801,86 @@
     box(0.05, headerBottom - sillH, 0.05, xR - 0.04, sillH + (headerBottom - sillH) / 2, (winZ0 + winZ1) / 2, winFrameMat);
     box(0.05, 0.05, winLen, xR - 0.04, sillH + (headerBottom - sillH) / 2, (winZ0 + winZ1) / 2, winFrameMat);
 
-        // Midnight sky exterior backdrop (0x040711 with subtle 0x060c1c emissive)
-    var skyTex = createMidnightSkyTexture();
-    var exteriorMat = new THREE.MeshStandardMaterial({
-      color: 0x040711,
-      map: skyTex,
-      emissive: 0x060c1c,
-      emissiveIntensity: 0.45,
-      roughness: 0.92,
+            // ---- Distant Procedural Night City Skyline ----
+    var cityGroup = new THREE.Group();
+    cityGroup.name = 'exterior-city-skyline';
+
+    // 1. Night Sky Backdrop Plane
+    var skyBackdropTex = createSkylineBackdropTex();
+    var skyBackdropMat = new THREE.MeshStandardMaterial({
+      color: 0x03060d,
+      map: skyBackdropTex,
+      emissive: 0x071120,
+      emissiveIntensity: 0.5,
+      roughness: 0.95,
       metalness: 0.0,
       side: THREE.DoubleSide
     });
-    var exterior = new THREE.Mesh(
-      new THREE.PlaneGeometry(winLen - 0.05, headerBottom - sillH - 0.05),
-      exteriorMat
+    var skyBackdrop = new THREE.Mesh(
+      new THREE.PlaneGeometry(winLen + 4.5, headerBottom - sillH + 2.0),
+      skyBackdropMat
     );
-    exterior.rotation.y = Math.PI / 2;
-    exterior.position.set(xR + 0.15, sillH + (headerBottom - sillH) / 2, (winZ0 + winZ1) / 2);
-    root.add(exterior);
+    skyBackdrop.rotation.y = Math.PI / 2;
+    skyBackdrop.position.set(xR + 2.6, sillH + (headerBottom - sillH) / 2 + 0.5, (winZ0 + winZ1) / 2);
+    cityGroup.add(skyBackdrop);
+
+    // 2. Procedural 3D Skyscraper Silhouettes with Lit Windows
+    var buildingsData = [
+      { z: winZ0 - 0.4, w: 0.75, h: 3.4, d: 0.65, xOff: 0.7, fl: 18, co: 6 },
+      { z: winZ0 + 0.35, w: 0.65, h: 2.5, d: 0.55, xOff: 0.45, fl: 14, co: 5 },
+      { z: winZ0 + 1.1, w: 0.85, h: 4.1, d: 0.7, xOff: 0.9, fl: 22, co: 7 },
+      { z: winZ0 + 1.85, w: 0.55, h: 2.8, d: 0.5, xOff: 0.55, fl: 15, co: 5 },
+      { z: winZ0 + 2.55, w: 0.8, h: 4.6, d: 0.75, xOff: 1.1, fl: 24, co: 7 },
+      { z: winZ0 + 3.25, w: 0.6, h: 3.2, d: 0.6, xOff: 0.5, fl: 17, co: 5 },
+      { z: winZ0 + 3.95, w: 0.75, h: 3.9, d: 0.65, xOff: 0.85, fl: 20, co: 6 },
+      { z: winZ0 + 4.65, w: 0.58, h: 2.6, d: 0.55, xOff: 0.4, fl: 13, co: 5 },
+      { z: winZ0 + 5.35, w: 0.82, h: 4.3, d: 0.7, xOff: 1.0, fl: 22, co: 6 },
+      { z: winZ0 + 6.05, w: 0.7, h: 3.0, d: 0.6, xOff: 0.6, fl: 16, co: 5 },
+      { z: winZ1 + 0.35, w: 0.65, h: 3.6, d: 0.6, xOff: 0.75, fl: 19, co: 6 }
+    ];
+
+    buildingsData.forEach(function (b) {
+      var facadeTex = createBuildingFacadeTex(b.fl, b.co);
+      var bMat = new THREE.MeshStandardMaterial({
+        color: 0x070a10,
+        map: facadeTex,
+        emissive: 0xffffff,
+        emissiveMap: facadeTex,
+        emissiveIntensity: 0.9,
+        roughness: 0.9,
+        metalness: 0.08
+      });
+      var bMesh = new THREE.Mesh(new THREE.BoxGeometry(b.d, b.h, b.w), bMat);
+      bMesh.position.set(xR + b.xOff + 0.35, b.h / 2, b.z);
+      cityGroup.add(bMesh);
+    });
+
+    // 3. Atmospheric City Haze Plane near Building Bases
+    var hazePlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(winLen + 3.0, 1.9),
+      new THREE.MeshBasicMaterial({
+        map: createHazeTex(),
+        transparent: true,
+        opacity: 0.75,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      })
+    );
+    hazePlane.rotation.y = Math.PI / 2;
+    hazePlane.position.set(xR + 0.45, 0.95, (winZ0 + winZ1) / 2);
+    cityGroup.add(hazePlane);
+
+    // 4. Subtle Ambient Night City Glow
+    var groundCityGlow = new THREE.PointLight(0x0c1728, 0.9, 9.0, 1.4);
+    groundCityGlow.position.set(xR + 1.2, 0.5, (winZ0 + winZ1) / 2);
+    cityGroup.add(groundCityGlow);
 
     // Subtle cool moonlight interior rim
     var exteriorMoonRim = new THREE.PointLight(0x4a6a8a, 0.4, 6.0, 1.4);
     exteriorMoonRim.position.set(xR - 0.25, headerBottom - 0.4, (winZ0 + winZ1) / 2);
-    root.add(exteriorMoonRim);
+    cityGroup.add(exteriorMoonRim);
+
+    root.add(cityGroup);
 
     // Sleek minimal black ceiling track for curtains
     var trackMat = new THREE.MeshStandardMaterial({
