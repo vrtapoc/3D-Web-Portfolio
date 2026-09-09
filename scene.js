@@ -238,9 +238,10 @@
     root.add(doorLight);
     root.add(doorLight.target);
 
-    var slatW = 3.4;
-    var slatH = 3.6;
-    var slatY = 1.9;
+    // Wood slat panel — enlarged for breathing room around desk
+    var slatW = 4.4;
+    var slatH = 3.7;
+    var slatY = 2.05;
     var felt = new THREE.Mesh(
       new THREE.BoxGeometry(slatW, slatH, 0.04),
       new THREE.MeshStandardMaterial({ color: 0x0c0c0e, roughness: 0.98, metalness: 0 })
@@ -248,7 +249,7 @@
     felt.position.set(DESK_X, slatY, zB + T / 2 + 0.03);
     root.add(felt);
 
-    var slatCount = 22;
+    var slatCount = 30;
     var gap = (slatW - 0.2) / slatCount;
     var woodMat = new THREE.MeshStandardMaterial({ color: 0x3a2a1c, roughness: 0.7, metalness: 0.05 });
     var slatGeo = new THREE.BoxGeometry(0.07, slatH - 0.15, 0.05);
@@ -333,7 +334,7 @@
     drawNeonText(NEON_PALETTE[0].str);
 
     var neonGroup = new THREE.Group();
-    neonGroup.position.set(DESK_X, 3.15, zB + T / 2 + 0.12);
+    neonGroup.position.set(DESK_X, 3.42, zB + T / 2 + 0.12);
 
     var plateW = 3.2;
     var plateH = 1.15;
