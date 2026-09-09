@@ -172,6 +172,11 @@
     }
 
     var lampX = (-3.15 + DESK_X) / 2;
+        scene.traverse(function (obj) {
+      if (obj.userData && obj.userData.name === 'balloon') {
+        obj.position.set(xR - 0.48, 0, winZ1 - 0.45);
+      }
+    });
     scene.traverse(function (obj) {
       if (obj.userData && obj.userData.name === 'lamp') {
         obj.position.set(lampX, 0, DESK_Z + 0.2);
@@ -223,24 +228,24 @@
     geo.computeVertexNormals();
     return geo;
   }
-  function createSkylineBackdropTex() {
+    function createSkylineBackdropTex() {
     var canvas = document.createElement('canvas');
     canvas.width = 512;
     canvas.height = 512;
     var ctx = canvas.getContext('2d');
     var grad = ctx.createLinearGradient(0, 0, 0, 512);
-    grad.addColorStop(0, '#03060d');
-    grad.addColorStop(0.65, '#060d1b');
-    grad.addColorStop(1, '#0c1728');
+    grad.addColorStop(0, '#020408');
+    grad.addColorStop(0.7, '#03060c');
+    grad.addColorStop(1, '#050a14');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, 512, 512);
 
-    for (var i = 0; i < 40; i++) {
+    for (var i = 0; i < 45; i++) {
       var sx = Math.random() * 512;
-      var sy = Math.random() * 260;
-      var r = Math.random() * 0.75 + 0.25;
-      var a = Math.random() * 0.4 + 0.1;
-      ctx.fillStyle = 'rgba(180, 205, 240, ' + a + ')';
+      var sy = Math.random() * 300;
+      var r = Math.random() * 0.7 + 0.25;
+      var a = Math.random() * 0.45 + 0.15;
+      ctx.fillStyle = 'rgba(195, 215, 245, ' + a + ')';
       ctx.beginPath();
       ctx.arc(sx, sy, r, 0, Math.PI * 2);
       ctx.fill();
@@ -253,27 +258,26 @@
     canvas.width = 128;
     canvas.height = 256;
     var ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#070a10';
+    ctx.fillStyle = '#040609';
     ctx.fillRect(0, 0, 128, 256);
 
-    // Warm amber (0xffb366), soft incandescent white, rare pale blue
-    var palette = ['#ffb366', '#fff0db', '#88ccff'];
+    // Vibrant warm amber 0xffa834 and soft incandescent white 0xfff0db
+    var palette = ['#ffa834', '#fff0db', '#7ec8f8'];
     var floorH = 256 / floors;
     var colW = 128 / cols;
-    var winPadX = colW * 0.25;
-    var winPadY = floorH * 0.28;
+    var winPadX = colW * 0.24;
+    var winPadY = floorH * 0.26;
     var winW = colW - winPadX * 2;
     var winH = floorH - winPadY * 2;
 
     for (var f = 0; f < floors; f++) {
       for (var c = 0; c < cols; c++) {
-        // ~15% illuminated, rest dark silhouette glass
-        var isLit = Math.random() < 0.15;
+        var isLit = Math.random() < 0.16;
         if (isLit) {
-          var colIndex = Math.random() < 0.7 ? 0 : (Math.random() < 0.9 ? 1 : 2);
+          var colIndex = Math.random() < 0.72 ? 0 : (Math.random() < 0.92 ? 1 : 2);
           ctx.fillStyle = palette[colIndex];
         } else {
-          ctx.fillStyle = '#080b12';
+          ctx.fillStyle = '#07090e';
         }
         ctx.fillRect(c * colW + winPadX, f * floorH + winPadY, winW, winH);
       }
@@ -281,18 +285,13 @@
     return new THREE.CanvasTexture(canvas);
   }
 
-  function createCityHazeTex() {
-    var canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 128;
-    var ctx = canvas.getContext('2d');
-    var grad = ctx.createLinearGradient(0, 0, 0, 128);
-    grad.addColorStop(0, 'rgba(3, 6, 15, 0)');
-    grad.addColorStop(0.35, 'rgba(14, 31, 56, 0.4)');
-    grad.addColorStop(1, 'rgba(14, 31, 56, 0.85)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, 256, 128);
-    return new THREE.CanvasTexture(canvas);
+  function createCrescentMoonShape(r) {
+    var s = new THREE.Shape();
+    s.absarc(0, 0, r, 0, Math.PI * 2, false);
+    var hole = new THREE.Path();
+    hole.absarc(r * 0.35, r * 0.18, r * 0.88, 0, Math.PI * 2, true);
+    s.holes.push(hole);
+    return s;
   }
 
   var __cityBeacons = [];
@@ -844,15 +843,17 @@
     box(0.04, 0.04, winLen, xR - 0.03, transom2Y, (winZ0 + winZ1) / 2, winFrameMat);
 
     // Clear floor-to-ceiling glass pane
+        // Crystal clear architectural glass (no milky haze or wash)
     var glass = new THREE.Mesh(
       new THREE.PlaneGeometry(winLen - 0.02, headerBottom - sillH - 0.02),
       new THREE.MeshPhysicalMaterial({
         color: 0xffffff,
+        roughness: 0.02,
+        transmission: 0.95,
+        ior: 1.5,
         transparent: true,
-        opacity: 0.12,
-        roughness: 0.08,
-        metalness: 0.1,
-        reflectivity: 0.85,
+        opacity: 1.0,
+        reflectivity: 0.5,
         side: THREE.DoubleSide
       })
     );
@@ -860,19 +861,19 @@
     glass.position.set(xR - 0.02, sillH + (headerBottom - sillH) / 2, (winZ0 + winZ1) / 2);
     root.add(glass);
 
-                // ---- Confined Procedural Night City Skyline strictly framed behind window ----
+                    // ---- Confined Procedural Night City Skyline strictly framed behind window ----
     var cityGroup = new THREE.Group();
     cityGroup.name = 'exterior-city-skyline';
     __cityBeacons = [];
 
-    // 1. Night Sky Backdrop Plane (strictly bounded within window aperture)
+    // 1. Deep Inky Midnight Backdrop Plane (0x020408)
     var skyBackdropTex = createSkylineBackdropTex();
     var skyBackdropMat = new THREE.MeshStandardMaterial({
-      color: 0x03060d,
+      color: 0x020408,
       map: skyBackdropTex,
-      emissive: 0x071120,
-      emissiveIntensity: 0.5,
-      roughness: 0.95,
+      emissive: 0x03060c,
+      emissiveIntensity: 0.35,
+      roughness: 0.98,
       metalness: 0.0,
       side: THREE.DoubleSide
     });
@@ -884,8 +885,26 @@
     skyBackdrop.position.set(xR + 0.48, sillH + (headerBottom - sillH) / 2, (winZ0 + winZ1) / 2);
     cityGroup.add(skyBackdrop);
 
+    // Stylized Glowing Crescent Moon in upper quadrant
+    var moonGeo = new THREE.ShapeGeometry(createCrescentMoonShape(0.18), 16);
+    var moonMat = new THREE.MeshStandardMaterial({
+      color: 0xeeffff,
+      emissive: 0xccddee,
+      emissiveIntensity: 1.4,
+      roughness: 0.2,
+      side: THREE.DoubleSide
+    });
+    var moon = new THREE.Mesh(moonGeo, moonMat);
+    moon.rotation.y = Math.PI / 2;
+    moon.rotation.z = -0.22;
+    moon.position.set(xR + 0.46, headerBottom - 0.65, winZ0 + winLen * 0.28);
+    cityGroup.add(moon);
+
+    var moonGlow = new THREE.PointLight(0xccddee, 0.35, 2.5, 1.6);
+    moonGlow.position.set(xR + 0.42, headerBottom - 0.65, winZ0 + winLen * 0.28);
+    cityGroup.add(moonGlow);
+
     // 2. Procedural 3D Skyscraper Silhouettes (tightly positioned in [xR + 0.14, xR + 0.38])
-    // All Z positions strictly within [winZ0 + 0.1, winZ1 - 0.1]
     var buildingsData = [
       { z: winZ0 + 0.35, w: 0.48, h: 2.5, d: 0.12, xOff: 0.15, fl: 14, co: 4, spire: false },
       { z: winZ0 + 0.95, w: 0.62, h: 3.6, d: 0.14, xOff: 0.25, fl: 20, co: 5, spire: true, spireH: 0.55 },
@@ -903,11 +922,11 @@
     buildingsData.forEach(function (b) {
       var facadeTex = createBuildingFacadeTex(b.fl, b.co);
       var bMat = new THREE.MeshStandardMaterial({
-        color: 0x070a10,
+        color: 0x05070c,
         map: facadeTex,
         emissive: 0xffffff,
         emissiveMap: facadeTex,
-        emissiveIntensity: 0.85,
+        emissiveIntensity: 1.15,
         roughness: 0.9,
         metalness: 0.08
       });
@@ -924,7 +943,6 @@
         spireMesh.position.set(bX, spireY, b.z);
         cityGroup.add(spireMesh);
 
-        // Warning beacon sphere
         var beaconMat = new THREE.MeshStandardMaterial({
           color: 0xff1a1a,
           emissive: 0xff1111,
@@ -943,25 +961,19 @@
       }
     });
 
-    // 3. Atmospheric Distant Street Haze Plane behind lower third of buildings
-    var hazePlane = new THREE.Mesh(
-      new THREE.PlaneGeometry(winLen + 0.1, 1.6),
-      new THREE.MeshBasicMaterial({
-        map: createCityHazeTex(),
-        transparent: true,
-        opacity: 0.85,
-        side: THREE.DoubleSide,
-        depthWrite: false
-      })
-    );
-    hazePlane.rotation.y = Math.PI / 2;
-    hazePlane.position.set(xR + 0.42, sillH + 0.8, (winZ0 + winZ1) / 2);
-    cityGroup.add(hazePlane);
+    // 3. Distant Highway Traffic Light Trails along building bases
+    var trafficSpan = winLen + 0.1;
+    // Red taillight line (inward lane)
+    var redTrailMat = new THREE.MeshBasicMaterial({ color: 0xff2222 });
+    var redTrail = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.018, trafficSpan * 0.92), redTrailMat);
+    redTrail.position.set(xR + 0.22, sillH + 0.08, (winZ0 + winZ1) / 2);
+    cityGroup.add(redTrail);
 
-    // 4. Subtle ambient street level glow
-    var groundCityGlow = new THREE.PointLight(0x0e1f38, 0.6, 5.0, 1.4);
-    groundCityGlow.position.set(xR + 0.35, sillH + 0.4, (winZ0 + winZ1) / 2);
-    cityGroup.add(groundCityGlow);
+    // Warm white headlight line (outward lane)
+    var whiteTrailMat = new THREE.MeshBasicMaterial({ color: 0xffeedd });
+    var whiteTrail = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.018, trafficSpan * 0.88), whiteTrailMat);
+    whiteTrail.position.set(xR + 0.26, sillH + 0.13, (winZ0 + winZ1) / 2);
+    cityGroup.add(whiteTrail);
 
     root.add(cityGroup);
 
@@ -1050,7 +1062,7 @@
       plantGroup.add(leafMesh);
     });
 
-    plantGroup.position.set(xR - 0.42, 0, winZ1 - 0.58);
+    plantGroup.position.set(xR - 0.45, 0, winZ0 + 0.48);
     root.add(plantGroup);
 
     scene.add(root);
