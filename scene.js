@@ -1,5 +1,5 @@
 /*
- * Minimal console + fixed interactive neon texture cycle
+ * Neon click fix: capture-phase pointer + fresh texture each cycle
  */
 (function () {
   var GOOD_SCENE_URL =
@@ -337,7 +337,6 @@
     edgeFill.position.set(xR - 0.4, winTop - 0.2, winCZ);
     root.add(edgeFill);
 
-    // Interactive neon
     var NEON_PALETTE = [
       { hex: 0x00f5ff, str: '#00f5ff' },
       { hex: 0xff007f, str: '#ff007f' },
@@ -439,10 +438,36 @@
     function cycleNeonColor() {
       neonColorIndex = (neonColorIndex + 1) % NEON_PALETTE.length;
       var c = NEON_PALETTE[neonColorIndex];
-      drawNeonText(c.str);
-      neonTex.needsUpdate = true;
-      neonLogoMat.map = neonTex;
+
+      neonCtx.clearRect(0, 0, neonCanvas.width, neonCanvas.height);
+      neonCtx.font = '900 160px "JetBrains Mono", Consolas, "Courier New", monospace';
+      neonCtx.textAlign = 'center';
+      neonCtx.textBaseline = 'middle';
+      neonCtx.shadowColor = c.str;
+      neonCtx.shadowBlur = 40;
+      neonCtx.fillStyle = c.str;
+      neonCtx.fillText('</bosst>', 512, 200);
+      neonCtx.shadowBlur = 18;
+      neonCtx.fillStyle = c.str;
+      neonCtx.fillText('</bosst>', 512, 200);
+      neonCtx.shadowBlur = 6;
+      neonCtx.fillStyle = '#ffffff';
+      neonCtx.fillText('</bosst>', 512, 200);
+
+      var oldMap = neonLogoMat.map;
+      var freshTex = new THREE.CanvasTexture(neonCanvas);
+      if (THREE.SRGBColorSpace) freshTex.colorSpace = THREE.SRGBColorSpace;
+      freshTex.anisotropy = 8;
+      freshTex.needsUpdate = true;
+      neonLogoMat.map = freshTex;
       neonLogoMat.needsUpdate = true;
+      neonTex = freshTex;
+      if (oldMap && oldMap.dispose) {
+        try {
+          oldMap.dispose();
+        } catch (e) {}
+      }
+
       if (__neonLight) {
         __neonLight.color.setHex(c.hex);
         __neonLight.intensity = 3.5;
@@ -450,8 +475,10 @@
           if (__neonLight) __neonLight.intensity = 2.2;
         }, 100);
       }
+
       if (window.showToast) window.showToast('Neon: ' + c.str);
       if (window.playUiSound) window.playUiSound('click');
+      console.log('[neon] color ->', c.str);
     }
     window.__cycleNeonColor = cycleNeonColor;
 
@@ -465,7 +492,6 @@
     neonGroup.userData = { interactive: true, name: 'neonSign', onClick: cycleNeonColor };
     root.add(neonGroup);
 
-    // Floating console
     var consoleW = 2.8;
     var consoleH = 0.45;
     var consoleD = 0.55;
@@ -501,7 +527,6 @@
     underGlow2.position.set(consoleX - 0.05, 0.12, consoleZ);
     root.add(underGlow2);
 
-    // Centered slim soundbar
     var barW = 1.2;
     var barH = 0.06;
     var barD = 0.12;
@@ -529,7 +554,6 @@
     led.position.set(soundbar.position.x - barD / 2 - 0.008, soundbar.position.y, soundbar.position.z);
     root.add(led);
 
-    // Left only: Japandi ceramic ring (right side empty)
     var topSurfaceY = consoleY + consoleH / 2 + 0.02;
     var ringMat = new THREE.MeshStandardMaterial({ color: 0xd6c7b2, roughness: 0.9, metalness: 0.0 });
     var ring = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.04, 16, 32), ringMat);
@@ -546,42 +570,47 @@
 
   function patchNeonClick() {
     if (window.__neonClickPatched) return;
-    if (typeof onPointerDown !== 'function' || typeof raycaster === 'undefined') {
-      setTimeout(patchNeonClick, 250);
+    if (typeof scene === 'undefined' || typeof camera === 'undefined' || typeof renderer === 'undefined') {
+      setTimeout(patchNeonClick, 200);
+      return;
+    }
+    if (!renderer || !renderer.domElement) {
+      setTimeout(patchNeonClick, 200);
       return;
     }
     window.__neonClickPatched = true;
-    var _origPointerDown = onPointerDown;
-    onPointerDown = function (event) {
+
+    var localRay = new THREE.Raycaster();
+    var localMouse = new THREE.Vector2();
+
+    function handleNeonPointer(event) {
+      if (!window.__cycleNeonColor) return;
       try {
-        if (typeof raycaster !== 'undefined' && typeof camera !== 'undefined' && scene) {
-          var rect = renderer.domElement.getBoundingClientRect();
-          var mouse = new THREE.Vector2(
-            ((event.clientX - rect.left) / rect.width) * 2 - 1,
-            -((event.clientY - rect.top) / rect.height) * 2 + 1
-          );
-          raycaster.setFromCamera(mouse, camera);
-          var hits = raycaster.intersectObjects(scene.children, true);
-          for (var i = 0; i < hits.length; i++) {
-            var target = hits[i].object;
-            while (target && target !== scene) {
-              if (target.userData && typeof target.userData.onClick === 'function') {
-                target.userData.onClick();
-                return;
-              }
-              if (target.userData && target.userData.name === 'neonSign') {
-                if (window.__cycleNeonColor) window.__cycleNeonColor();
-                return;
-              }
-              target = target.parent;
+        var rect = renderer.domElement.getBoundingClientRect();
+        localMouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        localMouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        localRay.setFromCamera(localMouse, camera);
+        var hits = localRay.intersectObjects(scene.children, true);
+        for (var i = 0; i < hits.length; i++) {
+          var target = hits[i].object;
+          while (target && target !== scene) {
+            if (target.userData && target.userData.name === 'neonSign') {
+              event.stopImmediatePropagation();
+              event.preventDefault();
+              window.__cycleNeonColor();
+              return;
             }
+            target = target.parent;
           }
         }
       } catch (err) {
-        console.warn('neon click', err);
+        console.warn('neon pointer', err);
       }
-      return _origPointerDown.apply(this, arguments);
-    };
+    }
+
+    renderer.domElement.addEventListener('pointerdown', handleNeonPointer, true);
+    renderer.domElement.addEventListener('click', handleNeonPointer, true);
+    console.log('[neon] click handler armed');
   }
 
   function startNeonLoop() {
@@ -627,6 +656,8 @@
       applyBalancedLighting();
       startNeonLoop();
       patchNeonClick();
+      setTimeout(patchNeonClick, 600);
+      setTimeout(patchNeonClick, 1500);
       setTimeout(placeProps, 500);
       setTimeout(placeProps, 1200);
     }, 280);
@@ -654,7 +685,7 @@
     }
     if (!document.querySelector('script[data-furniture]')) {
       var s = document.createElement('script');
-      s.src = 'furniture.js?v=min1';
+      s.src = 'furniture.js?v=neonfix';
       s.setAttribute('data-furniture', '1');
       s.onload = runCreates;
       document.body.appendChild(s);
