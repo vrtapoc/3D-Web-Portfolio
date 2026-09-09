@@ -1,5 +1,5 @@
 /*
- * Neon click fix: capture-phase pointer + fresh texture each cycle
+ * Neon single-fire click + corrected console prop positions
  */
 (function () {
   var GOOD_SCENE_URL =
@@ -527,23 +527,22 @@
     underGlow2.position.set(consoleX - 0.05, 0.12, consoleZ);
     root.add(underGlow2);
 
-    var barW = 1.2;
-    var barH = 0.06;
-    var barD = 0.12;
+    var topSurfaceY = consoleY + consoleH / 2 + 0.02;
+
+    // Centered soundbar
+    var barW = 1.15;
+    var barH = 0.055;
+    var barD = 0.11;
     var soundbar = new THREE.Mesh(
       new THREE.BoxGeometry(barD, barH, barW),
       new THREE.MeshStandardMaterial({ color: 0x27272a, roughness: 0.9, metalness: 0.05 })
     );
-    soundbar.position.set(
-      consoleX - consoleD / 2 + barD / 2 + 0.08,
-      consoleY + consoleH / 2 + 0.02 + barH / 2,
-      consoleZ
-    );
+    soundbar.position.set(consoleX - consoleD * 0.15, topSurfaceY + barH / 2, consoleZ);
     soundbar.castShadow = true;
     root.add(soundbar);
 
     var led = new THREE.Mesh(
-      new THREE.SphereGeometry(0.01, 8, 8),
+      new THREE.SphereGeometry(0.009, 8, 8),
       new THREE.MeshStandardMaterial({
         color: 0x00f5ff,
         emissive: 0x00f5ff,
@@ -551,19 +550,20 @@
         roughness: 0.3
       })
     );
-    led.position.set(soundbar.position.x - barD / 2 - 0.008, soundbar.position.y, soundbar.position.z);
+    led.position.set(soundbar.position.x - barD / 2 - 0.006, soundbar.position.y, soundbar.position.z);
     root.add(led);
 
-    var topSurfaceY = consoleY + consoleH / 2 + 0.02;
+    // Left ceramic ring (right stays empty)
+    var leftZ = consoleZ - consoleW * 0.32;
     var ringMat = new THREE.MeshStandardMaterial({ color: 0xd6c7b2, roughness: 0.9, metalness: 0.0 });
-    var ring = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.04, 16, 32), ringMat);
-    ring.position.set(consoleX - 0.02, topSurfaceY + 0.12, consoleZ - 0.9);
+    var ringBase = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.07, 0.018, 20), ringMat);
+    ringBase.position.set(consoleX - consoleD * 0.1, topSurfaceY + 0.009, leftZ);
+    root.add(ringBase);
+    var ring = new THREE.Mesh(new THREE.TorusGeometry(0.1, 0.035, 16, 32), ringMat);
+    ring.position.set(consoleX - consoleD * 0.1, topSurfaceY + 0.1, leftZ);
     ring.castShadow = true;
     ring.receiveShadow = true;
     root.add(ring);
-    var ringBase = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.02, 20), ringMat);
-    ringBase.position.set(consoleX - 0.02, topSurfaceY + 0.01, consoleZ - 0.9);
-    root.add(ringBase);
 
     scene.add(root);
   }
@@ -582,9 +582,12 @@
 
     var localRay = new THREE.Raycaster();
     var localMouse = new THREE.Vector2();
+    var lastCycleAt = 0;
 
     function handleNeonPointer(event) {
       if (!window.__cycleNeonColor) return;
+      var now = performance.now();
+      if (now - lastCycleAt < 280) return;
       try {
         var rect = renderer.domElement.getBoundingClientRect();
         localMouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -595,8 +598,9 @@
           var target = hits[i].object;
           while (target && target !== scene) {
             if (target.userData && target.userData.name === 'neonSign') {
+              lastCycleAt = now;
               event.stopImmediatePropagation();
-              event.preventDefault();
+              if (event.cancelable) event.preventDefault();
               window.__cycleNeonColor();
               return;
             }
@@ -609,8 +613,7 @@
     }
 
     renderer.domElement.addEventListener('pointerdown', handleNeonPointer, true);
-    renderer.domElement.addEventListener('click', handleNeonPointer, true);
-    console.log('[neon] click handler armed');
+    console.log('[neon] single-fire click handler armed');
   }
 
   function startNeonLoop() {
@@ -657,7 +660,6 @@
       startNeonLoop();
       patchNeonClick();
       setTimeout(patchNeonClick, 600);
-      setTimeout(patchNeonClick, 1500);
       setTimeout(placeProps, 500);
       setTimeout(placeProps, 1200);
     }, 280);
@@ -685,7 +687,7 @@
     }
     if (!document.querySelector('script[data-furniture]')) {
       var s = document.createElement('script');
-      s.src = 'furniture.js?v=neonfix';
+      s.src = 'furniture.js?v=single1';
       s.setAttribute('data-furniture', '1');
       s.onload = runCreates;
       document.body.appendChild(s);
