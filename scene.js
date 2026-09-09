@@ -1,6 +1,5 @@
 /*
- * Acoustic wall polish: </> neon with front PointLight, top grazing spots,
- * thicker oatmeal cushion, pillows left / books+plant right
+ * Neon fixed: acrylic panel mounted on right wall (faces -X), canvas </> logo
  */
 (function () {
   var GOOD_SCENE_URL =
@@ -300,7 +299,6 @@
     var winCY = winBottom + winH / 2;
     var winCZ = (winZ0 + winZ1) / 2;
 
-    // --- Acoustic felt + slats ---
     var felt = new THREE.Mesh(
       new THREE.BoxGeometry(0.04, winH - 0.06, winLen - 0.1),
       new THREE.MeshStandardMaterial({ color: 0x0c0c0e, roughness: 0.98, metalness: 0 })
@@ -326,7 +324,6 @@
     slats.instanceMatrix.needsUpdate = true;
     root.add(slats);
 
-    // Top grazing spots
     var topSpot1 = new THREE.SpotLight(0xffc090, 1.4, 8, Math.PI / 5, 0.55, 1.2);
     topSpot1.position.set(xR - 0.9, winTop - 0.05, winCZ - winLen * 0.22);
     topSpot1.target.position.set(xR - 0.05, winCY - 0.5, winCZ - winLen * 0.22);
@@ -341,38 +338,111 @@
     edgeFill.position.set(xR - 0.4, winTop - 0.2, winCZ);
     root.add(edgeFill);
 
-    // Neon </> sign
-    var neonColor = 0xff2a6a;
-    var neonMat = new THREE.MeshStandardMaterial({
-      color: neonColor,
-      emissive: neonColor,
-      emissiveIntensity: 2.0,
-      roughness: 0.25,
-      metalness: 0.15
-    });
-    var neonGroup = new THREE.Group();
-    neonGroup.position.set(xR - 0.14, winCY + 0.1, winCZ);
-    function neonSeg(len, rx, ry, rz, px, py, pz) {
-      var m = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, len, 10), neonMat);
-      m.rotation.set(rx, ry, rz);
-      m.position.set(px, py, pz);
-      neonGroup.add(m);
-    }
-    neonSeg(0.55, 0, 0, Math.PI / 2.6, 0, 0.12, -0.55);
-    neonSeg(0.55, 0, 0, -Math.PI / 2.6, 0, -0.12, -0.55);
-    neonSeg(0.85, 0, 0, -0.45, 0, 0, -0.05);
-    neonSeg(0.55, 0, 0, -Math.PI / 2.6, 0, 0.12, 0.5);
-    neonSeg(0.55, 0, 0, Math.PI / 2.6, 0, -0.12, 0.5);
-    root.add(neonGroup);
+    // Neon </> — wall-mounted acrylic panel on right wall (faces -X into room)
+    var neonColor = 0xff3377;
 
-    var neonLight = new THREE.PointLight(neonColor, 1.8, 5.5, 1.3);
+    function makeNeonLogoTexture() {
+      var c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 320;
+      var ctx = c.getContext('2d');
+      ctx.clearRect(0, 0, 512, 320);
+      ctx.font = 'bold 160px monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.shadowColor = '#ff3377';
+      ctx.shadowBlur = 28;
+      ctx.fillStyle = '#ff5599';
+      ctx.fillText('</>', 256, 168);
+      ctx.shadowBlur = 10;
+      ctx.fillStyle = '#ff88bb';
+      ctx.fillText('</>', 256, 168);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#ffd0e0';
+      ctx.fillText('</>', 256, 168);
+      var tex = new THREE.CanvasTexture(c);
+      if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+      return tex;
+    }
+
+    var neonGroup = new THREE.Group();
+    neonGroup.rotation.y = -Math.PI / 2;
+    neonGroup.position.set(xR - 0.12, winCY + 0.05, winCZ);
+
+    var plateW = 1.15;
+    var plateH = 0.72;
+    var plateMat;
+    try {
+      plateMat = new THREE.MeshPhysicalMaterial({
+        color: 0x1a1a22,
+        roughness: 0.12,
+        metalness: 0.08,
+        transmission: 0.55,
+        transparent: true,
+        opacity: 0.55,
+        thickness: 0.02,
+        side: THREE.DoubleSide
+      });
+    } catch (e) {
+      plateMat = new THREE.MeshStandardMaterial({
+        color: 0x1a1a22,
+        roughness: 0.15,
+        metalness: 0.1,
+        transparent: true,
+        opacity: 0.5,
+        side: THREE.DoubleSide
+      });
+    }
+    var plate = new THREE.Mesh(new THREE.BoxGeometry(plateW, plateH, 0.02), plateMat);
+    neonGroup.add(plate);
+
+    var chromeMat = new THREE.MeshStandardMaterial({
+      color: 0xc0c4cc,
+      roughness: 0.25,
+      metalness: 0.9
+    });
+    var standOffs = [
+      [-plateW * 0.42, plateH * 0.38],
+      [plateW * 0.42, plateH * 0.38],
+      [-plateW * 0.42, -plateH * 0.38],
+      [plateW * 0.42, -plateH * 0.38]
+    ];
+    standOffs.forEach(function (xy) {
+      var stand = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.018, 0.018, 0.04, 10),
+        chromeMat
+      );
+      stand.rotation.x = Math.PI / 2;
+      stand.position.set(xy[0], xy[1], -0.03);
+      neonGroup.add(stand);
+      var disc = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.028, 0.028, 0.006, 12),
+        chromeMat
+      );
+      disc.rotation.x = Math.PI / 2;
+      disc.position.set(xy[0], xy[1], -0.05);
+      neonGroup.add(disc);
+    });
+
+    var logoTex = makeNeonLogoTexture();
+    var logoMat = new THREE.MeshBasicMaterial({
+      map: logoTex,
+      transparent: true,
+      toneMapped: false,
+      side: THREE.DoubleSide,
+      depthWrite: false
+    });
+    var logo = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.55), logoMat);
+    logo.position.set(0, 0, 0.012);
+    neonGroup.add(logo);
+
+    var neonLight = new THREE.PointLight(neonColor, 1.7, 5.5, 1.3);
     neonLight.name = 'neon-accent';
-    neonLight.position.set(xR - 0.55, winCY + 0.1, winCZ);
-    root.add(neonLight);
+    neonLight.position.set(0, 0, 0.35);
+    neonGroup.add(neonLight);
     __neonLight = neonLight;
-    var neonFill = new THREE.PointLight(0xff6090, 0.5, 4, 1.4);
-    neonFill.position.set(xR - 0.35, winCY - 0.2, winCZ);
-    root.add(neonFill);
+
+    root.add(neonGroup);
 
     // Daybed — thick oatmeal cushion
     var fabricMat = new THREE.MeshStandardMaterial({ color: 0xc4b8a8, roughness: 0.88, metalness: 0.02 });
@@ -389,7 +459,6 @@
     root.add(cushionBevel);
     var cushionY = benchH + 0.22;
 
-    // Pillows left
     var pillow1 = new THREE.Mesh(
       new THREE.BoxGeometry(0.42, 0.36, 0.14),
       new THREE.MeshStandardMaterial({ color: 0x5a554c, roughness: 0.9, metalness: 0.02 })
@@ -409,7 +478,6 @@
     pillow2.castShadow = true;
     root.add(pillow2);
 
-    // Books + plant on top (right)
     var bookColors = [0x2a3040, 0x5a3020, 0x1e3a2a];
     var bookBaseZ = winCZ + winLen * 0.28;
     var bookBaseX = xR - 0.5;
@@ -523,7 +591,7 @@
     }
     if (!document.querySelector('script[data-furniture]')) {
       var s = document.createElement('script');
-      s.src = 'furniture.js?v=acoustic2';
+      s.src = 'furniture.js?v=neonfix1';
       s.setAttribute('data-furniture', '1');
       s.onload = runCreates;
       document.body.appendChild(s);
