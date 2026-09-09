@@ -15,7 +15,7 @@
   var zB = -2.7;
   var zF = 4.2;
 
-  var DESK_X = -0.15;
+  var DESK_X = 0.85;
   var DESK_Z = zB + 0.85;
   var CONSOLE_W = 2.9;
   var CONSOLE_D = 0.75;
@@ -152,7 +152,7 @@
       }
     }
 
-    var lampX = (-3.2 + DESK_X) / 2;
+    var lampX = (-3.15 + DESK_X) / 2;
     scene.traverse(function (obj) {
       if (obj.userData && obj.userData.name === 'lamp') {
         obj.position.set(lampX, 0, DESK_Z + 0.2);
@@ -168,8 +168,9 @@
     });
 
     if (typeof jukebox !== 'undefined' && jukebox) {
-      jukebox.position.set(2.5, 0, -2.05);
-      jukebox.rotation.y = Math.PI;
+      // Front-left, facing into the room (clears back-right corner)
+      jukebox.position.set(-3.55, 0, 2.9);
+      jukebox.rotation.y = Math.PI / 2;
     }
 
     scene.traverse(function (obj) {
@@ -217,51 +218,85 @@
     floor.receiveShadow = true;
     root.add(floor);
 
-    var doorW = 1.6;
-    var doorH = 3.8;
-    var doorX = -3.2;
+    // ---- Full-wall wood slats + concealed jib door ----
+    var doorW = 1.0;
+    var doorH = 2.4;
+    var doorX = -3.15;
     var doorX0 = doorX - doorW / 2;
     var doorX1 = doorX + doorW / 2;
-    if (doorX0 > xL) box(doorX0 - xL, H, T, (xL + doorX0) / 2, H / 2, zB);
-    box(doorW, H - doorH, T, doorX, doorH + (H - doorH) / 2, zB);
-    if (xR > doorX1) box(xR - doorX1, H, T, (doorX1 + xR) / 2, H / 2, zB);
+    var doorBottom = 0.0;
+    var doorTop = doorH;
 
-    box(0.06, doorH + 0.08, T + 0.02, doorX0, doorH / 2, zB, frameMat);
-    box(0.06, doorH + 0.08, T + 0.02, doorX1, doorH / 2, zB, frameMat);
-    box(doorW, 0.06, T + 0.02, doorX, doorH, zB, frameMat);
-    box(doorW - 0.1, doorH - 0.06, 0.05, doorX, doorH / 2, zB + T / 2 + 0.02, doorMat);
-    box(0.14, 0.03, 0.03, doorX + doorW * 0.3, doorH * 0.48, zB + T / 2 + 0.05, metalMat);
+    box(xR - xL, H, T, (xL + xR) / 2, H / 2, zB);
+
+    var feltW = xR - xL - 0.04;
+    var feltH = H - 0.04;
+    var felt = new THREE.Mesh(
+      new THREE.BoxGeometry(feltW, feltH, 0.04),
+      new THREE.MeshStandardMaterial({ color: 0x0c0c0e, roughness: 0.98, metalness: 0 })
+    );
+    felt.position.set((xL + xR) / 2, H / 2, zB + T / 2 + 0.03);
+    root.add(felt);
+
+    var slatCount = 52;
+    var margin = 0.08;
+    var usableW = feltW - margin * 2;
+    var gap = usableW / slatCount;
+    var woodMat = new THREE.MeshStandardMaterial({ color: 0x3a2a1c, roughness: 0.7, metalness: 0.05 });
+    var slatGeo = new THREE.BoxGeometry(0.065, feltH - 0.06, 0.05);
+    var slats = new THREE.InstancedMesh(slatGeo, woodMat, slatCount);
+    var dummy = new THREE.Object3D();
+    var slatZ = zB + T / 2 + 0.08;
+    for (var si = 0; si < slatCount; si++) {
+      dummy.position.set(xL + margin + gap * (si + 0.5), H / 2, slatZ);
+      dummy.updateMatrix();
+      slats.setMatrixAt(si, dummy.matrix);
+    }
+    slats.instanceMatrix.needsUpdate = true;
+    root.add(slats);
+
+    var seamMat = new THREE.MeshStandardMaterial({ color: 0x050506, roughness: 0.9, metalness: 0.1 });
+    var seam = 0.015;
+    var seamZ = slatZ + 0.028;
+    var topSeam = new THREE.Mesh(new THREE.BoxGeometry(doorW + seam * 2, seam, 0.02), seamMat);
+    topSeam.position.set(doorX, doorTop + seam / 2, seamZ);
+    root.add(topSeam);
+    var botSeam = new THREE.Mesh(new THREE.BoxGeometry(doorW + seam * 2, seam, 0.02), seamMat);
+    botSeam.position.set(doorX, doorBottom + seam / 2, seamZ);
+    root.add(botSeam);
+    var leftSeam = new THREE.Mesh(new THREE.BoxGeometry(seam, doorH, 0.02), seamMat);
+    leftSeam.position.set(doorX0 - seam / 2, doorH / 2, seamZ);
+    root.add(leftSeam);
+    var rightSeam = new THREE.Mesh(new THREE.BoxGeometry(seam, doorH, 0.02), seamMat);
+    rightSeam.position.set(doorX1 + seam / 2, doorH / 2, seamZ);
+    root.add(rightSeam);
+
+    var handleMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.35, metalness: 0.7 });
+    var handle = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.32, 0.025), handleMat);
+    handle.position.set(doorX1 - 0.04, doorH * 0.48, seamZ + 0.02);
+    root.add(handle);
 
     var doorLight = new THREE.SpotLight(0xffeedd, 1.5, 4.0, Math.PI / 3.5, 0.85, 1.4);
     doorLight.position.set(doorX, 0.04, zB + 0.06);
     doorLight.target.position.set(doorX, 0, zB + 1.5);
     root.add(doorLight);
     root.add(doorLight.target);
-
-    // Wood slat panel — enlarged for breathing room around desk
-    var slatW = 4.4;
-    var slatH = 3.7;
-    var slatY = 2.05;
-    var felt = new THREE.Mesh(
-      new THREE.BoxGeometry(slatW, slatH, 0.04),
-      new THREE.MeshStandardMaterial({ color: 0x0c0c0e, roughness: 0.98, metalness: 0 })
+    var doorFill = new THREE.PointLight(0xffeedd, 0.4, 2.2, 1.6);
+    doorFill.position.set(doorX, 0.06, zB + 0.18);
+    root.add(doorFill);
+    var crack = new THREE.Mesh(
+      new THREE.PlaneGeometry(doorW * 0.92, 0.03),
+      new THREE.MeshBasicMaterial({
+        color: 0xffeedd,
+        transparent: true,
+        opacity: 0.5,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      })
     );
-    felt.position.set(DESK_X, slatY, zB + T / 2 + 0.03);
-    root.add(felt);
-
-    var slatCount = 30;
-    var gap = (slatW - 0.2) / slatCount;
-    var woodMat = new THREE.MeshStandardMaterial({ color: 0x3a2a1c, roughness: 0.7, metalness: 0.05 });
-    var slatGeo = new THREE.BoxGeometry(0.07, slatH - 0.15, 0.05);
-    var slats = new THREE.InstancedMesh(slatGeo, woodMat, slatCount);
-    var dummy = new THREE.Object3D();
-    for (var si = 0; si < slatCount; si++) {
-      dummy.position.set(DESK_X - slatW / 2 + 0.12 + gap * (si + 0.5), slatY, zB + T / 2 + 0.08);
-      dummy.updateMatrix();
-      slats.setMatrixAt(si, dummy.matrix);
-    }
-    slats.instanceMatrix.needsUpdate = true;
-    root.add(slats);
+    crack.rotation.x = -Math.PI / 2;
+    crack.position.set(doorX, 0.012, zB + T / 2 + 0.1);
+    root.add(crack);
 
     var consoleMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.4, metalness: 0.1 });
     var consoleBody = new THREE.Mesh(new THREE.BoxGeometry(CONSOLE_W, CONSOLE_H, CONSOLE_D), consoleMat);
