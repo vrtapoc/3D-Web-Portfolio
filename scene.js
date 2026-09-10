@@ -1058,21 +1058,7 @@
     box(T, headerH, winLen, xR, headerBottom + headerH / 2, winMidZ, rightWallMat);
     box(T, sillH, winLen, xR, sillH / 2, winMidZ, rightWallMat);
 
-    // Subtle Shallow Recessed Architectural Border (#08090B, depth 0.04, width 0.05)
-    var recessMat = new THREE.MeshStandardMaterial({
-      color: 0x08090b,
-      roughness: 0.92,
-      metalness: 0.05
-    });
-    var borderW = 0.05;
-    var recessD = 0.04;
     var panelX = xR - T / 2 - 0.005;
-
-    // Inner reveal liner framing the aperture
-    box(recessD, borderW, winLen, panelX + recessD / 2, headerBottom - borderW / 2, winMidZ, recessMat);
-    box(recessD, borderW, winLen, panelX + recessD / 2, sillH + borderW / 2, winMidZ, recessMat);
-    box(recessD, winH, borderW, panelX + recessD / 2, winMidH, winZ0 + borderW / 2, recessMat);
-    box(recessD, winH, borderW, panelX + recessD / 2, winMidH, winZ1 - borderW / 2, recessMat);
 
     function boxIn(parent, w, h, d, x, y, z, mat) {
       var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
@@ -1217,25 +1203,6 @@
     skyPlane.userData.isRightWallFeature = true;
     windowGroup.add(skyPlane);
 
-    // Recessed ceiling linear graze light
-    var grazeMat = new THREE.MeshStandardMaterial({
-      color: 0x14161a,
-      emissive: 0xffeedd,
-      emissiveIntensity: 0.4,
-      roughness: 0.4,
-      transparent: true,
-      opacity: 0.0
-    });
-    var grazeBar = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.025, winLen), grazeMat);
-    grazeBar.position.set(panelX - 0.04, headerBottom - 0.015, winMidZ);
-    windowGroup.add(grazeBar);
-
-    var windowGrazeLight = new THREE.SpotLight(0xffeedd, 0.0, 5.5, Math.PI / 3.0, 0.85, 1.3);
-    windowGrazeLight.position.set(panelX - 0.1, headerBottom, winMidZ);
-    windowGrazeLight.target.position.set(panelX, 0, winMidZ);
-    windowGroup.add(windowGrazeLight);
-    windowGroup.add(windowGrazeLight.target);
-
     root.add(windowGroup);
 
     // Invisible interactive hit plane for reliable raycasting across entire aperture
@@ -1285,10 +1252,6 @@
         mullionMat.opacity = progress;
         glassMat.opacity = progress;
         highMat.opacity = progress;
-        grazeMat.opacity = progress;
-        if (windowGrazeLight) {
-          windowGrazeLight.intensity = 0.55 * progress;
-        }
 
         if (t < 1.0) {
           requestAnimationFrame(animateTransition);
