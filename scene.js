@@ -1125,30 +1125,47 @@
     root.add(muralGroup);
 
     // ==========================================
-    // 2. STATE 2: WINDOW (Physical Glass + Frame + Exterior Image)
+    // 2. STATE 2: WINDOW (Architectural Floor-to-Ceiling Window)
     // ==========================================
     var windowGroup = new THREE.Group();
     windowGroup.name = 'right-wall-window-group';
     // Pre-warmed on GPU with opacity 0 to eliminate first-click shader compilation stall
     windowGroup.visible = true;
 
-    // Single slim interior vertical mullion (near-black #050608, NO horizontal mullions)
-    var mullionMat = new THREE.MeshStandardMaterial({
-      color: 0x050608,
-      roughness: 0.55,
-      metalness: 0.6,
+    // Dark architectural frame and sill material (#05070A, roughness 0.65)
+    var winFrameMat = new THREE.MeshStandardMaterial({
+      color: 0x05070a,
+      roughness: 0.65,
+      metalness: 0.25,
       transparent: true,
       opacity: 0.0
     });
-    boxIn(windowGroup, 0.04, winH, 0.045, panelX - 0.012, winMidH, winMidZ, mullionMat);
 
-    // Physical Glass Pane with Rain Normal Map (crystal clear glass with crisp raindrops, zero frosted blur)
+    var frameW = 0.08;
+    var frameD = 0.08;
+    var frameX = panelX + frameD / 2;
+    var glassX = panelX + 0.06;
+
+    // Outer architectural frame (top, bottom, and side jambs)
+    boxIn(windowGroup, frameD, frameW, winLen, frameX, headerBottom - frameW / 2, winMidZ, winFrameMat);
+    boxIn(windowGroup, frameD, frameW, winLen, frameX, sillH + frameW / 2, winMidZ, winFrameMat);
+    boxIn(windowGroup, frameD, winH, frameW, frameX, winMidH, winZ0 + frameW / 2, winFrameMat);
+    boxIn(windowGroup, frameD, winH, frameW, frameX, winMidH, winZ1 - frameW / 2, winFrameMat);
+
+    // Single slim structural vertical center mullion (#05070A, NO horizontal mullions)
+    boxIn(windowGroup, 0.085, winH, 0.045, panelX + 0.0425, winMidH, winMidZ, winFrameMat);
+
+    // Narrow structural bottom sill (#05070A, depth 0.12, cleanly grounded)
+    boxIn(windowGroup, 0.12, 0.035, winLen + 0.04, panelX - 0.025, sillH - 0.015, winMidZ, winFrameMat);
+
+    // Physical Glass Panes with Rain Normal Map (recessed behind frame, crystal clear with crisp raindrops)
     var rainNormalMap = createRainyGlassNormalMap();
     var glassMat = new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
       transmission: 0.88,
       roughness: 0.02,
-      ior: 1.45,
+      ior: 1.48,
+      reflectivity: 0.25,
       transparent: true,
       opacity: 0.0,
       normalMap: rainNormalMap,
@@ -1156,16 +1173,24 @@
     });
     glassMat.normalScale.set(0.04, 0.04);
 
-    var glass = new THREE.Mesh(
-      new THREE.PlaneGeometry(winLen, winH),
-      glassMat
-    );
-    glass.rotation.y = -Math.PI / 2;
-    glass.position.set(panelX - 0.002, winMidH, winMidZ);
-    glass.userData.isRightWallFeature = true;
-    windowGroup.add(glass);
+    // Two large recessed glass panes framing the center mullion
+    var paneLen = (winLen - 2 * frameW - 0.045) / 2;
+    var paneH = winH - 2 * frameW;
+    var paneGeo = new THREE.PlaneGeometry(paneLen, paneH);
 
-    // Exterior Backdrop (assets/high.png behind the glass)
+    var glass1 = new THREE.Mesh(paneGeo, glassMat);
+    glass1.rotation.y = -Math.PI / 2;
+    glass1.position.set(glassX, winMidH, (winZ0 + frameW) + paneLen / 2);
+    glass1.userData.isRightWallFeature = true;
+    windowGroup.add(glass1);
+
+    var glass2 = new THREE.Mesh(paneGeo, glassMat);
+    glass2.rotation.y = -Math.PI / 2;
+    glass2.position.set(glassX, winMidH, (winZ1 - frameW) - paneLen / 2);
+    glass2.userData.isRightWallFeature = true;
+    windowGroup.add(glass2);
+
+    // Exterior Backdrop (assets/high.png placed behind the recessed glass)
     var highTex = texLoader.load('assets/high.png', function (tex) {
       if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
       var winAspect = winLen / winH;
@@ -1187,19 +1212,18 @@
 
     var highMat = new THREE.MeshBasicMaterial({
       map: highTex,
-      color: 0x767f8a, // Subtly darkened ~18% further to balance night lights while preserving buildings, river & clouds
+      color: 0x767f8a, // Subtly darkened ~18% to balance night lights while preserving buildings, river & clouds
       side: THREE.DoubleSide,
       transparent: true,
       opacity: 0.0
     });
 
-    // Exact same panel dimensions, alignment, and position as Mural
     var skyPlane = new THREE.Mesh(
       new THREE.PlaneGeometry(winLen, winH),
       highMat
     );
     skyPlane.rotation.y = -Math.PI / 2;
-    skyPlane.position.set(panelX, winMidH, winMidZ);
+    skyPlane.position.set(glassX + 0.02, winMidH, winMidZ);
     skyPlane.userData.isRightWallFeature = true;
     windowGroup.add(skyPlane);
 
@@ -1249,7 +1273,7 @@
         }
 
         // Crossfade Window components
-        mullionMat.opacity = progress;
+        winFrameMat.opacity = progress;
         glassMat.opacity = progress;
         highMat.opacity = progress;
 
