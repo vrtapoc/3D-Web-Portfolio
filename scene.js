@@ -116,7 +116,7 @@
     var fill = new THREE.DirectionalLight(0xd0d4e0, 0.35);
     fill.position.set(-5, 5.5, 7);
     scene.add(fill);
-        var moonlight = new THREE.DirectionalLight(0x4a6a8a, 0.45);
+        var moonlight = new THREE.DirectionalLight(0x4a6a8a, 0.30);
     moonlight.name = 'window-moonlight';
     moonlight.position.set(8.5, 4.5, 1.2);
     moonlight.target.position.set(0, 0.5, 0.5);
@@ -499,81 +499,67 @@
     cvs.height = 1024;
     var ctx = cvs.getContext('2d');
 
-    // Sky Gradient: Vertical linear gradient from deep night sky (#020617 at top) down to foggy cyan-tinted horizon (#082f49 at bottom)
+    // Background: subtle vertical/diagonal gradient (dark cinematic night)
+    // top: #02050B, middle: #050B16, bottom: #071321
     var skyGrad = ctx.createLinearGradient(0, 0, 0, 1024);
-    skyGrad.addColorStop(0.0, '#020617');
-    skyGrad.addColorStop(1.0, '#082f49');
+    skyGrad.addColorStop(0.0, '#02050B');
+    skyGrad.addColorStop(0.55, '#050B16');
+    skyGrad.addColorStop(1.0, '#071321');
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, 1024, 1024);
 
-    // 8 to 10 staggered dark building silhouettes (#090d16 and #050811)
-    var buildings = [
-      { x: 0, w: 125, h: 580, col: '#090d16', beacon: false },
-      { x: 95, w: 140, h: 790, col: '#050811', beacon: true }, // Tallest tower 1
-      { x: 215, w: 115, h: 520, col: '#090d16', beacon: false },
-      { x: 305, w: 155, h: 690, col: '#050811', beacon: false },
-      { x: 435, w: 125, h: 570, col: '#090d16', beacon: false },
-      { x: 535, w: 165, h: 840, col: '#050811', beacon: true }, // Tallest tower 2
-      { x: 675, w: 125, h: 510, col: '#090d16', beacon: false },
-      { x: 775, w: 145, h: 730, col: '#050811', beacon: false },
-      { x: 895, w: 130, h: 600, col: '#090d16', beacon: false }
+    // Atmospheric Haze: subtle dark-blue radial depth glow
+    var hazeGrad = ctx.createRadialGradient(512, 700, 40, 512, 700, 580);
+    hazeGrad.addColorStop(0.0, 'rgba(10, 30, 55, 0.28)');
+    hazeGrad.addColorStop(0.6, 'rgba(7, 20, 38, 0.12)');
+    hazeGrad.addColorStop(1.0, 'rgba(2, 5, 11, 0.0)');
+    ctx.fillStyle = hazeGrad;
+    ctx.fillRect(0, 0, 1024, 1024);
+
+    // 4 to 6 Soft Blurred Bokeh Lights (subtle, heavily blurred, no bright circles)
+    var blurredLights = [
+      { x: 280, y: 640, r: 24, color: '140, 185, 235', alpha: 0.18 },
+      { x: 620, y: 580, r: 28, color: '160, 200, 245', alpha: 0.2 },
+      { x: 440, y: 720, r: 18, color: '240, 190, 120', alpha: 0.14 }, // subtle warm
+      { x: 810, y: 660, r: 25, color: '130, 175, 225', alpha: 0.16 },
+      { x: 160, y: 760, r: 20, color: '150, 195, 240', alpha: 0.14 }
     ];
-
-    buildings.forEach(function (b) {
-      ctx.fillStyle = b.col;
-      ctx.fillRect(b.x, 1024 - b.h, b.w, b.h);
-
-      // Red 2px rooftop beacon dots (#ef4444) on 2 of the tallest towers
-      if (b.beacon) {
-        ctx.fillStyle = '#ef4444';
-        ctx.fillRect(Math.floor(b.x + b.w / 2) - 1, 1024 - b.h - 4, 2, 2);
-        // Subtle atmospheric beacon glow
-        ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
-        ctx.fillRect(Math.floor(b.x + b.w / 2) - 2, 1024 - b.h - 5, 4, 4);
-      }
+    blurredLights.forEach(function (l) {
+      var g = ctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, l.r);
+      g.addColorStop(0.0, 'rgba(' + l.color + ', ' + l.alpha + ')');
+      g.addColorStop(0.45, 'rgba(' + l.color + ', ' + l.alpha * 0.45 + ')');
+      g.addColorStop(1.0, 'rgba(' + l.color + ', 0.0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(l.x, l.y, l.r, 0, Math.PI * 2);
+      ctx.fill();
     });
 
-    // Office Windows:
-    // Small scattered 2x3px window lights across building faces using warm amber (#f59e0b),
-    // soft cyan (#38bdf8), and pale white (#f8fafc) with varied opacities (0.3 to 0.8).
-    // Leave the majority of windows dark.
-    var winColors = ['#f59e0b', '#38bdf8', '#f8fafc'];
-    var seed = 77;
-    function pseudoRand() {
+    // 18-25 Tiny Distant Lights (1-3px, low opacity, cool white/blue with 3-4 warm amber)
+    var seed = 108;
+    function rand() {
       seed = (seed * 9301 + 49297) % 233280;
       return seed / 233280;
     }
 
-    buildings.forEach(function (b) {
-      var topY = 1024 - b.h + 24;
-      var botY = 1024 - 40;
-      var padX = 12;
-      var stepX = 14;
-      var stepY = 18;
+    var lightColors = [
+      'rgba(215, 230, 255, ',
+      'rgba(170, 210, 255, ',
+      'rgba(195, 225, 255, ',
+      'rgba(145, 190, 245, ',
+      'rgba(255, 200, 130, ' // warm amber
+    ];
 
-      for (var y = topY; y < botY; y += stepY) {
-        for (var x = b.x + padX; x < b.x + b.w - padX; x += stepX) {
-          // ~18% chance of illuminated window (majority remain dark)
-          if (pseudoRand() < 0.18) {
-            var color = winColors[Math.floor(pseudoRand() * winColors.length)];
-            var opacity = 0.3 + pseudoRand() * 0.5; // 0.3 to 0.8
+    for (var i = 0; i < 22; i++) {
+      var lx = 50 + rand() * 924;
+      var ly = 460 + rand() * 460;
+      var sz = 1.0 + rand() * 1.8; // 1 to 2.8 px
+      var colPrefix = lightColors[Math.floor(rand() * lightColors.length)];
+      var op = 0.25 + rand() * 0.35; // 0.25 to 0.60 opacity
 
-            ctx.globalAlpha = opacity;
-            ctx.fillStyle = color;
-            ctx.fillRect(Math.floor(x), Math.floor(y), 2, 3);
-          }
-        }
-      }
-    });
-    ctx.globalAlpha = 1.0;
-
-    // Atmospheric low horizon mist blending the skyline softly into the bottom
-    var mistGrad = ctx.createLinearGradient(0, 1024 - 180, 0, 1024);
-    mistGrad.addColorStop(0.0, 'rgba(8, 47, 73, 0.0)');
-    mistGrad.addColorStop(0.6, 'rgba(8, 47, 73, 0.35)');
-    mistGrad.addColorStop(1.0, 'rgba(8, 47, 73, 0.70)');
-    ctx.fillStyle = mistGrad;
-    ctx.fillRect(0, 1024 - 180, 1024, 180);
+      ctx.fillStyle = colPrefix + op + ')';
+      ctx.fillRect(Math.floor(lx), Math.floor(ly), Math.max(1, Math.floor(sz)), Math.max(1, Math.floor(sz)));
+    }
 
     var tex = new THREE.CanvasTexture(cvs);
     tex.needsUpdate = true;
