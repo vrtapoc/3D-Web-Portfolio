@@ -171,31 +171,25 @@
       }
     }
 
-    var lampX = (-3.15 + DESK_X) / 2;
-        scene.traverse(function (obj) {
-      if (obj.userData && obj.userData.name === 'balloon') {
-        obj.position.set(xR - 0.48, 0, winZ1 - 0.45);
-      }
-    });
-    scene.traverse(function (obj) {
-      if (obj.userData && obj.userData.name === 'lamp') {
-        obj.position.set(lampX, 0, DESK_Z + 0.2);
-        obj.rotation.y = 0.4;
-      }
-    });
-
-    scene.traverse(function (obj) {
-      if (obj.name === 'office-chair') {
-        obj.position.set(DESK_X, 0, DESK_Z + 1.35);
-        obj.rotation.y = Math.PI;
-      }
-    });
-
-    // Relocate jukebox to LEFT foreground area, clear of desk and door path
+    // Staging Area: Cluster Jukebox, Balloon Lamp, and Floor Lamp along FAR-LEFT room wall
     if (typeof jukebox !== 'undefined' && jukebox) {
-      jukebox.position.set(-4.0, 0, 2.5);
-      jukebox.rotation.y = Math.PI * 0.38;
+      jukebox.position.set(-4.1, 0, 1.4);
+      jukebox.rotation.y = Math.PI * 0.45;
     }
+
+    scene.traverse(function (obj) {
+      if (obj.userData && obj.userData.name === 'balloon') {
+        obj.position.set(-4.15, 0, 2.5);
+        // Ensure red/pink balloon color
+        if (typeof balloonMaterial !== 'undefined' && balloonMaterial) {
+          balloonMaterial.color.setHex(0xd94747);
+        }
+      }
+      if (obj.userData && obj.userData.name === 'lamp') {
+        obj.position.set(-4.1, 0, 0.4);
+        obj.rotation.y = 0.85;
+      }
+    });
     buildModernOfficeChair();
 
     scene.traverse(function (obj) {
@@ -255,33 +249,44 @@
     return new THREE.CanvasTexture(canvas);
   }
 
-  function createBuildingFacadeTex(floors, cols) {
+    function createRealisticCityFacadeTex(floors, cols) {
     var canvas = document.createElement('canvas');
-    canvas.width = 128;
-    canvas.height = 256;
+    canvas.width = 256;
+    canvas.height = 512;
     var ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#040609';
-    ctx.fillRect(0, 0, 128, 256);
+    ctx.fillStyle = '#040508';
+    ctx.fillRect(0, 0, 256, 512);
 
-    // Vibrant warm amber 0xffa834 and soft incandescent white 0xfff0db
-    var palette = ['#ffa834', '#fff0db', '#7ec8f8'];
-    var floorH = 256 / floors;
-    var colW = 128 / cols;
-    var winPadX = colW * 0.24;
-    var winPadY = floorH * 0.26;
-    var winW = colW - winPadX * 2;
-    var winH = floorH - winPadY * 2;
+    var floorH = 512 / floors;
+    var colW = 256 / cols;
+    var winW = colW * 0.55;
+    var winH = floorH * 0.45;
+    var padX = (colW - winW) / 2;
+    var padY = (floorH - winH) / 2;
+
+    var warmColors = ['#ffb86c', '#fff4e6', '#ffd08a'];
 
     for (var f = 0; f < floors; f++) {
+      // 40% of entire floors are dark (after hours / vacant)
+      var floorIsActive = Math.random() > 0.42;
+      if (!floorIsActive) continue;
+
+      // Sometimes a continuous horizontal illuminated office strip
+      var isStrip = Math.random() < 0.28;
+      if (isStrip) {
+        var stripColor = warmColors[Math.floor(Math.random() * warmColors.length)];
+        ctx.fillStyle = stripColor;
+        ctx.fillRect(padX, f * floorH + padY, 256 - padX * 2, winH);
+        continue;
+      }
+
       for (var c = 0; c < cols; c++) {
-        var isLit = Math.random() < 0.16;
-        if (isLit) {
-          var colIndex = Math.random() < 0.72 ? 0 : (Math.random() < 0.92 ? 1 : 2);
-          ctx.fillStyle = palette[colIndex];
-        } else {
-          ctx.fillStyle = '#07090e';
+        // Clustered lit offices (~30% of windows on active floors)
+        if (Math.random() < 0.32) {
+          var winColor = warmColors[Math.floor(Math.random() * warmColors.length)];
+          ctx.fillStyle = winColor;
+          ctx.fillRect(c * colW + padX, f * floorH + padY, winW, winH);
         }
-        ctx.fillRect(c * colW + winPadX, f * floorH + winPadY, winW, winH);
       }
     }
     return new THREE.CanvasTexture(canvas);
@@ -373,104 +378,97 @@
     tex.repeat.set(3, 2);
     return tex;
   }
-  function buildModernOfficeChair() {
+    function buildModernOfficeChair() {
     var existing = scene.getObjectByName('office-chair');
-    if (existing) {
-      scene.remove(existing);
-    }
+    if (existing) scene.remove(existing);
 
     var chair = new THREE.Group();
     chair.name = 'office-chair';
 
-    var gunmetalMat = new THREE.MeshStandardMaterial({
-      color: 0x181a1f,
-      metalness: 0.8,
-      roughness: 0.3
-    });
-    var leatherMat = new THREE.MeshStandardMaterial({
-      color: 0x14161a,
-      roughness: 0.65,
-      metalness: 0.08
-    });
-    var wheelMat = new THREE.MeshStandardMaterial({
-      color: 0x0c0d0f,
-      roughness: 0.6,
+    var shellMat = new THREE.MeshStandardMaterial({
+      color: 0x16171b,
+      roughness: 0.55,
       metalness: 0.1
     });
+    var metalMat = new THREE.MeshStandardMaterial({
+      color: 0x101114,
+      metalness: 0.8,
+      roughness: 0.25
+    });
 
-    // 5-Star Caster Base
-    var stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.42, 16), gunmetalMat);
-    stem.position.y = 0.26;
-    stem.castShadow = true;
-    chair.add(stem);
+    // Sleek single-piece contoured executive shell (smooth continuous curved seat + back)
+    var profile = new THREE.Shape();
+    profile.moveTo(0.26, 0.0);
+    profile.lineTo(0.26, 0.06);
+    profile.quadraticCurveTo(-0.18, 0.05, -0.22, 0.14);
+    profile.quadraticCurveTo(-0.29, 0.48, -0.27, 0.82);
+    profile.quadraticCurveTo(-0.25, 0.90, -0.29, 0.92);
+    profile.lineTo(-0.33, 0.90);
+    profile.quadraticCurveTo(-0.35, 0.46, -0.27, 0.09);
+    profile.quadraticCurveTo(-0.21, -0.01, 0.24, -0.01);
+    profile.closePath();
 
-    var hub = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.06, 16), gunmetalMat);
-    hub.position.y = 0.1;
+    var shellGeo = new THREE.ExtrudeGeometry(profile, {
+      depth: 0.62,
+      bevelEnabled: true,
+      bevelSegments: 4,
+      steps: 1,
+      bevelSize: 0.02,
+      bevelThickness: 0.02
+    });
+    shellGeo.center();
+
+    var shellMesh = new THREE.Mesh(shellGeo, shellMat);
+    shellMesh.position.set(0, 0.84, 0);
+    shellMesh.rotation.y = Math.PI / 2;
+    shellMesh.castShadow = true;
+    shellMesh.receiveShadow = true;
+    chair.add(shellMesh);
+
+    // Minimalist gunmetal loop armrests on each side
+    [-1, 1].forEach(function (side) {
+      var armCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(side * 0.33, 0.52, 0.06),
+        new THREE.Vector3(side * 0.35, 0.76, 0.15),
+        new THREE.Vector3(side * 0.35, 0.78, -0.12),
+        new THREE.Vector3(side * 0.33, 0.62, -0.22)
+      ]);
+      var armGeo = new THREE.TubeGeometry(armCurve, 20, 0.015, 8, false);
+      var armMesh = new THREE.Mesh(armGeo, metalMat);
+      armMesh.castShadow = true;
+      chair.add(armMesh);
+    });
+
+    // Central support column
+    var column = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.045, 0.42, 16), metalMat);
+    column.position.y = 0.24;
+    column.castShadow = true;
+    chair.add(column);
+
+    // 5-Point star base with clean miniature caster wheels
+    var hub = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.075, 0.05, 16), metalMat);
+    hub.position.y = 0.08;
     chair.add(hub);
 
     for (var i = 0; i < 5; i++) {
       var angle = (i / 5) * Math.PI * 2;
-      var legLen = 0.42;
-      var leg = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.03, legLen), gunmetalMat);
-      leg.position.set(Math.sin(angle) * (legLen / 2 + 0.04), 0.09, Math.cos(angle) * (legLen / 2 + 0.04));
+      var legLen = 0.38;
+      var leg = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.025, legLen), metalMat);
+      leg.position.set(Math.sin(angle) * (legLen / 2 + 0.03), 0.07, Math.cos(angle) * (legLen / 2 + 0.03));
       leg.rotation.y = angle;
       leg.castShadow = true;
       chair.add(leg);
 
-      var wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.04, 12), wheelMat);
+      var wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.03, 12), metalMat);
       wheel.rotation.z = Math.PI / 2;
-      wheel.position.set(Math.sin(angle) * (legLen + 0.04), 0.04, Math.cos(angle) * (legLen + 0.04));
+      wheel.position.set(Math.sin(angle) * (legLen + 0.035), 0.035, Math.cos(angle) * (legLen + 0.035));
       wheel.castShadow = true;
       chair.add(wheel);
     }
 
-    // Seat mechanism & Contoured Cushion
-    var seatBase = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.04, 0.35), gunmetalMat);
-    seatBase.position.y = 0.48;
-    chair.add(seatBase);
-
-    var seatCushion = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.09, 0.64), leatherMat);
-    seatCushion.position.set(0, 0.54, -0.02);
-    seatCushion.castShadow = true;
-    seatCushion.receiveShadow = true;
-    chair.add(seatCushion);
-
-    // Contoured Backrest with 3 horizontal ribbed segments
-    var spine = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.68, 0.04), gunmetalMat);
-    spine.position.set(0, 0.92, -0.32);
-    spine.rotation.x = -0.1;
-    spine.castShadow = true;
-    chair.add(spine);
-
-    for (var s = 0; s < 3; s++) {
-      var ribW = 0.62 - s * 0.03;
-      var ribH = 0.18;
-      var rib = new THREE.Mesh(new THREE.BoxGeometry(ribW, ribH, 0.07), leatherMat);
-      var ribY = 0.72 + s * 0.22;
-      var ribZ = -0.31 - s * 0.025;
-      rib.position.set(0, ribY, ribZ);
-      rib.rotation.x = -0.1;
-      rib.castShadow = true;
-      rib.receiveShadow = true;
-      chair.add(rib);
-    }
-
-    // Slim Architectural Steel Armrests
-    [-1, 1].forEach(function (side) {
-      var armPost = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.24, 10), gunmetalMat);
-      armPost.position.set(side * 0.34, 0.66, 0.04);
-      armPost.castShadow = true;
-      chair.add(armPost);
-
-      var armPad = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.03, 0.32), leatherMat);
-      armPad.position.set(side * 0.34, 0.78, 0.02);
-      armPad.castShadow = true;
-      chair.add(armPad);
-    });
-
-    // Position tucked behind desk on the rug, rotated ~13 deg toward camera
-    chair.position.set(0.18, 0, -1.08);
-    chair.rotation.y = Math.PI + 0.22;
+    // Centered cleanly behind desk on rug, rotated ~14 deg toward camera
+    chair.position.set(0.18, 0, -1.05);
+    chair.rotation.y = Math.PI + 0.24;
     scene.add(chair);
     return chair;
   }
@@ -727,12 +725,11 @@
     root.add(ring);
 
     var NEON_PALETTE = [
-      { hex: 0x00f5ff, str: '#00f5ff' },
-      { hex: 0xff007f, str: '#ff007f' },
-      { hex: 0xa855f7, str: '#a855f7' },
-      { hex: 0x39ff14, str: '#39ff14' },
-      { hex: 0xffa600, str: '#ffa600' },
-      { hex: 0xf8fafc, str: '#f8fafc' }
+      { hex: 0x00f3ff, str: '#00f3ff' }, // Cyan
+      { hex: 0xff007f, str: '#ff007f' }, // Magenta
+      { hex: 0xffaa00, str: '#ffaa00' }, // Amber
+      { hex: 0x00ff66, str: '#00ff66' }, // Green
+      { hex: 0xa855f7, str: '#a855f7' }  // Purple
     ];
     var neonColorIndex = 0;
     var neonCanvas = document.createElement('canvas');
@@ -806,35 +803,37 @@
     neonGroup.add(neonLight);
     __neonLight = neonLight;
 
-    function cycleNeonColor() {
+        function cycleNeonColor() {
       neonColorIndex = (neonColorIndex + 1) % NEON_PALETTE.length;
       var c = NEON_PALETTE[neonColorIndex];
       drawNeonText(c.str);
-      var oldMap = neonLogoMat.map;
+
       var fresh = new THREE.CanvasTexture(neonCanvas);
       if (THREE.SRGBColorSpace) fresh.colorSpace = THREE.SRGBColorSpace;
       fresh.needsUpdate = true;
+      var oldMap = neonLogoMat.map;
       neonLogoMat.map = fresh;
+      if (neonLogoMat.color) neonLogoMat.color.set(c.hex);
+      if (neonLogoMat.emissive) neonLogoMat.emissive.set(c.hex);
       neonLogoMat.needsUpdate = true;
       neonTex = fresh;
-      if (oldMap && oldMap.dispose)
-        try {
-          oldMap.dispose();
-        } catch (e) {}
+      if (oldMap && oldMap.dispose) {
+        try { oldMap.dispose(); } catch (e) {}
+      }
 
-      // Realistic neon ignition flicker: 0.2 -> 1.5 -> 0.4 -> 2.4
+      // Point light & underglow color sync + realistic ignition flicker
       if (__neonLight) {
         __neonLight.color.setHex(c.hex);
         __neonLight.intensity = 0.2;
         setTimeout(function () {
-          if (__neonLight) __neonLight.intensity = 1.5;
+          if (__neonLight) __neonLight.intensity = 1.8;
           setTimeout(function () {
             if (__neonLight) __neonLight.intensity = 0.4;
             setTimeout(function () {
               if (__neonLight) __neonLight.intensity = 2.4;
-            }, 60);
-          }, 60);
-        }, 50);
+            }, 50);
+          }, 50);
+        }, 40);
       }
 
       if (__consoleUnderglow) __consoleUnderglow.color.setHex(c.hex);
@@ -973,7 +972,7 @@
     glass.position.set(xR - 0.02, sillH + (headerBottom - sillH) / 2, (winZ0 + winZ1) / 2);
     root.add(glass);
 
-                    // ---- Confined Procedural Night City Skyline strictly framed behind window ----
+                        // ---- Confined Realistic Night City Skyline strictly framed behind window ----
     var cityGroup = new THREE.Group();
     cityGroup.name = 'exterior-city-skyline';
     __cityBeacons = [];
@@ -983,8 +982,8 @@
     var skyBackdropMat = new THREE.MeshStandardMaterial({
       color: 0x020408,
       map: skyBackdropTex,
-      emissive: 0x03060c,
-      emissiveIntensity: 0.35,
+      emissive: 0x020408,
+      emissiveIntensity: 0.25,
       roughness: 0.98,
       metalness: 0.0,
       side: THREE.DoubleSide
@@ -997,64 +996,68 @@
     skyBackdrop.position.set(xR + 0.48, sillH + (headerBottom - sillH) / 2, (winZ0 + winZ1) / 2);
     cityGroup.add(skyBackdrop);
 
-    // Stylized Glowing Crescent Moon in upper quadrant
-    var moonGeo = new THREE.ShapeGeometry(createCrescentMoonShape(0.18), 16);
+    // 2. Soft Luminous Circular Moon Disc (solid, clean, NO hollow ring)
+    var moonGeo = new THREE.CircleGeometry(0.14, 32);
     var moonMat = new THREE.MeshStandardMaterial({
-      color: 0xeeffff,
-      emissive: 0xccddee,
-      emissiveIntensity: 1.4,
-      roughness: 0.2,
+      color: 0xfffaed,
+      emissive: 0xffeecc,
+      emissiveIntensity: 1.25,
+      roughness: 0.3,
       side: THREE.DoubleSide
     });
     var moon = new THREE.Mesh(moonGeo, moonMat);
     moon.rotation.y = Math.PI / 2;
-    moon.rotation.z = -0.22;
-    moon.position.set(xR + 0.46, headerBottom - 0.65, winZ0 + winLen * 0.28);
+    moon.position.set(xR + 0.46, headerBottom - 0.75, winZ0 + winLen * 0.25);
     cityGroup.add(moon);
 
-    var moonGlow = new THREE.PointLight(0xccddee, 0.35, 2.5, 1.6);
-    moonGlow.position.set(xR + 0.42, headerBottom - 0.65, winZ0 + winLen * 0.28);
+    var moonGlow = new THREE.PointLight(0xffeecc, 0.28, 2.4, 1.6);
+    moonGlow.position.set(xR + 0.42, headerBottom - 0.75, winZ0 + winLen * 0.25);
     cityGroup.add(moonGlow);
 
-    // 2. Procedural 3D Skyscraper Silhouettes (tightly positioned in [xR + 0.14, xR + 0.38])
-    var buildingsData = [
-      { z: winZ0 + 0.35, w: 0.48, h: 2.5, d: 0.12, xOff: 0.15, fl: 14, co: 4, spire: false },
-      { z: winZ0 + 0.95, w: 0.62, h: 3.6, d: 0.14, xOff: 0.25, fl: 20, co: 5, spire: true, spireH: 0.55 },
-      { z: winZ0 + 1.60, w: 0.52, h: 2.2, d: 0.10, xOff: 0.14, fl: 12, co: 4, spire: false },
-      { z: winZ0 + 2.25, w: 0.70, h: 4.1, d: 0.16, xOff: 0.28, fl: 24, co: 6, spire: true, spireH: 0.65 },
-      { z: winZ0 + 2.95, w: 0.56, h: 2.8, d: 0.12, xOff: 0.18, fl: 16, co: 4, spire: false },
-      { z: winZ0 + 3.60, w: 0.65, h: 3.4, d: 0.14, xOff: 0.26, fl: 19, co: 5, spire: true, spireH: 0.45 },
-      { z: winZ0 + 4.25, w: 0.54, h: 2.4, d: 0.11, xOff: 0.16, fl: 13, co: 4, spire: false },
-      { z: winZ0 + 4.90, w: 0.68, h: 3.8, d: 0.15, xOff: 0.27, fl: 22, co: 5, spire: false },
-      { z: winZ0 + 5.55, w: 0.50, h: 2.1, d: 0.10, xOff: 0.15, fl: 11, co: 4, spire: false }
+    // 3. 7 Realistic Staggered Skyscraper Silhouettes with Stepped Rooflines
+    var towers = [
+      { z: winZ0 + 0.45, w: 0.60, h: 2.7, d: 0.12, xOff: 0.16, fl: 16, co: 5, stepH: 0.35, stepW: 0.38 },
+      { z: winZ0 + 1.15, w: 0.74, h: 3.8, d: 0.15, xOff: 0.26, fl: 22, co: 6, stepH: 0.45, stepW: 0.48, beacon: true },
+      { z: winZ0 + 1.95, w: 0.58, h: 2.3, d: 0.11, xOff: 0.15, fl: 14, co: 5, stepH: 0.25, stepW: 0.35 },
+      { z: winZ0 + 2.70, w: 0.82, h: 4.2, d: 0.16, xOff: 0.28, fl: 25, co: 7, stepH: 0.55, stepW: 0.52, beacon: true },
+      { z: winZ0 + 3.50, w: 0.66, h: 3.2, d: 0.13, xOff: 0.22, fl: 18, co: 6, stepH: 0.35, stepW: 0.42 },
+      { z: winZ0 + 4.30, w: 0.78, h: 3.9, d: 0.15, xOff: 0.27, fl: 23, co: 6, stepH: 0.45, stepW: 0.48, beacon: true },
+      { z: winZ0 + 5.15, w: 0.62, h: 2.6, d: 0.12, xOff: 0.17, fl: 15, co: 5, stepH: 0.30, stepW: 0.38 }
     ];
 
-    var spireMat = new THREE.MeshStandardMaterial({ color: 0x181a20, roughness: 0.5, metalness: 0.6 });
+    var towerMatBase = new THREE.MeshStandardMaterial({
+      color: 0x05070a,
+      roughness: 0.9,
+      metalness: 0.1
+    });
 
-    buildingsData.forEach(function (b) {
-      var facadeTex = createBuildingFacadeTex(b.fl, b.co);
-      var bMat = new THREE.MeshStandardMaterial({
-        color: 0x05070c,
+    towers.forEach(function (t) {
+      var facadeTex = createRealisticCityFacadeTex(t.fl, t.co);
+      var tMat = new THREE.MeshStandardMaterial({
+        color: 0x05070a,
         map: facadeTex,
         emissive: 0xffffff,
         emissiveMap: facadeTex,
-        emissiveIntensity: 1.15,
+        emissiveIntensity: 1.1,
         roughness: 0.9,
         metalness: 0.08
       });
-      var bMesh = new THREE.Mesh(new THREE.BoxGeometry(b.d, b.h, b.w), bMat);
-      var bX = xR + b.xOff;
-      bMesh.position.set(bX, sillH + b.h / 2, b.z);
+
+      // Main tower body
+      var bMesh = new THREE.Mesh(new THREE.BoxGeometry(t.d, t.h, t.w), tMat);
+      var bX = xR + t.xOff;
+      bMesh.position.set(bX, sillH + t.h / 2, t.z);
       cityGroup.add(bMesh);
 
-      // Slender communication spires & animated red rooftop warning beacons
-      if (b.spire) {
-        var spGeo = new THREE.CylinderGeometry(0.006, 0.012, b.spireH, 8);
-        var spireMesh = new THREE.Mesh(spGeo, spireMat);
-        var spireY = sillH + b.h + b.spireH / 2;
-        spireMesh.position.set(bX, spireY, b.z);
-        cityGroup.add(spireMesh);
+      // Stepped penthouse / architectural mechanical level
+      if (t.stepH > 0) {
+        var stepMesh = new THREE.Mesh(new THREE.BoxGeometry(t.d * 0.85, t.stepH, t.stepW), towerMatBase);
+        stepMesh.position.set(bX, sillH + t.h + t.stepH / 2, t.z);
+        cityGroup.add(stepMesh);
+      }
 
+      // Red rooftop aviation warning beacon
+      if (t.beacon) {
         var beaconMat = new THREE.MeshStandardMaterial({
           color: 0xff1a1a,
           emissive: 0xff1111,
@@ -1062,29 +1065,28 @@
           roughness: 0.3
         });
         var beaconMesh = new THREE.Mesh(new THREE.SphereGeometry(0.022, 10, 10), beaconMat);
-        beaconMesh.position.set(bX, sillH + b.h + b.spireH + 0.01, b.z);
+        var bY = sillH + t.h + t.stepH + 0.025;
+        beaconMesh.position.set(bX, bY, t.z);
         cityGroup.add(beaconMesh);
 
-        var beaconLight = new THREE.PointLight(0xff1111, 0.4, 1.5, 1.8);
-        beaconLight.position.set(bX, sillH + b.h + b.spireH + 0.02, b.z);
+        var beaconLight = new THREE.PointLight(0xff1111, 0.35, 1.4, 1.8);
+        beaconLight.position.set(bX, bY + 0.02, t.z);
         cityGroup.add(beaconLight);
 
         __cityBeacons.push({ mesh: beaconMesh, material: beaconMat, light: beaconLight });
       }
     });
 
-    // 3. Distant Highway Traffic Light Trails along building bases
+    // 4. Distant Highway Traffic Light Trails along building bases
     var trafficSpan = winLen + 0.1;
-    // Red taillight line (inward lane)
     var redTrailMat = new THREE.MeshBasicMaterial({ color: 0xff2222 });
-    var redTrail = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.018, trafficSpan * 0.92), redTrailMat);
-    redTrail.position.set(xR + 0.22, sillH + 0.08, (winZ0 + winZ1) / 2);
+    var redTrail = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.016, trafficSpan * 0.92), redTrailMat);
+    redTrail.position.set(xR + 0.22, sillH + 0.06, (winZ0 + winZ1) / 2);
     cityGroup.add(redTrail);
 
-    // Warm white headlight line (outward lane)
     var whiteTrailMat = new THREE.MeshBasicMaterial({ color: 0xffeedd });
-    var whiteTrail = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.018, trafficSpan * 0.88), whiteTrailMat);
-    whiteTrail.position.set(xR + 0.26, sillH + 0.13, (winZ0 + winZ1) / 2);
+    var whiteTrail = new THREE.Mesh(new THREE.BoxGeometry(0.015, 0.016, trafficSpan * 0.88), whiteTrailMat);
+    whiteTrail.position.set(xR + 0.26, sillH + 0.10, (winZ0 + winZ1) / 2);
     cityGroup.add(whiteTrail);
 
     root.add(cityGroup);
@@ -1180,10 +1182,10 @@
     scene.add(root);
   }
 
-    function patchNeonClick() {
+      function patchNeonClick() {
     if (window.__neonClickPatched) return;
     if (typeof renderer === 'undefined' || !renderer || !renderer.domElement) {
-      setTimeout(patchNeonClick, 200);
+      setTimeout(patchNeonClick, 150);
       return;
     }
     window.__neonClickPatched = true;
@@ -1191,28 +1193,28 @@
     var ray = new THREE.Raycaster();
     var mouse = new THREE.Vector2();
     var isHovered = false;
-    var pointerStartPos = new THREE.Vector2();
+    var pointerDownPos = new THREE.Vector2();
 
-    function isHitNeon(clientX, clientY) {
+    function checkNeonHit(clientX, clientY) {
+      if (!camera || !scene) return false;
       var rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
       ray.setFromCamera(mouse, camera);
       var hits = ray.intersectObjects(scene.children, true);
       for (var i = 0; i < hits.length; i++) {
-        var t = hits[i].object;
-        while (t && t !== scene) {
-          if (t.userData && t.userData.name === 'neonSign') return true;
-          t = t.parent;
+        var obj = hits[i].object;
+        while (obj && obj !== scene) {
+          if (obj.userData && obj.userData.name === 'neonSign') return true;
+          obj = obj.parent;
         }
       }
       return false;
     }
 
-    // Hover detection for pointer cursor
-    renderer.domElement.addEventListener('pointermove', function (e) {
-      if (!camera || !scene) return;
-      var hit = isHitNeon(e.clientX, e.clientY);
+    // Set cursor to pointer on hover
+    window.addEventListener('pointermove', function (e) {
+      var hit = checkNeonHit(e.clientX, e.clientY);
       if (hit) {
         document.body.style.cursor = 'pointer';
         isHovered = true;
@@ -1220,22 +1222,21 @@
         document.body.style.cursor = 'default';
         isHovered = false;
       }
-    });
+    }, { passive: true });
 
-    renderer.domElement.addEventListener('pointerdown', function (e) {
-      pointerStartPos.set(e.clientX, e.clientY);
-    });
+    window.addEventListener('pointerdown', function (e) {
+      pointerDownPos.set(e.clientX, e.clientY);
+    }, { passive: true });
 
-    // Reliable click with flicker trigger
-    renderer.domElement.addEventListener('pointerup', function (e) {
-      var dist = Math.hypot(e.clientX - pointerStartPos.x, e.clientY - pointerStartPos.y);
-      if (dist > 8) return; // ignore orbit drags
-      if (isHitNeon(e.clientX, e.clientY)) {
+    window.addEventListener('pointerup', function (e) {
+      var dist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
+      if (dist > 10) return; // Ignore camera orbit drags
+      if (checkNeonHit(e.clientX, e.clientY)) {
         if (window.__cycleNeonColor) {
           window.__cycleNeonColor();
         }
       }
-    });
+    }, { passive: true });
   }
 
   function applyView() {
