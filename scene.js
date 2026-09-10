@@ -438,387 +438,58 @@
     return tex;
   }
 
-  function createClassicalMuralTexture() {
-    var cvs = document.createElement('canvas');
-    cvs.width = 2048;
-    cvs.height = 1720;
-    var ctx = cvs.getContext('2d');
+  function createRainyGlassNormalMap() {
+    var canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    var ctx = canvas.getContext('2d');
 
-    // 1. Deep Matte Charcoal Background with rich ambient vignette
-    var bgGrad = ctx.createRadialGradient(800, 860, 80, 1024, 860, 1300);
-    bgGrad.addColorStop(0.0, '#10131a');
-    bgGrad.addColorStop(0.55, '#0a0c10');
-    bgGrad.addColorStop(1.0, '#060709');
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, 2048, 1720);
+    // Base flat normal vector (128, 128, 255) -> #8080ff
+    ctx.fillStyle = '#8080ff';
+    ctx.fillRect(0, 0, 256, 256);
 
-    // Subtle stone texture speckles using standard random fills (safe & fast)
-    var seed = 31;
-    function rand() {
-      seed = (seed * 9301 + 49297) % 233280;
-      return seed / 233280;
-    }
-    for (var sp = 0; sp < 1200; sp++) {
-      var sx = rand() * 2048;
-      var sy = rand() * 1720;
-      var sSize = 1.0 + rand() * 2.5;
-      var sOp = 0.04 + rand() * 0.08;
-      ctx.fillStyle = 'rgba(255, 255, 255, ' + sOp + ')';
-      ctx.fillRect(sx, sy, sSize, sSize);
-    }
+    // Subtle vertical streaks simulating trickling rainwater
+    for (var i = 0; i < 50; i++) {
+      var sx = (i * 7.3 + Math.sin(i * 2.9) * 16 + 256) % 256;
+      var sy = (i * 19.1) % 256;
+      var len = 30 + ((i * 17) % 70);
+      var width = 1.0 + ((i % 3) * 0.4);
 
-    // 2. Classical Statue Face (Sculptural Chiaroscuro in Monochrome Marble)
-    var cx = 680;
-    var cy = 820;
-
-    // Ambient back-glow behind statue head
-    var headGlow = ctx.createRadialGradient(cx - 40, cy - 60, 80, cx, cy, 700);
-    headGlow.addColorStop(0.0, 'rgba(38, 48, 64, 0.40)');
-    headGlow.addColorStop(0.55, 'rgba(18, 24, 34, 0.20)');
-    headGlow.addColorStop(1.0, 'rgba(0, 0, 0, 0.0)');
-    ctx.fillStyle = headGlow;
-    ctx.fillRect(0, 0, 2048, 1720);
-
-    // Neck & Shoulder Base
-    var neckGrad = ctx.createLinearGradient(cx - 250, 1100, cx + 350, 1720);
-    neckGrad.addColorStop(0.0, '#12151b');
-    neckGrad.addColorStop(0.35, '#303848');
-    neckGrad.addColorStop(0.65, '#181b22');
-    neckGrad.addColorStop(1.0, '#090a0d');
-    ctx.fillStyle = neckGrad;
-    ctx.beginPath();
-    ctx.moveTo(cx - 280, 1720);
-    ctx.quadraticCurveTo(cx - 220, 1300, cx - 160, 1120);
-    ctx.lineTo(cx + 180, 1100);
-    ctx.quadraticCurveTo(cx + 260, 1320, cx + 420, 1720);
-    ctx.closePath();
-    ctx.fill();
-
-    // Sternocleidomastoid muscle & clavicle highlight
-    var muscleGrad = ctx.createLinearGradient(cx - 120, 1120, cx + 80, 1600);
-    muscleGrad.addColorStop(0.0, 'rgba(135, 150, 172, 0.50)');
-    muscleGrad.addColorStop(0.5, 'rgba(80, 95, 112, 0.30)');
-    muscleGrad.addColorStop(1.0, 'rgba(20, 25, 35, 0.0)');
-    ctx.fillStyle = muscleGrad;
-    ctx.beginPath();
-    ctx.moveTo(cx - 110, 1150);
-    ctx.quadraticCurveTo(cx - 30, 1350, cx + 50, 1650);
-    ctx.quadraticCurveTo(cx + 10, 1680, cx - 40, 1500);
-    ctx.quadraticCurveTo(cx - 90, 1320, cx - 130, 1180);
-    ctx.closePath();
-    ctx.fill();
-
-    // Throat shadow
-    var throatShadow = ctx.createLinearGradient(cx - 50, 1120, cx + 180, 1350);
-    throatShadow.addColorStop(0.0, 'rgba(4, 5, 8, 0.95)');
-    throatShadow.addColorStop(0.7, 'rgba(8, 10, 14, 0.6)');
-    throatShadow.addColorStop(1.0, 'rgba(12, 14, 18, 0.0)');
-    ctx.fillStyle = throatShadow;
-    ctx.beginPath();
-    ctx.moveTo(cx - 40, 1130);
-    ctx.quadraticCurveTo(cx + 80, 1180, cx + 180, 1260);
-    ctx.quadraticCurveTo(cx + 100, 1400, cx + 20, 1380);
-    ctx.closePath();
-    ctx.fill();
-
-    // Main Head Form
-    var faceGrad = ctx.createRadialGradient(cx - 80, cy - 60, 60, cx + 50, cy + 80, 520);
-    faceGrad.addColorStop(0.0, '#485468');
-    faceGrad.addColorStop(0.4, '#262d3a');
-    faceGrad.addColorStop(0.75, '#131720');
-    faceGrad.addColorStop(1.0, '#07080b');
-    ctx.fillStyle = faceGrad;
-    ctx.beginPath();
-    ctx.moveTo(cx - 240, 620);
-    ctx.quadraticCurveTo(cx - 280, 840, cx - 210, 1050);
-    ctx.quadraticCurveTo(cx - 120, 1200, cx - 10, 1210);
-    ctx.quadraticCurveTo(cx + 160, 1190, cx + 240, 1060);
-    ctx.quadraticCurveTo(cx + 310, 850, cx + 280, 660);
-    ctx.quadraticCurveTo(cx + 200, 360, cx - 20, 340);
-    ctx.quadraticCurveTo(cx - 180, 360, cx - 240, 620);
-    ctx.closePath();
-    ctx.fill();
-
-    // Forehead highlight planes
-    var fhGrad = ctx.createLinearGradient(cx - 200, 420, cx + 180, 600);
-    fhGrad.addColorStop(0.0, 'rgba(155, 172, 198, 0.60)');
-    fhGrad.addColorStop(0.35, 'rgba(110, 125, 148, 0.45)');
-    fhGrad.addColorStop(0.7, 'rgba(45, 55, 70, 0.15)');
-    fhGrad.addColorStop(1.0, 'rgba(10, 14, 20, 0.0)');
-    ctx.fillStyle = fhGrad;
-    ctx.beginPath();
-    ctx.moveTo(cx - 190, 480);
-    ctx.quadraticCurveTo(cx - 50, 420, cx + 120, 450);
-    ctx.quadraticCurveTo(cx + 170, 560, cx + 110, 640);
-    ctx.quadraticCurveTo(cx - 60, 620, cx - 180, 590);
-    ctx.closePath();
-    ctx.fill();
-
-    // Brow ridge highlights
-    var browGrad = ctx.createLinearGradient(cx - 160, 610, cx + 120, 650);
-    browGrad.addColorStop(0.0, 'rgba(185, 200, 225, 0.75)');
-    browGrad.addColorStop(0.4, 'rgba(130, 145, 170, 0.55)');
-    browGrad.addColorStop(1.0, 'rgba(30, 38, 50, 0.1)');
-    ctx.fillStyle = browGrad;
-    ctx.beginPath();
-    ctx.moveTo(cx - 160, 630);
-    ctx.quadraticCurveTo(cx - 60, 605, cx + 40, 625);
-    ctx.quadraticCurveTo(cx + 120, 640, cx + 100, 660);
-    ctx.quadraticCurveTo(cx + 20, 645, cx - 60, 635);
-    ctx.quadraticCurveTo(cx - 130, 655, cx - 160, 630);
-    ctx.closePath();
-    ctx.fill();
-
-    // Classical Greek Nose Bridge & Tip
-    var noseGrad = ctx.createLinearGradient(cx - 70, 660, cx + 40, 960);
-    noseGrad.addColorStop(0.0, 'rgba(195, 210, 235, 0.90)');
-    noseGrad.addColorStop(0.3, 'rgba(160, 178, 205, 0.85)');
-    noseGrad.addColorStop(0.7, 'rgba(210, 225, 248, 0.95)');
-    noseGrad.addColorStop(1.0, 'rgba(60, 70, 88, 0.2)');
-    ctx.fillStyle = noseGrad;
-    ctx.beginPath();
-    ctx.moveTo(cx - 50, 660);
-    ctx.lineTo(cx - 38, 880);
-    ctx.quadraticCurveTo(cx - 45, 935, cx - 20, 945);
-    ctx.lineTo(cx + 15, 935);
-    ctx.quadraticCurveTo(cx + 20, 915, cx - 5, 905);
-    ctx.lineTo(cx - 15, 680);
-    ctx.closePath();
-    ctx.fill();
-
-    // Nose shadow
-    var noseShadow = ctx.createLinearGradient(cx - 15, 700, cx + 80, 940);
-    noseShadow.addColorStop(0.0, 'rgba(5, 7, 10, 0.85)');
-    noseShadow.addColorStop(0.7, 'rgba(10, 14, 20, 0.65)');
-    noseShadow.addColorStop(1.0, 'rgba(20, 25, 35, 0.0)');
-    ctx.fillStyle = noseShadow;
-    ctx.beginPath();
-    ctx.moveTo(cx - 10, 680);
-    ctx.lineTo(cx + 65, 920);
-    ctx.quadraticCurveTo(cx + 25, 955, cx - 15, 948);
-    ctx.lineTo(cx - 5, 905);
-    ctx.closePath();
-    ctx.fill();
-
-    // Cheekbone highlight
-    var cheekGrad = ctx.createRadialGradient(cx - 130, 820, 20, cx - 100, 840, 220);
-    cheekGrad.addColorStop(0.0, 'rgba(165, 182, 208, 0.70)');
-    cheekGrad.addColorStop(0.45, 'rgba(95, 110, 132, 0.40)');
-    cheekGrad.addColorStop(1.0, 'rgba(15, 18, 25, 0.0)');
-    ctx.fillStyle = cheekGrad;
-    ctx.beginPath();
-    ctx.ellipse(cx - 130, 820, 120, 160, -0.2, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Lips & Philtrum
-    var philGrad = ctx.createLinearGradient(cx - 35, 940, cx - 10, 995);
-    philGrad.addColorStop(0.0, 'rgba(165, 180, 205, 0.60)');
-    philGrad.addColorStop(1.0, 'rgba(70, 80, 100, 0.15)');
-    ctx.fillStyle = philGrad;
-    ctx.beginPath();
-    ctx.moveTo(cx - 30, 948);
-    ctx.lineTo(cx - 26, 995);
-    ctx.lineTo(cx - 12, 995);
-    ctx.lineTo(cx - 15, 948);
-    ctx.closePath();
-    ctx.fill();
-
-    // Upper Lip
-    ctx.fillStyle = '#11141c';
-    ctx.beginPath();
-    ctx.moveTo(cx - 85, 1005);
-    ctx.quadraticCurveTo(cx - 22, 990, cx - 20, 1000);
-    ctx.quadraticCurveTo(cx - 18, 990, cx + 45, 1010);
-    ctx.quadraticCurveTo(cx - 20, 1025, cx - 85, 1005);
-    ctx.closePath();
-    ctx.fill();
-
-    // Lower Lip
-    var lipGrad = ctx.createLinearGradient(cx - 70, 1010, cx + 30, 1060);
-    lipGrad.addColorStop(0.0, 'rgba(180, 195, 220, 0.88)');
-    lipGrad.addColorStop(0.45, 'rgba(125, 140, 165, 0.72)');
-    lipGrad.addColorStop(1.0, 'rgba(35, 42, 55, 0.3)');
-    ctx.fillStyle = lipGrad;
-    ctx.beginPath();
-    ctx.moveTo(cx - 75, 1010);
-    ctx.quadraticCurveTo(cx - 20, 1020, cx + 35, 1015);
-    ctx.quadraticCurveTo(cx - 15, 1065, cx - 75, 1010);
-    ctx.closePath();
-    ctx.fill();
-
-    // Under-lip shadow
-    ctx.fillStyle = '#06080b';
-    ctx.beginPath();
-    ctx.moveTo(cx - 65, 1055);
-    ctx.quadraticCurveTo(cx - 20, 1070, cx + 25, 1058);
-    ctx.quadraticCurveTo(cx - 20, 1090, cx - 65, 1055);
-    ctx.closePath();
-    ctx.fill();
-
-    // Chin prominence
-    var chinGrad = ctx.createRadialGradient(cx - 25, 1130, 15, cx - 20, 1140, 110);
-    chinGrad.addColorStop(0.0, 'rgba(205, 222, 245, 0.92)');
-    chinGrad.addColorStop(0.5, 'rgba(115, 130, 155, 0.50)');
-    chinGrad.addColorStop(1.0, 'rgba(10, 14, 20, 0.0)');
-    ctx.fillStyle = chinGrad;
-    ctx.beginPath();
-    ctx.ellipse(cx - 25, 1130, 85, 65, 0.05, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Jawline ridge
-    var jawGrad = ctx.createLinearGradient(cx - 180, 1060, cx + 240, 1070);
-    jawGrad.addColorStop(0.0, 'rgba(155, 170, 195, 0.70)');
-    jawGrad.addColorStop(0.4, 'rgba(95, 110, 130, 0.40)');
-    jawGrad.addColorStop(0.75, 'rgba(140, 155, 180, 0.60)');
-    jawGrad.addColorStop(1.0, 'rgba(20, 25, 35, 0.0)');
-    ctx.strokeStyle = jawGrad;
-    ctx.lineWidth = 14;
-    ctx.beginPath();
-    ctx.moveTo(cx - 200, 1050);
-    ctx.quadraticCurveTo(cx - 110, 1185, cx - 15, 1205);
-    ctx.quadraticCurveTo(cx + 140, 1180, cx + 230, 1065);
-    ctx.stroke();
-
-    // Classical Sculpted Curls
-    var curlConfigs = [
-      { x: cx - 220, y: 380, r: 65, rot: 0.3, col: '#8a96aa' },
-      { x: cx - 140, y: 320, r: 75, rot: -0.2, col: '#a2afc2' },
-      { x: cx - 50, y: 290, r: 85, rot: 0.4, col: '#b8c5d8' },
-      { x: cx + 55, y: 305, r: 80, rot: -0.3, col: '#9ca9bc' },
-      { x: cx + 150, y: 350, r: 70, rot: 0.5, col: '#808d9e' },
-      { x: cx + 230, y: 430, r: 65, rot: -0.4, col: '#677382' },
-      { x: cx - 270, y: 460, r: 60, rot: 0.2, col: '#727e90' },
-      { x: cx - 290, y: 560, r: 55, rot: -0.3, col: '#5c6674' },
-      { x: cx + 290, y: 530, r: 60, rot: 0.4, col: '#55606d' },
-      { x: cx + 295, y: 640, r: 50, rot: -0.2, col: '#48525e' },
-      { x: cx - 110, y: 400, r: 70, rot: 0.6, col: '#95a3b6' },
-      { x: cx + 10, y: 380, r: 75, rot: -0.5, col: '#aebbd0' },
-      { x: cx + 110, y: 410, r: 65, rot: 0.3, col: '#8895a6' }
-    ];
-
-    curlConfigs.forEach(function (c) {
-      ctx.fillStyle = '#0f1218';
+      ctx.strokeStyle = 'rgba(110, 128, 255, 0.38)';
+      ctx.lineWidth = width;
       ctx.beginPath();
-      ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+      ctx.moveTo(sx, sy);
+      ctx.lineTo(sx + Math.sin(i * 1.5) * 1.2, sy + len);
+      ctx.stroke();
+
+      ctx.strokeStyle = 'rgba(146, 128, 255, 0.38)';
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      ctx.moveTo(sx + width, sy);
+      ctx.lineTo(sx + width + Math.sin(i * 1.5) * 1.2, sy + len);
+      ctx.stroke();
+    }
+
+    // Condensed droplet particles
+    for (var j = 0; j < 110; j++) {
+      var dx = (j * 29.3 + Math.cos(j * 1.8) * 45 + 256) % 256;
+      var dy = (j * 41.7 + Math.sin(j * 2.1) * 55 + 256) % 256;
+      var rad = 1.2 + ((j % 4) * 0.5);
+
+      ctx.fillStyle = 'rgba(152, 112, 255, 0.48)';
+      ctx.beginPath();
+      ctx.arc(dx - 0.5, dy - 0.5, rad, 0, Math.PI * 2);
       ctx.fill();
 
-      var cGrad = ctx.createRadialGradient(c.x - c.r * 0.3, c.y - c.r * 0.3, 5, c.x, c.y, c.r);
-      cGrad.addColorStop(0.0, c.col);
-      cGrad.addColorStop(0.5, 'rgba(45, 55, 70, 0.4)');
-      cGrad.addColorStop(1.0, 'rgba(10, 14, 20, 0.0)');
-      ctx.fillStyle = cGrad;
+      ctx.fillStyle = 'rgba(104, 144, 255, 0.48)';
       ctx.beginPath();
-      ctx.arc(c.x - 4, c.y - 4, c.r * 0.85, 0, Math.PI * 2);
+      ctx.arc(dx + 0.5, dy + 0.5, rad * 0.85, 0, Math.PI * 2);
       ctx.fill();
-
-      ctx.strokeStyle = c.col;
-      ctx.lineWidth = 4;
-      ctx.beginPath();
-      ctx.arc(c.x, c.y, c.r * 0.65, c.rot, c.rot + Math.PI * 1.2);
-      ctx.stroke();
-    });
-
-    // 3. Horizontal Dry-Brush Eye Blindfold Band (Artistic Obscuration)
-    var bandY = 740;
-    var bandH = 145;
-
-    var darkBandGrad = ctx.createLinearGradient(120, bandY, 1350, bandY);
-    darkBandGrad.addColorStop(0.0, 'rgba(4, 5, 8, 0.96)');
-    darkBandGrad.addColorStop(0.7, 'rgba(7, 9, 14, 0.94)');
-    darkBandGrad.addColorStop(0.9, 'rgba(12, 16, 24, 0.7)');
-    darkBandGrad.addColorStop(1.0, 'rgba(10, 12, 16, 0.0)');
-    ctx.fillStyle = darkBandGrad;
-    ctx.fillRect(120, bandY - bandH / 2, 1200, bandH);
-
-    for (var b = 0; b < 65; b++) {
-      var by = bandY - bandH / 2 + rand() * bandH;
-      var bx0 = 100 + rand() * 120;
-      var bLen = 600 + rand() * 650;
-      var bThick = 1.5 + rand() * 6.5;
-
-      var bShade = Math.floor(rand() * 3);
-      var bCol = 'rgba(215, 225, 240, ';
-      var bAlpha = 0.25 + rand() * 0.55;
-      if (bShade === 1) {
-        bCol = 'rgba(110, 130, 158, ';
-        bAlpha = 0.35 + rand() * 0.45;
-      } else if (bShade === 2) {
-        bCol = 'rgba(20, 26, 36, ';
-        bAlpha = 0.6 + rand() * 0.35;
-      }
-
-      ctx.strokeStyle = bCol + bAlpha + ')';
-      ctx.lineWidth = bThick;
-      ctx.beginPath();
-      ctx.moveTo(bx0, by);
-      ctx.lineTo(bx0 + bLen, by + (rand() - 0.5) * 6);
-      ctx.stroke();
     }
 
-    var highlightStreaks = [
-      { y: bandY - 45, x0: 220, len: 950, w: 4.5, op: 0.8 },
-      { y: bandY - 18, x0: 160, len: 1080, w: 6.0, op: 0.9 },
-      { y: bandY + 8, x0: 260, len: 880, w: 3.5, op: 0.7 },
-      { y: bandY + 35, x0: 190, len: 1020, w: 5.0, op: 0.85 },
-      { y: bandY + 58, x0: 280, len: 780, w: 3.0, op: 0.65 }
-    ];
-
-    highlightStreaks.forEach(function (st) {
-      var sGrad = ctx.createLinearGradient(st.x0, st.y, st.x0 + st.len, st.y);
-      sGrad.addColorStop(0.0, 'rgba(235, 242, 255, 0.0)');
-      sGrad.addColorStop(0.15, 'rgba(235, 242, 255, ' + st.op + ')');
-      sGrad.addColorStop(0.65, 'rgba(195, 210, 235, ' + (st.op * 0.85) + ')');
-      sGrad.addColorStop(1.0, 'rgba(140, 160, 190, 0.0)');
-      ctx.strokeStyle = sGrad;
-      ctx.lineWidth = st.w;
-      ctx.beginPath();
-      ctx.moveTo(st.x0, st.y);
-      ctx.lineTo(st.x0 + st.len, st.y);
-      ctx.stroke();
-    });
-
-    // 4. Elegant Minimal Typography on the Right Side
-    var textX = 1580;
-    var startY = 620;
-    var lineGap = 135;
-
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    var lines = ['LESS', 'DISTRACTIONS', 'MORE', 'RESULTS'];
-
-    lines.forEach(function (line, idx) {
-      var ly = startY + idx * lineGap;
-      var fontSize = (line === 'DISTRACTIONS') ? 66 : 74;
-      ctx.font = '500 ' + fontSize + 'px "Space Grotesk", "Segoe UI", sans-serif';
-
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
-      ctx.shadowBlur = 18;
-      ctx.shadowOffsetX = 0;
-      ctx.shadowOffsetY = 6;
-
-      var spaced = line.split('').join(line === 'DISTRACTIONS' ? '  ' : '   ');
-      ctx.fillStyle = '#ded8cc';
-      ctx.fillText(spaced, textX, ly);
-
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = 'rgba(255, 250, 240, 0.15)';
-      ctx.fillText(spaced, textX, ly - 1);
-    });
-
-    var ruleY = startY + (lines.length - 1) * lineGap + 120;
-    var ruleW = 260;
-    var ruleGrad = ctx.createLinearGradient(textX - ruleW / 2, ruleY, textX + ruleW / 2, ruleY);
-    ruleGrad.addColorStop(0.0, 'rgba(222, 216, 204, 0.0)');
-    ruleGrad.addColorStop(0.2, 'rgba(222, 216, 204, 0.55)');
-    ruleGrad.addColorStop(0.8, 'rgba(222, 216, 204, 0.55)');
-    ruleGrad.addColorStop(1.0, 'rgba(222, 216, 204, 0.0)');
-    ctx.fillStyle = ruleGrad;
-    ctx.fillRect(textX - ruleW / 2, ruleY, ruleW, 2.5);
-
-    var tex = new THREE.CanvasTexture(cvs);
-    tex.needsUpdate = true;
-    if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+    var tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(2, 2);
     return tex;
   }
 
@@ -1359,64 +1030,260 @@
     biasLight.position.set(DESK_X, CONSOLE_Y + CONSOLE_H / 2 + 0.15, DESK_Z - CONSOLE_D * 0.35);
     root.add(biasLight);
 
-    // ---- RIGHT WALL: Large Sculptural Art Mural ("LESS DISTRACTIONS MORE RESULTS") ----
+    // ---- RIGHT WALL: Two-State Interactive Feature (Mural <-> Window) ----
     var wallD = zF - zB;
     var wallZ = (zB + zF) / 2;
     var winZ0 = zB + 0.4;
+    var winZ1 = zF - 0.4;
+    var winLen = winZ1 - winZ0;
+    var headerH = 0.55;
+    var sillH = 0.15;
+    var headerBottom = H - headerH;
+    var winH = headerBottom - sillH;
+    var winMidH = sillH + winH / 2;
+    var winMidZ = (winZ0 + winZ1) / 2;
 
-    // Solid full right wall
+    // Solid Wall Bounding Casing around the Right-Wall Feature Aperture
     var rightWallMat = new THREE.MeshStandardMaterial({
       color: 0x090a0c,
       roughness: 0.95,
       metalness: 0.05
     });
-    box(T, H, wallD, xR, H / 2, wallZ, rightWallMat);
+    box(T, H, winZ0 - zB, xR, H / 2, (zB + winZ0) / 2, rightWallMat);
+    box(T, H, zF - winZ1, xR, H / 2, (winZ1 + zF) / 2, rightWallMat);
+    box(T, headerH, winLen, xR, headerBottom + headerH / 2, winMidZ, rightWallMat);
+    box(T, sillH, winLen, xR, sillH / 2, winMidZ, rightWallMat);
 
-    // Full-Wall Classical Sculpture Art Mural
-    var muralW = wallD - 0.35;
-    var muralH = H - 0.35;
-    var muralTex = createClassicalMuralTexture();
-    var muralMat = new THREE.MeshStandardMaterial({
-      map: muralTex,
-      roughness: 0.72,
-      metalness: 0.06
+    function boxIn(parent, w, h, d, x, y, z, mat) {
+      var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      m.position.set(x, y, z);
+      m.castShadow = false;
+      m.receiveShadow = true;
+      parent.add(m);
+      return m;
+    }
+
+    var texLoader = new THREE.TextureLoader();
+
+    // ==========================================
+    // 1. STATE 1: MURAL (Initial State)
+    // ==========================================
+    var muralGroup = new THREE.Group();
+    muralGroup.name = 'right-wall-mural-group';
+
+    var muralW = winLen;
+    var muralH = winH;
+
+    var muralTex = texLoader.load('assets/mural.png', function (tex) {
+      if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+      var planeAspect = muralW / muralH;
+      var imgAspect = (tex.image && tex.image.width && tex.image.height)
+        ? (tex.image.width / tex.image.height)
+        : (650 / 753);
+      if (planeAspect > imgAspect) {
+        tex.repeat.set(1, imgAspect / planeAspect);
+        tex.offset.set(0, (1 - imgAspect / planeAspect) * 0.5);
+      } else {
+        tex.repeat.set(planeAspect / imgAspect, 1);
+        tex.offset.set((1 - planeAspect / imgAspect) * 0.5, 0);
+      }
+      tex.needsUpdate = true;
     });
 
-    var mural = new THREE.Mesh(new THREE.PlaneGeometry(muralW, muralH), muralMat);
-    mural.rotation.y = -Math.PI / 2;
-    mural.position.set(xR - T / 2 - 0.008, H / 2, wallZ);
-    mural.receiveShadow = true;
-    root.add(mural);
+    var muralMat = new THREE.MeshStandardMaterial({
+      map: muralTex,
+      roughness: 0.82,
+      metalness: 0.05,
+      transparent: true,
+      opacity: 1.0,
+      side: THREE.DoubleSide
+    });
 
-    // Sleek minimal architectural border frame (matte charcoal anodized profile)
-    var frameMat = new THREE.MeshStandardMaterial({ color: 0x0c0d10, roughness: 0.45, metalness: 0.6 });
-    var fT = 0.035;
-    var fD = 0.025;
-    var fX = xR - T / 2 - fD / 2;
-
-    box(fD, fT, muralW + 0.06, fX, H / 2 + muralH / 2 + fT / 2, wallZ, frameMat);
-    box(fD, fT, muralW + 0.06, fX, H / 2 - muralH / 2 - fT / 2, wallZ, frameMat);
-    box(fD, muralH, fT, fX, H / 2, wallZ - muralW / 2 - fT / 2, frameMat);
-    box(fD, muralH, fT, fX, H / 2, wallZ + muralW / 2 + fT / 2, frameMat);
-
-    // Recessed ceiling linear gallery wash light
-    var grazeBar = new THREE.Mesh(
-      new THREE.BoxGeometry(0.04, 0.025, wallD * 0.75),
-      new THREE.MeshStandardMaterial({
-        color: 0x14161a,
-        emissive: 0xffeedd,
-        emissiveIntensity: 0.4,
-        roughness: 0.4
-      })
-    );
-    grazeBar.position.set(xR - T / 2 - 0.06, H - 0.06, wallZ);
-    root.add(grazeBar);
+    var muralMesh = new THREE.Mesh(new THREE.PlaneGeometry(muralW, muralH), muralMat);
+    muralMesh.rotation.y = -Math.PI / 2;
+    muralMesh.position.set(xR - T / 2 - 0.005, winMidH, winMidZ);
+    muralMesh.receiveShadow = true;
+    muralMesh.userData.isRightWallFeature = true;
+    muralGroup.add(muralMesh);
 
     var muralWashLight = new THREE.SpotLight(0xffeedd, 0.75, 7.5, Math.PI / 3.0, 0.85, 1.2);
-    muralWashLight.position.set(xR - T / 2 - 0.35, H - 0.05, wallZ);
-    muralWashLight.target.position.set(xR - T / 2, 2.6, wallZ);
-    root.add(muralWashLight);
-    root.add(muralWashLight.target);
+    muralWashLight.position.set(xR - T / 2 - 0.35, H - 0.05, winMidZ);
+    muralWashLight.target.position.set(xR - T / 2, 2.6, winMidZ);
+    muralGroup.add(muralWashLight);
+    muralGroup.add(muralWashLight.target);
+
+    root.add(muralGroup);
+
+    // ==========================================
+    // 2. STATE 2: WINDOW (Physical Glass + Frame + Exterior Image)
+    // ==========================================
+    var windowGroup = new THREE.Group();
+    windowGroup.name = 'right-wall-window-group';
+    windowGroup.visible = false; // Hidden initially in Mural state
+
+    var winFrameMat = new THREE.MeshStandardMaterial({
+      color: 0x0c0d10,
+      roughness: 0.35,
+      metalness: 0.7,
+      transparent: true,
+      opacity: 0.0
+    });
+
+    // Outer architectural frame
+    boxIn(windowGroup, 0.06, winH, 0.06, xR - 0.03, winMidH, winZ0, winFrameMat);
+    boxIn(windowGroup, 0.06, winH, 0.06, xR - 0.03, winMidH, winZ1, winFrameMat);
+    boxIn(windowGroup, 0.06, 0.06, winLen, xR - 0.03, headerBottom, winMidZ, winFrameMat);
+    boxIn(windowGroup, 0.06, 0.06, winLen, xR - 0.03, sillH, winMidZ, winFrameMat);
+
+    // Single slim interior vertical mullion
+    boxIn(windowGroup, 0.04, winH, 0.055, xR - 0.03, winMidH, winMidZ, winFrameMat);
+
+    // Physical Glass Pane with Rain Normal Map
+    var rainNormalMap = createRainyGlassNormalMap();
+    var glassMat = new THREE.MeshPhysicalMaterial({
+      color: 0xffffff,
+      transmission: 0.92,
+      roughness: 0.14,
+      ior: 1.5,
+      transparent: true,
+      opacity: 0.0,
+      normalMap: rainNormalMap,
+      side: THREE.DoubleSide
+    });
+    glassMat.normalScale.set(0.1, 0.1);
+
+    var glass = new THREE.Mesh(
+      new THREE.PlaneGeometry(winLen - 0.02, winH - 0.02),
+      glassMat
+    );
+    glass.rotation.y = Math.PI / 2;
+    glass.position.set(xR - 0.02, winMidH, winMidZ);
+    glass.userData.isRightWallFeature = true;
+    windowGroup.add(glass);
+
+    // Exterior Backdrop (assets/high.png behind the glass)
+    var highTex = texLoader.load('assets/high.png', function (tex) {
+      if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+      var winAspect = winLen / winH;
+      var imgAspect = (tex.image && tex.image.width && tex.image.height)
+        ? (tex.image.width / tex.image.height)
+        : (1487 / 751);
+      if (winAspect > imgAspect) {
+        tex.repeat.set(1, imgAspect / winAspect);
+        tex.offset.set(0, (1 - imgAspect / winAspect) * 0.5);
+      } else {
+        tex.repeat.set(winAspect / imgAspect, 1);
+        tex.offset.set((1 - winAspect / imgAspect) * 0.5, 0);
+      }
+      tex.needsUpdate = true;
+    });
+
+    var highMat = new THREE.MeshBasicMaterial({
+      map: highTex,
+      side: THREE.DoubleSide,
+      transparent: true,
+      opacity: 0.0,
+      toneMapped: false
+    });
+
+    var skyPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(winLen, winH),
+      highMat
+    );
+    skyPlane.rotation.y = Math.PI / 2;
+    skyPlane.position.set(xR + 0.08, winMidH, winMidZ);
+    skyPlane.userData.isRightWallFeature = true;
+    windowGroup.add(skyPlane);
+
+    // Recessed ceiling linear graze light
+    var grazeMat = new THREE.MeshStandardMaterial({
+      color: 0x14161a,
+      emissive: 0xffeedd,
+      emissiveIntensity: 0.4,
+      roughness: 0.4,
+      transparent: true,
+      opacity: 0.0
+    });
+    var grazeBar = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.025, winLen), grazeMat);
+    grazeBar.position.set(xR - 0.06, headerBottom + 0.015, winMidZ);
+    windowGroup.add(grazeBar);
+
+    var windowGrazeLight = new THREE.SpotLight(0xffeedd, 0.0, 5.5, Math.PI / 3.0, 0.85, 1.3);
+    windowGrazeLight.position.set(xR - 0.1, headerBottom, winMidZ);
+    windowGrazeLight.target.position.set(xR - 0.05, 0, winMidZ);
+    windowGroup.add(windowGrazeLight);
+    windowGroup.add(windowGrazeLight.target);
+
+    root.add(windowGroup);
+
+    // Invisible interactive hit plane for reliable raycasting across entire aperture
+    var hitPlane = new THREE.Mesh(
+      new THREE.PlaneGeometry(winLen, winH),
+      new THREE.MeshBasicMaterial({ visible: false })
+    );
+    hitPlane.rotation.y = -Math.PI / 2;
+    hitPlane.position.set(xR - T / 2 - 0.01, winMidH, winMidZ);
+    hitPlane.userData.isRightWallFeature = true;
+    root.add(hitPlane);
+
+    // ==========================================
+    // 3. TOGGLE INTERACTION (Smooth 600ms Crossfade)
+    // ==========================================
+    var isWindowState = false;
+    var isTransitioning = false;
+    var transitionDuration = 600;
+
+    function toggleRightWallState() {
+      if (isTransitioning) return;
+      isTransitioning = true;
+      var startVal = isWindowState ? 1.0 : 0.0;
+      var targetVal = isWindowState ? 0.0 : 1.0;
+      var startTime = performance.now();
+
+      muralGroup.visible = true;
+      windowGroup.visible = true;
+
+      function easeInOutQuad(t) {
+        return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      }
+
+      function animateTransition(now) {
+        var elapsed = now - startTime;
+        var t = Math.min(1.0, elapsed / transitionDuration);
+        var eased = easeInOutQuad(t);
+        var progress = startVal + (targetVal - startVal) * eased;
+
+        // Crossfade Mural
+        muralMat.opacity = 1.0 - progress;
+        if (muralWashLight) {
+          muralWashLight.intensity = 0.75 * (1.0 - progress);
+        }
+
+        // Crossfade Window components
+        winFrameMat.opacity = progress;
+        glassMat.opacity = progress;
+        highMat.opacity = progress;
+        grazeMat.opacity = progress;
+        if (windowGrazeLight) {
+          windowGrazeLight.intensity = 0.65 * progress;
+        }
+
+        if (t < 1.0) {
+          requestAnimationFrame(animateTransition);
+        } else {
+          isWindowState = !isWindowState;
+          isTransitioning = false;
+          if (isWindowState) {
+            muralGroup.visible = false;
+          } else {
+            windowGroup.visible = false;
+          }
+        }
+      }
+
+      requestAnimationFrame(animateTransition);
+    }
+    window.__toggleRightWallState = toggleRightWallState;
 
     // 6. Tall Architectural Plant (Corner Focal Piece where curtain was bunched)
     var plantGroup = new THREE.Group();
@@ -1520,10 +1387,28 @@
       return false;
     }
 
+    function checkRightWallHit(clientX, clientY) {
+      if (!camera || !scene) return false;
+      var rect = renderer.domElement.getBoundingClientRect();
+      mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+      ray.setFromCamera(mouse, camera);
+      var hits = ray.intersectObjects(scene.children, true);
+      for (var i = 0; i < hits.length; i++) {
+        var obj = hits[i].object;
+        while (obj && obj !== scene) {
+          if (obj.userData && obj.userData.isRightWallFeature) return true;
+          obj = obj.parent;
+        }
+      }
+      return false;
+    }
+
     // Set cursor to pointer on hover
     window.addEventListener('pointermove', function (e) {
-      var hit = checkNeonHit(e.clientX, e.clientY);
-      if (hit) {
+      var hitNeon = checkNeonHit(e.clientX, e.clientY);
+      var hitWall = checkRightWallHit(e.clientX, e.clientY);
+      if (hitNeon || hitWall) {
         document.body.style.cursor = 'pointer';
         isHovered = true;
       } else if (isHovered) {
@@ -1542,6 +1427,10 @@
       if (checkNeonHit(e.clientX, e.clientY)) {
         if (window.__cycleNeonColor) {
           window.__cycleNeonColor();
+        }
+      } else if (checkRightWallHit(e.clientX, e.clientY)) {
+        if (window.__toggleRightWallState) {
+          window.__toggleRightWallState();
         }
       }
     }, { passive: true });
