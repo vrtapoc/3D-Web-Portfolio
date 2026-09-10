@@ -636,9 +636,9 @@
     var doorX0 = doorX - doorW / 2;
     var doorX1 = doorX + doorW / 2;
 
-    // 1. Acoustic Felt Backing (Base Wall: near-black matte felt 0x090a0c, roughness 0.98)
+    // 1. Acoustic Felt Backing (Base Wall: near-black charcoal matte felt 0x090b0d, roughness 0.98)
     var feltMat = new THREE.MeshStandardMaterial({
-      color: 0x090a0c,
+      color: 0x090b0d,
       roughness: 0.98,
       metalness: 0.0
     });
@@ -646,16 +646,16 @@
 
     // Minimal perimeter baseboard along bottom floor seam + crown trim
     var trimMat = new THREE.MeshStandardMaterial({
-      color: 0x08090b,
-      roughness: 0.45,
-      metalness: 0.1
+      color: 0x0c0e11,
+      roughness: 0.65,
+      metalness: 0.12
     });
     var baseH = 0.08;
     var crownH = 0.06;
     box(xR - xL, baseH, 0.035, (xL + xR) / 2, baseH / 2, zB + T / 2 + 0.018, trimMat);
     box(xR - xL, crownH, 0.035, (xL + xR) / 2, H - crownH / 2, zB + T / 2 + 0.018, trimMat);
 
-    // 2. Vertical Slat Array using THREE.InstancedMesh
+    // 2. Vertical Slat Array using THREE.InstancedMesh (Dark Graphite Charcoal #151A1D, matte roughness 0.72)
     var slatW = 0.045;
     var slatD = 0.025;
     var slatGap = 0.038;
@@ -663,8 +663,8 @@
     var slatZ = zB + T / 2 + slatD / 2 + 0.002;
 
     var slatMat = new THREE.MeshStandardMaterial({
-      color: 0x151619,
-      roughness: 0.65,
+      color: 0x151a1d,
+      roughness: 0.72,
       metalness: 0.08
     });
 
@@ -714,6 +714,13 @@
       }
       slatInstances.instanceMatrix.needsUpdate = true;
       root.add(slatInstances);
+
+      // Subtle architectural graphite slat graze light (soft, localized, non-bright)
+      var slatGraze = new THREE.SpotLight(0xa0b0c0, 0.45, 6.5, Math.PI / 2.8, 0.9, 1.4);
+      slatGraze.position.set(0.2, H - 0.15, zB + 0.6);
+      slatGraze.target.position.set(0.2, H / 2, zB);
+      root.add(slatGraze);
+      root.add(slatGraze.target);
     }
 
     var doorPanelMat = new THREE.MeshStandardMaterial({ color: 0x1a1b1f, roughness: 0.82, metalness: 0.04 });
