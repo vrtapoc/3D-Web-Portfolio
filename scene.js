@@ -233,39 +233,25 @@
       }
     }
 
-    // Staging Area: Cluster Jukebox, Balloon Lamp, and Floor Lamp along FAR-LEFT room wall
+    // Staging Area: Cluster Jukebox and Floor Lamp along FAR-LEFT room wall
     if (typeof jukebox !== 'undefined' && jukebox) {
       jukebox.position.set(-4.1, 0, 1.4);
       jukebox.rotation.y = Math.PI * 0.45;
     }
 
     scene.traverse(function (obj) {
-      if (obj.userData && obj.userData.name === 'balloon') {
-        obj.position.set(-4.15, 0, 2.5);
-        // Ensure red/pink balloon color
-        if (typeof balloonMaterial !== 'undefined' && balloonMaterial) {
-          balloonMaterial.color.setHex(0xd94747);
-        }
-      }
       if (obj.userData && obj.userData.name === 'lamp') {
         obj.position.set(-4.1, 0, 0.4);
         obj.rotation.y = 0.85;
       }
+      // Hide legacy duplicate plant/balloon instances from original scene
+      if (obj.userData && (obj.userData.name === 'balloon' || obj.userData.name === 'plant')) {
+        if (!obj.userData.isDecorSlot) {
+          obj.visible = false;
+        }
+      }
     });
     buildModernOfficeChair();
-
-    scene.traverse(function (obj) {
-      if (!obj.isGroup) return;
-      var isB = obj.userData && obj.userData.name === 'balloon';
-      if (!isB) {
-        var hs = false;
-        obj.traverse(function (c) {
-          if (c.isMesh && c.geometry && c.geometry.type === 'SphereGeometry') hs = true;
-        });
-        if (hs && obj.position.x > 2.5) isB = true;
-      }
-      if (isB) obj.position.set(3.7, -0.28, 3.5);
-    });
   }
 
   function createFiddleLeafGeo(w, l) {
@@ -1292,7 +1278,18 @@
     var plantGroup = new THREE.Group();
     plantGroup.name = 'corner-architectural-plant';
 
-    // Minimalist matte black / raw concrete cylinder planter
+    // ==========================================
+    // 4. UNIFIED CORNER DECOR SLOT (Plant <-> Balloon)
+    // ==========================================
+    var decorSlotGroup = new THREE.Group();
+    decorSlotGroup.name = 'corner-decor-slot';
+    decorSlotGroup.userData = { interactive: true, name: 'decorSlot', isDecorSlot: true };
+
+    // --- Variant 1: Architectural Plant ---
+    var plantVariantGroup = new THREE.Group();
+    plantVariantGroup.name = 'decor-variant-plant';
+    plantVariantGroup.userData = { interactive: true, name: 'decorSlot', isDecorSlot: true };
+
     var potMat = new THREE.MeshStandardMaterial({
       color: 0x141518,
       roughness: 0.9,
@@ -1302,17 +1299,17 @@
     pot.position.y = 0.275;
     pot.castShadow = true;
     pot.receiveShadow = true;
-    plantGroup.add(pot);
+    pot.userData = { interactive: true, name: 'decorSlot', isDecorSlot: true };
+    plantVariantGroup.add(pot);
 
-    // Soil inside pot
     var soil = new THREE.Mesh(
       new THREE.CylinderGeometry(0.21, 0.21, 0.03, 24),
       new THREE.MeshStandardMaterial({ color: 0x0a0a0a, roughness: 0.98 })
     );
     soil.position.y = 0.54;
-    plantGroup.add(soil);
+    soil.userData = { interactive: true, name: 'decorSlot', isDecorSlot: true };
+    plantVariantGroup.add(soil);
 
-    // Foliage: broad leaves branching gracefully on slender stalks reaching ~1.4 - 1.8 units high
     var leafMat = new THREE.MeshStandardMaterial({
       color: 0x182c1f,
       roughness: 0.45,
@@ -1342,7 +1339,8 @@
       var stalkGeo = new THREE.TubeGeometry(stalkCurve, 12, 0.012, 8, false);
       var stalkMesh = new THREE.Mesh(stalkGeo, stalkMat);
       stalkMesh.castShadow = true;
-      plantGroup.add(stalkMesh);
+      stalkMesh.userData = { interactive: true, name: 'decorSlot', isDecorSlot: true };
+      plantVariantGroup.add(stalkMesh);
 
       var leafGeo = createFiddleLeafGeo(cfg.leafW, cfg.leafL);
       var leafMesh = new THREE.Mesh(leafGeo, leafMat);
@@ -1351,11 +1349,93 @@
       leafMesh.rotation.x = cfg.pitch;
       leafMesh.castShadow = true;
       leafMesh.receiveShadow = true;
-      plantGroup.add(leafMesh);
+      leafMesh.userData = { interactive: true, name: 'decorSlot', isDecorSlot: true };
+      plantVariantGroup.add(leafMesh);
     });
 
-    plantGroup.position.set(xR - 0.45, 0, winZ0 + 0.48);
-    root.add(plantGroup);
+    decorSlotGroup.add(plantVariantGroup);
+
+    // --- Variant 2: Floating Balloon ---
+    var balloonVariantGroup = new THREE.Group();
+    balloonVariantGroup.name = 'decor-variant-balloon';
+    balloonVariantGroup.visible = false;
+    balloonVariantGroup.userData = { interactive: true, name: 'decorSlot', isDecorSlot: true };
+
+    var bPot = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.35, 32), potMat);
+    bPot.position.set(0, 0.175, 0);
+    bPot.castShadow = true;
+    bPot.receiveShadow = true;
+    bPot.userData = { interactive: true, name: 'decorSlot', isDecorSlot: true };
+    balloonVariantGroup.add(bPot);
+
+    var balloonColors = [0xd94747, 0x00e5ff, 0xffd700, 0xa855f7, 0x10b981];
+    var balloonColorIndex = 0;
+    var balloonMaterial = new THREE.MeshStandardMaterial({
+      color: balloonColors[0],
+      roughness: 0.8,
+      emissive: 0x3d1010,
+      emissiveIntensity: 0.15
+    });
+
+    var balloonMesh = new THREE.Mesh(
+      new THREE.SphereGeometry(0.34, 24, 24),
+      balloonMaterial
+    );
+    balloonMesh.position.set(0, 1.95, 0);
+    balloonMesh.scale.set(1.0, 1.28, 1.0);
+    balloonMesh.castShadow = true;
+    balloonMesh.userData = { interactive: true, name: 'decorSlot', isDecorSlot: true };
+    balloonVariantGroup.add(balloonMesh);
+
+    var balloonNub = new THREE.Mesh(
+      new THREE.ConeGeometry(0.04, 0.18, 12),
+      balloonMaterial
+    );
+    balloonNub.position.set(0, 1.60, 0);
+    balloonNub.rotation.x = Math.PI;
+    balloonNub.castShadow = true;
+    balloonNub.userData = { interactive: true, name: 'decorSlot', isDecorSlot: true };
+    balloonVariantGroup.add(balloonNub);
+
+    var balloonStringStart = new THREE.Vector3(0, 1.51, 0);
+    var vaseTop = new THREE.Vector3(0, 0.35, 0);
+    var stringLength = balloonStringStart.distanceTo(vaseTop);
+
+    var balloonString = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.008, 0.008, stringLength, 10),
+      new THREE.MeshStandardMaterial({ color: 0x000000, roughness: 0.8 })
+    );
+    balloonString.position.copy(balloonStringStart.clone().add(vaseTop).multiplyScalar(0.5));
+    balloonString.lookAt(vaseTop);
+    balloonString.rotateX(Math.PI / 2);
+    balloonString.castShadow = true;
+    balloonString.userData = { interactive: true, name: 'decorSlot', isDecorSlot: true };
+    balloonVariantGroup.add(balloonString);
+
+    decorSlotGroup.add(balloonVariantGroup);
+
+    decorSlotGroup.position.set(xR - 0.45, 0, winZ0 + 0.48);
+    root.add(decorSlotGroup);
+
+    // Decor Slot Toggle Interaction
+    var isBalloonDecor = false;
+    function toggleDecorSlot() {
+      isBalloonDecor = !isBalloonDecor;
+      if (isBalloonDecor) {
+        plantVariantGroup.visible = false;
+        balloonVariantGroup.visible = true;
+        balloonColorIndex = (balloonColorIndex + 1) % balloonColors.length;
+        balloonMaterial.color.setHex(balloonColors[balloonColorIndex]);
+        if (window.showToast) window.showToast('🎈 Switched to Balloon Decor');
+        if (window.playUiSound) window.playUiSound('boing');
+      } else {
+        plantVariantGroup.visible = true;
+        balloonVariantGroup.visible = false;
+        if (window.showToast) window.showToast('🪴 Switched to Architectural Plant');
+        if (window.playUiSound) window.playUiSound('click');
+      }
+    }
+    window.__toggleDecorSlot = toggleDecorSlot;
 
     scene.add(root);
   }
@@ -1373,6 +1453,7 @@
     var mouse = new THREE.Vector2();
     var currentHoveredObj = null;
     var pointerDownPos = new THREE.Vector2();
+    var isProcessingClick = false;
 
     var TOOLTIPS = {
       'computer': '🖥️ Click to Open Portfolio',
@@ -1380,10 +1461,10 @@
       'keyboard': '⌨️ Cycle Keyboard RGB',
       'coffeeMug': '☕ Drink Coffee (100% Fuel)',
       'tablet': '📱 Cycle Tablet Notes',
-      'balloon': '🎈 Bounce Balloon (Change Color)',
       'jukebox': '📻 Toggle Retro Jukebox Music',
       'neonSign': '💡 Cycle Neon Glow',
-      'rightWallFeature': '🖼️ Toggle Mural / Window'
+      'rightWallFeature': '🖼️ Toggle Mural / Window',
+      'decorSlot': '🪴 Toggle Decor (Plant / Balloon)'
     };
 
     function getObjectAnchor(obj, name) {
@@ -1401,13 +1482,13 @@
         pos.set(center.x, box3.max.y + 0.10, center.z);
       } else if (name === 'tablet') {
         pos.set(center.x, box3.max.y + 0.10, center.z);
-      } else if (name === 'balloon') {
+      } else if (name === 'decorSlot' || (obj.userData && obj.userData.isDecorSlot)) {
         pos.set(center.x, box3.max.y + 0.16, center.z);
       } else if (name === 'jukebox') {
         pos.set(center.x, box3.max.y + 0.15, center.z);
       } else if (name === 'neonSign') {
         pos.set(center.x, box3.max.y + 0.15, center.z);
-      } else if (name === 'rightWallFeature') {
+      } else if (name === 'rightWallFeature' || (obj.userData && obj.userData.isRightWallFeature)) {
         pos.set(center.x - 0.2, center.y + 0.35, center.z);
       } else {
         pos.set(center.x, box3.max.y + 0.12, center.z);
@@ -1451,7 +1532,7 @@
       for (var i = 0; i < hits.length; i++) {
         var obj = hits[i].object;
         while (obj && obj !== scene) {
-          if (obj.userData && (obj.userData.interactive || obj.userData.isRightWallFeature)) {
+          if (obj.userData && (obj.userData.interactive || obj.userData.isRightWallFeature || obj.userData.isDecorSlot)) {
             return obj;
           }
           obj = obj.parent;
@@ -1469,7 +1550,7 @@
       var hitObj = findInteractiveObject(e.clientX, e.clientY);
 
       if (hitObj) {
-        var name = hitObj.userData ? (hitObj.userData.name || (hitObj.userData.isRightWallFeature ? 'rightWallFeature' : '')) : '';
+        var name = hitObj.userData ? (hitObj.userData.name || (hitObj.userData.isRightWallFeature ? 'rightWallFeature' : (hitObj.userData.isDecorSlot ? 'decorSlot' : ''))) : '';
 
         if (currentHoveredObj !== hitObj) {
           // Restore previous hovered object scale
@@ -1480,7 +1561,7 @@
           currentHoveredObj = hitObj;
 
           // Subtle active scale on hover
-          if (hitObj.scale && name !== 'rightWallFeature' && name !== 'neonSign') {
+          if (hitObj.scale && name !== 'rightWallFeature' && name !== 'neonSign' && name !== 'decorSlot') {
             var s = name === 'computer' ? 1.05 : 1.04;
             hitObj.scale.set(s, s, s);
           }
@@ -1517,6 +1598,10 @@
       var dist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
       if (dist > 10) return; // Orbit drag threshold
 
+      if (isProcessingClick) return;
+      isProcessingClick = true;
+      setTimeout(function () { isProcessingClick = false; }, 180);
+
       var hitObj = findInteractiveObject(e.clientX, e.clientY);
       if (!hitObj || !hitObj.userData) return;
 
@@ -1549,14 +1634,6 @@
           if (window.showToast) window.showToast('📱 Note switched: ' + tabletNotes[tabletNoteIndex].title);
         }
         if (window.playUiSound) window.playUiSound('click');
-      } else if (name === 'balloon') {
-        if (typeof balloonColors !== 'undefined' && balloonColors.length) {
-          balloonColorIndex = (balloonColorIndex + 1) % balloonColors.length;
-          if (balloonMaterial) balloonMaterial.color.setHex(balloonColors[balloonColorIndex]);
-        }
-        balloonWobbleTime = Date.now();
-        if (window.showToast) window.showToast('🎈 Balloon bounced! Color updated.');
-        if (window.playUiSound) window.playUiSound('boing');
       } else if (name === 'jukebox') {
         isJukeboxPlaying = !isJukeboxPlaying;
         if (jukeboxLight) jukeboxLight.intensity = isJukeboxPlaying ? 1.4 : 0.3;
@@ -1567,6 +1644,8 @@
         if (window.__cycleNeonColor) window.__cycleNeonColor();
       } else if (hitObj.userData.isRightWallFeature || name === 'rightWallFeature') {
         if (window.__toggleRightWallState) window.__toggleRightWallState();
+      } else if (name === 'decorSlot' || hitObj.userData.isDecorSlot) {
+        if (window.__toggleDecorSlot) window.__toggleDecorSlot();
       }
     }, { passive: true });
   }
@@ -1648,10 +1727,13 @@
         code = code.replace('let ' + declaration + ';', 'var ' + declaration + ';');
       });
 
-      // Neutralize the legacy flat mouse-offset pointer listeners in injected code so setupInteractiveTooltips controls all 3D projected tooltips
-      code = code.replace("window.addEventListener('pointermove', onPointerMove", "// window.addEventListener('pointermove', onPointerMove");
-      code = code.replace("window.addEventListener('pointerup', onPointerUp", "// window.addEventListener('pointerup', onPointerUp");
-      code = code.replace("window.addEventListener('pointerdown', onPointerDown", "// window.addEventListener('pointerdown', onPointerDown");
+      // Neutralize all legacy pointer event listeners in injected code so setupInteractiveTooltips is the sole controller
+      code = code.replace(/renderer\.domElement\.addEventListener\('pointerdown'[^)]+\);?/g, '// pointerdown removed');
+      code = code.replace(/renderer\.domElement\.addEventListener\('pointerup'[^)]+\);?/g, '// pointerup removed');
+      code = code.replace(/renderer\.domElement\.addEventListener\('pointercancel'[^)]+\);?/g, '// pointercancel removed');
+      code = code.replace(/window\.addEventListener\('pointermove'[^)]+\);?/g, '// pointermove removed');
+      code = code.replace(/window\.addEventListener\('pointerdown'[^)]+\);?/g, '// pointerdown removed');
+      code = code.replace(/window\.addEventListener\('pointerup'[^)]+\);?/g, '// pointerup removed');
 
       var s = document.createElement('script');
       s.textContent = code;
