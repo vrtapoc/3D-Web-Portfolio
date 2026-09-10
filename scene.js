@@ -116,7 +116,7 @@
     var fill = new THREE.DirectionalLight(0xd0d4e0, 0.35);
     fill.position.set(-5, 5.5, 7);
     scene.add(fill);
-        var moonlight = new THREE.DirectionalLight(0x4a6a8a, 0.30);
+        var moonlight = new THREE.DirectionalLight(0xffecd8, 0.38);
     moonlight.name = 'window-moonlight';
     moonlight.position.set(8.5, 4.5, 1.2);
     moonlight.target.position.set(0, 0.5, 0.5);
@@ -438,86 +438,393 @@
     return tex;
   }
 
-  function createRainyGlassNormalMap() {
-    var canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 256;
-    var ctx = canvas.getContext('2d');
-
-    // Base flat normal vector (128, 128, 255) -> #8080ff
-    ctx.fillStyle = '#8080ff';
-    ctx.fillRect(0, 0, 256, 256);
-
-    // Subtle vertical streaks simulating trickling rainwater
-    for (var i = 0; i < 50; i++) {
-      var sx = (i * 7.3 + Math.sin(i * 2.9) * 16 + 256) % 256;
-      var sy = (i * 19.1) % 256;
-      var len = 30 + ((i * 17) % 70);
-      var width = 1.0 + ((i % 3) * 0.4);
-
-      ctx.strokeStyle = 'rgba(110, 128, 255, 0.38)';
-      ctx.lineWidth = width;
-      ctx.beginPath();
-      ctx.moveTo(sx, sy);
-      ctx.lineTo(sx + Math.sin(i * 1.5) * 1.2, sy + len);
-      ctx.stroke();
-
-      ctx.strokeStyle = 'rgba(146, 128, 255, 0.38)';
-      ctx.lineWidth = width;
-      ctx.beginPath();
-      ctx.moveTo(sx + width, sy);
-      ctx.lineTo(sx + width + Math.sin(i * 1.5) * 1.2, sy + len);
-      ctx.stroke();
-    }
-
-    // Condensed droplet particles
-    for (var j = 0; j < 110; j++) {
-      var dx = (j * 29.3 + Math.cos(j * 1.8) * 45 + 256) % 256;
-      var dy = (j * 41.7 + Math.sin(j * 2.1) * 55 + 256) % 256;
-      var rad = 1.2 + ((j % 4) * 0.5);
-
-      ctx.fillStyle = 'rgba(152, 112, 255, 0.48)';
-      ctx.beginPath();
-      ctx.arc(dx - 0.5, dy - 0.5, rad, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = 'rgba(104, 144, 255, 0.48)';
-      ctx.beginPath();
-      ctx.arc(dx + 0.5, dy + 0.5, rad * 0.85, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    var tex = new THREE.CanvasTexture(canvas);
-    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(2, 2);
-    return tex;
-  }
-
-  function createRainySkylineBackdropTex() {
+  function createClassicalMuralTexture() {
     var cvs = document.createElement('canvas');
-    cvs.width = 1024;
-    cvs.height = 1024;
+    cvs.width = 2048;
+    cvs.height = 1720;
     var ctx = cvs.getContext('2d');
 
-    // Subtle vertical atmospheric night gradient:
-    // TOP: #02050A, MIDDLE: #050B15, BOTTOM: #07111C
-    var skyGrad = ctx.createLinearGradient(0, 0, 0, 1024);
-    skyGrad.addColorStop(0.0, '#02050A');
-    skyGrad.addColorStop(0.55, '#050B15');
-    skyGrad.addColorStop(1.0, '#07111C');
-    ctx.fillStyle = skyGrad;
-    ctx.fillRect(0, 0, 1024, 1024);
+    // 1. Deep Matte Charcoal Background with subtle vignette and stone grain
+    var bgGrad = ctx.createRadialGradient(800, 860, 100, 1024, 860, 1400);
+    bgGrad.addColorStop(0.0, '#101319');
+    bgGrad.addColorStop(0.5, '#0a0c10');
+    bgGrad.addColorStop(1.0, '#060709');
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, 2048, 1720);
 
-    // Subtle horizontal atmospheric haze near lower third (distant night horizon, soft blurred blend)
-    var horizonHaze = ctx.createLinearGradient(0, 640, 0, 960);
-    horizonHaze.addColorStop(0.0, 'rgba(7, 17, 28, 0.0)');
-    horizonHaze.addColorStop(0.45, 'rgba(11, 24, 38, 0.32)');
-    horizonHaze.addColorStop(1.0, 'rgba(7, 17, 28, 0.0)');
-    ctx.fillStyle = horizonHaze;
-    ctx.fillRect(0, 640, 1024, 320);
+    // Subtle stone texture noise
+    var imgData = ctx.getImageData(0, 0, 2048, 1720);
+    var d = imgData.data;
+    for (var n = 0; n < d.length; n += 4) {
+      var noise = (Math.random() - 0.5) * 12;
+      d[n] = Math.min(255, Math.max(0, d[n] + noise));
+      d[n + 1] = Math.min(255, Math.max(0, d[n + 1] + noise));
+      d[n + 2] = Math.min(255, Math.max(0, d[n + 2] + noise));
+    }
+    ctx.putImageData(imgData, 0, 0);
+
+    // 2. Classical Statue Face (Sculptural Chiaroscuro in Monochrome Marble)
+    var cx = 680;
+    var cy = 820;
+
+    ctx.save();
+
+    // Ambient back-glow behind head silhouette
+    var headGlow = ctx.createRadialGradient(cx - 50, cy - 80, 80, cx, cy, 750);
+    headGlow.addColorStop(0.0, 'rgba(32, 40, 54, 0.35)');
+    headGlow.addColorStop(0.6, 'rgba(18, 24, 34, 0.18)');
+    headGlow.addColorStop(1.0, 'rgba(0, 0, 0, 0.0)');
+    ctx.fillStyle = headGlow;
+    ctx.fillRect(0, 0, 2048, 1720);
+
+    // Neck & Trapezius / Shoulder Base
+    var neckGrad = ctx.createLinearGradient(cx - 250, 1100, cx + 350, 1720);
+    neckGrad.addColorStop(0.0, '#12151b');
+    neckGrad.addColorStop(0.35, '#2e3544');
+    neckGrad.addColorStop(0.65, '#181b22');
+    neckGrad.addColorStop(1.0, '#090a0d');
+    ctx.fillStyle = neckGrad;
+    ctx.beginPath();
+    ctx.moveTo(cx - 280, 1720);
+    ctx.quadraticCurveTo(cx - 220, 1300, cx - 160, 1120);
+    ctx.lineTo(cx + 180, 1100);
+    ctx.quadraticCurveTo(cx + 260, 1320, cx + 420, 1720);
+    ctx.closePath();
+    ctx.fill();
+
+    // Sternocleidomastoid muscle & clavicle hollow highlights
+    var muscleGrad = ctx.createLinearGradient(cx - 120, 1120, cx + 80, 1600);
+    muscleGrad.addColorStop(0.0, 'rgba(120, 135, 155, 0.45)');
+    muscleGrad.addColorStop(0.5, 'rgba(75, 88, 105, 0.25)');
+    muscleGrad.addColorStop(1.0, 'rgba(20, 25, 35, 0.0)');
+    ctx.fillStyle = muscleGrad;
+    ctx.beginPath();
+    ctx.moveTo(cx - 110, 1150);
+    ctx.quadraticCurveTo(cx - 30, 1350, cx + 50, 1650);
+    ctx.quadraticCurveTo(cx + 10, 1680, cx - 40, 1500);
+    ctx.quadraticCurveTo(cx - 90, 1320, cx - 130, 1180);
+    ctx.closePath();
+    ctx.fill();
+
+    // Throat shadow
+    var throatShadow = ctx.createLinearGradient(cx - 50, 1120, cx + 180, 1350);
+    throatShadow.addColorStop(0.0, 'rgba(4, 5, 8, 0.95)');
+    throatShadow.addColorStop(0.7, 'rgba(8, 10, 14, 0.6)');
+    throatShadow.addColorStop(1.0, 'rgba(12, 14, 18, 0.0)');
+    ctx.fillStyle = throatShadow;
+    ctx.beginPath();
+    ctx.moveTo(cx - 40, 1130);
+    ctx.quadraticCurveTo(cx + 80, 1180, cx + 180, 1260);
+    ctx.quadraticCurveTo(cx + 100, 1400, cx + 20, 1380);
+    ctx.closePath();
+    ctx.fill();
+
+    // Main Head Form (Jaw, Cheeks, Forehead)
+    var faceGrad = ctx.createRadialGradient(cx - 80, cy - 60, 60, cx + 50, cy + 80, 520);
+    faceGrad.addColorStop(0.0, '#424c5e');
+    faceGrad.addColorStop(0.4, '#242a36');
+    faceGrad.addColorStop(0.75, '#13171f');
+    faceGrad.addColorStop(1.0, '#07080b');
+    ctx.fillStyle = faceGrad;
+    ctx.beginPath();
+    ctx.moveTo(cx - 240, 620);
+    ctx.quadraticCurveTo(cx - 280, 840, cx - 210, 1050);
+    ctx.quadraticCurveTo(cx - 120, 1200, cx - 10, 1210);
+    ctx.quadraticCurveTo(cx + 160, 1190, cx + 240, 1060);
+    ctx.quadraticCurveTo(cx + 310, 850, cx + 280, 660);
+    ctx.quadraticCurveTo(cx + 200, 360, cx - 20, 340);
+    ctx.quadraticCurveTo(cx - 180, 360, cx - 240, 620);
+    ctx.closePath();
+    ctx.fill();
+
+    // Sculptural Forehead Highlight Planes
+    var fhGrad = ctx.createLinearGradient(cx - 200, 420, cx + 180, 600);
+    fhGrad.addColorStop(0.0, 'rgba(145, 160, 185, 0.55)');
+    fhGrad.addColorStop(0.35, 'rgba(105, 120, 142, 0.40)');
+    fhGrad.addColorStop(0.7, 'rgba(45, 55, 70, 0.15)');
+    fhGrad.addColorStop(1.0, 'rgba(10, 14, 20, 0.0)');
+    ctx.fillStyle = fhGrad;
+    ctx.beginPath();
+    ctx.moveTo(cx - 190, 480);
+    ctx.quadraticCurveTo(cx - 50, 420, cx + 120, 450);
+    ctx.quadraticCurveTo(cx + 170, 560, cx + 110, 640);
+    ctx.quadraticCurveTo(cx - 60, 620, cx - 180, 590);
+    ctx.closePath();
+    ctx.fill();
+
+    // Brow ridge sculpted highlights
+    var browGrad = ctx.createLinearGradient(cx - 160, 610, cx + 120, 650);
+    browGrad.addColorStop(0.0, 'rgba(175, 190, 215, 0.7)');
+    browGrad.addColorStop(0.4, 'rgba(125, 140, 165, 0.5)');
+    browGrad.addColorStop(1.0, 'rgba(30, 38, 50, 0.1)');
+    ctx.fillStyle = browGrad;
+    ctx.beginPath();
+    ctx.moveTo(cx - 160, 630);
+    ctx.quadraticCurveTo(cx - 60, 605, cx + 40, 625);
+    ctx.quadraticCurveTo(cx + 120, 640, cx + 100, 660);
+    ctx.quadraticCurveTo(cx + 20, 645, cx - 60, 635);
+    ctx.quadraticCurveTo(cx - 130, 655, cx - 160, 630);
+    ctx.closePath();
+    ctx.fill();
+
+    // Classical Greek Nose Bridge & Tip
+    var noseGrad = ctx.createLinearGradient(cx - 70, 660, cx + 40, 960);
+    noseGrad.addColorStop(0.0, 'rgba(180, 195, 220, 0.85)');
+    noseGrad.addColorStop(0.3, 'rgba(150, 168, 195, 0.80)');
+    noseGrad.addColorStop(0.7, 'rgba(195, 210, 235, 0.90)');
+    noseGrad.addColorStop(1.0, 'rgba(60, 70, 88, 0.2)');
+    ctx.fillStyle = noseGrad;
+    ctx.beginPath();
+    ctx.moveTo(cx - 50, 660);
+    ctx.lineTo(cx - 38, 880);
+    ctx.quadraticCurveTo(cx - 45, 935, cx - 20, 945);
+    ctx.lineTo(cx + 15, 935);
+    ctx.quadraticCurveTo(cx + 20, 915, cx - 5, 905);
+    ctx.lineTo(cx - 15, 680);
+    ctx.closePath();
+    ctx.fill();
+
+    // Nose shadow
+    var noseShadow = ctx.createLinearGradient(cx - 15, 700, cx + 80, 940);
+    noseShadow.addColorStop(0.0, 'rgba(5, 7, 10, 0.85)');
+    noseShadow.addColorStop(0.7, 'rgba(10, 14, 20, 0.65)');
+    noseShadow.addColorStop(1.0, 'rgba(20, 25, 35, 0.0)');
+    ctx.fillStyle = noseShadow;
+    ctx.beginPath();
+    ctx.moveTo(cx - 10, 680);
+    ctx.lineTo(cx + 65, 920);
+    ctx.quadraticCurveTo(cx + 25, 955, cx - 15, 948);
+    ctx.lineTo(cx - 5, 905);
+    ctx.closePath();
+    ctx.fill();
+
+    // Left Cheekbone Highlight
+    var cheekGrad = ctx.createRadialGradient(cx - 130, 820, 20, cx - 100, 840, 220);
+    cheekGrad.addColorStop(0.0, 'rgba(155, 172, 198, 0.65)');
+    cheekGrad.addColorStop(0.45, 'rgba(90, 105, 128, 0.35)');
+    cheekGrad.addColorStop(1.0, 'rgba(15, 18, 25, 0.0)');
+    ctx.fillStyle = cheekGrad;
+    ctx.beginPath();
+    ctx.ellipse(cx - 130, 820, 120, 160, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Classical Sculpted Lips & Philtrum
+    var philGrad = ctx.createLinearGradient(cx - 35, 940, cx - 10, 995);
+    philGrad.addColorStop(0.0, 'rgba(160, 175, 200, 0.55)');
+    philGrad.addColorStop(1.0, 'rgba(70, 80, 100, 0.15)');
+    ctx.fillStyle = philGrad;
+    ctx.beginPath();
+    ctx.moveTo(cx - 30, 948);
+    ctx.lineTo(cx - 26, 995);
+    ctx.lineTo(cx - 12, 995);
+    ctx.lineTo(cx - 15, 948);
+    ctx.closePath();
+    ctx.fill();
+
+    // Upper Lip
+    ctx.fillStyle = '#11141c';
+    ctx.beginPath();
+    ctx.moveTo(cx - 85, 1005);
+    ctx.quadraticCurveTo(cx - 22, 990, cx - 20, 1000);
+    ctx.quadraticCurveTo(cx - 18, 990, cx + 45, 1010);
+    ctx.quadraticCurveTo(cx - 20, 1025, cx - 85, 1005);
+    ctx.closePath();
+    ctx.fill();
+
+    // Lower Lip
+    var lipGrad = ctx.createLinearGradient(cx - 70, 1010, cx + 30, 1060);
+    lipGrad.addColorStop(0.0, 'rgba(170, 185, 210, 0.85)');
+    lipGrad.addColorStop(0.45, 'rgba(120, 135, 160, 0.70)');
+    lipGrad.addColorStop(1.0, 'rgba(35, 42, 55, 0.3)');
+    ctx.fillStyle = lipGrad;
+    ctx.beginPath();
+    ctx.moveTo(cx - 75, 1010);
+    ctx.quadraticCurveTo(cx - 20, 1020, cx + 35, 1015);
+    ctx.quadraticCurveTo(cx - 15, 1065, cx - 75, 1010);
+    ctx.closePath();
+    ctx.fill();
+
+    // Under-lip shadow
+    ctx.fillStyle = '#06080b';
+    ctx.beginPath();
+    ctx.moveTo(cx - 65, 1055);
+    ctx.quadraticCurveTo(cx - 20, 1070, cx + 25, 1058);
+    ctx.quadraticCurveTo(cx - 20, 1090, cx - 65, 1055);
+    ctx.closePath();
+    ctx.fill();
+
+    // Chin Prominence
+    var chinGrad = ctx.createRadialGradient(cx - 25, 1130, 15, cx - 20, 1140, 110);
+    chinGrad.addColorStop(0.0, 'rgba(195, 212, 238, 0.90)');
+    chinGrad.addColorStop(0.5, 'rgba(110, 125, 150, 0.45)');
+    chinGrad.addColorStop(1.0, 'rgba(10, 14, 20, 0.0)');
+    ctx.fillStyle = chinGrad;
+    ctx.beginPath();
+    ctx.ellipse(cx - 25, 1130, 85, 65, 0.05, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Jawline Ridge
+    var jawGrad = ctx.createLinearGradient(cx - 180, 1060, cx + 240, 1070);
+    jawGrad.addColorStop(0.0, 'rgba(150, 165, 190, 0.65)');
+    jawGrad.addColorStop(0.4, 'rgba(95, 110, 130, 0.35)');
+    jawGrad.addColorStop(0.75, 'rgba(135, 150, 175, 0.55)');
+    jawGrad.addColorStop(1.0, 'rgba(20, 25, 35, 0.0)');
+    ctx.strokeStyle = jawGrad;
+    ctx.lineWidth = 14;
+    ctx.beginPath();
+    ctx.moveTo(cx - 200, 1050);
+    ctx.quadraticCurveTo(cx - 110, 1185, cx - 15, 1205);
+    ctx.quadraticCurveTo(cx + 140, 1180, cx + 230, 1065);
+    ctx.stroke();
+
+    // Classical Sculpted Curls
+    var curlConfigs = [
+      { x: cx - 220, y: 380, r: 65, rot: 0.3, col: '#8a96aa' },
+      { x: cx - 140, y: 320, r: 75, rot: -0.2, col: '#a2afc2' },
+      { x: cx - 50, y: 290, r: 85, rot: 0.4, col: '#b8c5d8' },
+      { x: cx + 55, y: 305, r: 80, rot: -0.3, col: '#9ca9bc' },
+      { x: cx + 150, y: 350, r: 70, rot: 0.5, col: '#808d9e' },
+      { x: cx + 230, y: 430, r: 65, rot: -0.4, col: '#677382' },
+      { x: cx - 270, y: 460, r: 60, rot: 0.2, col: '#727e90' },
+      { x: cx - 290, y: 560, r: 55, rot: -0.3, col: '#5c6674' },
+      { x: cx + 290, y: 530, r: 60, rot: 0.4, col: '#55606d' },
+      { x: cx + 295, y: 640, r: 50, rot: -0.2, col: '#48525e' },
+      { x: cx - 110, y: 400, r: 70, rot: 0.6, col: '#95a3b6' },
+      { x: cx + 10, y: 380, r: 75, rot: -0.5, col: '#aebbd0' },
+      { x: cx + 110, y: 410, r: 65, rot: 0.3, col: '#8895a6' }
+    ];
+
+    curlConfigs.forEach(function (c) {
+      ctx.fillStyle = '#0f1218';
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+      ctx.fill();
+
+      var cGrad = ctx.createRadialGradient(c.x - c.r * 0.3, c.y - c.r * 0.3, 5, c.x, c.y, c.r);
+      cGrad.addColorStop(0.0, c.col);
+      cGrad.addColorStop(0.5, 'rgba(45, 55, 70, 0.4)');
+      cGrad.addColorStop(1.0, 'rgba(10, 14, 20, 0.0)');
+      ctx.fillStyle = cGrad;
+      ctx.beginPath();
+      ctx.arc(c.x - 4, c.y - 4, c.r * 0.85, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = c.col;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.arc(c.x, c.y, c.r * 0.65, c.rot, c.rot + Math.PI * 1.2);
+      ctx.stroke();
+    });
+
+    // 3. Horizontal Dry-Brush Eye Blindfold Band (Artistic Obscuration)
+    var bandY = 740;
+    var bandH = 145;
+
+    var darkBandGrad = ctx.createLinearGradient(120, bandY, 1350, bandY);
+    darkBandGrad.addColorStop(0.0, 'rgba(4, 5, 8, 0.96)');
+    darkBandGrad.addColorStop(0.7, 'rgba(7, 9, 14, 0.94)');
+    darkBandGrad.addColorStop(0.9, 'rgba(12, 16, 24, 0.7)');
+    darkBandGrad.addColorStop(1.0, 'rgba(10, 12, 16, 0.0)');
+    ctx.fillStyle = darkBandGrad;
+    ctx.fillRect(120, bandY - bandH / 2, 1200, bandH);
+
+    var brushSeed = 42;
+    function bRand() {
+      brushSeed = (brushSeed * 9301 + 49297) % 233280;
+      return brushSeed / 233280;
+    }
+
+    for (var b = 0; b < 65; b++) {
+      var by = bandY - bandH / 2 + bRand() * bandH;
+      var bx0 = 100 + bRand() * 120;
+      var bLen = 600 + bRand() * 650;
+      var bThick = 1.5 + bRand() * 6.5;
+
+      var bShade = Math.floor(bRand() * 3);
+      var bCol = 'rgba(215, 225, 240, ';
+      var bAlpha = 0.25 + bRand() * 0.55;
+      if (bShade === 1) {
+        bCol = 'rgba(110, 130, 158, ';
+        bAlpha = 0.35 + bRand() * 0.45;
+      } else if (bShade === 2) {
+        bCol = 'rgba(20, 26, 36, ';
+        bAlpha = 0.6 + bRand() * 0.35;
+      }
+
+      ctx.strokeStyle = bCol + bAlpha + ')';
+      ctx.lineWidth = bThick;
+      ctx.beginPath();
+      ctx.moveTo(bx0, by);
+      ctx.lineTo(bx0 + bLen, by + (bRand() - 0.5) * 6);
+      ctx.stroke();
+    }
+
+    var highlightStreaks = [
+      { y: bandY - 45, x0: 220, len: 950, w: 4.5, op: 0.8 },
+      { y: bandY - 18, x0: 160, len: 1080, w: 6.0, op: 0.9 },
+      { y: bandY + 8, x0: 260, len: 880, w: 3.5, op: 0.7 },
+      { y: bandY + 35, x0: 190, len: 1020, w: 5.0, op: 0.85 },
+      { y: bandY + 58, x0: 280, len: 780, w: 3.0, op: 0.65 }
+    ];
+
+    highlightStreaks.forEach(function (st) {
+      var sGrad = ctx.createLinearGradient(st.x0, st.y, st.x0 + st.len, st.y);
+      sGrad.addColorStop(0.0, 'rgba(235, 242, 255, 0.0)');
+      sGrad.addColorStop(0.15, 'rgba(235, 242, 255, ' + st.op + ')');
+      sGrad.addColorStop(0.65, 'rgba(195, 210, 235, ' + (st.op * 0.85) + ')');
+      sGrad.addColorStop(1.0, 'rgba(140, 160, 190, 0.0)');
+      ctx.strokeStyle = sGrad;
+      ctx.lineWidth = st.w;
+      ctx.beginPath();
+      ctx.moveTo(st.x0, st.y);
+      ctx.lineTo(st.x0 + st.len, st.y);
+      ctx.stroke();
+    });
+
+    ctx.restore();
+
+    // 4. Elegant Minimal Typography on the Right Side
+    var textX = 1580;
+    var startY = 620;
+    var lineGap = 135;
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    var lines = ['LESS', 'DISTRACTIONS', 'MORE', 'RESULTS'];
+
+    lines.forEach(function (line, idx) {
+      var ly = startY + idx * lineGap;
+      var fontSize = (line === 'DISTRACTIONS') ? 66 : 74;
+      ctx.font = '500 ' + fontSize + 'px "Space Grotesk", "Segoe UI", sans-serif';
+
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+      ctx.shadowBlur = 18;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 6;
+
+      var spaced = line.split('').join(line === 'DISTRACTIONS' ? '  ' : '   ');
+      ctx.fillStyle = '#ded8cc';
+      ctx.fillText(spaced, textX, ly);
+
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = 'rgba(255, 250, 240, 0.15)';
+      ctx.fillText(spaced, textX, ly - 1);
+    });
+
+    var ruleY = startY + (lines.length - 1) * lineGap + 120;
+    var ruleW = 260;
+    var ruleGrad = ctx.createLinearGradient(textX - ruleW / 2, ruleY, textX + ruleW / 2, ruleY);
+    ruleGrad.addColorStop(0.0, 'rgba(222, 216, 204, 0.0)');
+    ruleGrad.addColorStop(0.2, 'rgba(222, 216, 204, 0.55)');
+    ruleGrad.addColorStop(0.8, 'rgba(222, 216, 204, 0.55)');
+    ruleGrad.addColorStop(1.0, 'rgba(222, 216, 204, 0.0)');
+    ctx.fillStyle = ruleGrad;
+    ctx.fillRect(textX - ruleW / 2, ruleY, ruleW, 2.5);
 
     var tex = new THREE.CanvasTexture(cvs);
     tex.needsUpdate = true;
+    if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
     return tex;
   }
 
@@ -1058,127 +1365,60 @@
     biasLight.position.set(DESK_X, CONSOLE_Y + CONSOLE_H / 2 + 0.15, DESK_Z - CONSOLE_D * 0.35);
     root.add(biasLight);
 
-    // RIGHT WALL WINDOW (unchanged)
-    var winZ0 = zB + 0.4;
-    var winZ1 = zF - 0.4;
-    var winLen = winZ1 - winZ0;
-    var headerH = 0.55;
-    var sillH = 0.15;
-    var headerBottom = H - headerH;
+    // ---- RIGHT WALL: Large Sculptural Art Mural ("LESS DISTRACTIONS MORE RESULTS") ----
+    var wallD = zF - zB;
+    var wallZ = (zB + zF) / 2;
 
-    box(T, H, winZ0 - zB, xR, H / 2, (zB + winZ0) / 2);
-    box(T, H, zF - winZ1, xR, H / 2, (winZ1 + zF) / 2);
-    box(T, headerH, winLen, xR, headerBottom + headerH / 2, (winZ0 + winZ1) / 2);
-    box(T, sillH, winLen, xR, sillH / 2, (winZ0 + winZ1) / 2);
+    // Solid right wall base
+    box(T, H, wallD, xR, H / 2, wallZ, wallMat);
 
-    // Architectural Window: matte-black slim steel frame with single center mullion
-    var winFrameMat = new THREE.MeshStandardMaterial({
-      color: 0x0c0d10,
-      roughness: 0.35,
-      metalness: 0.7
+    // Full-Wall Classical Sculpture Art Mural
+    var muralW = wallD - 0.22; // 6.68 wide along Z
+    var muralH = H - 0.24;     // 5.56 tall along Y
+    var muralTex = createClassicalMuralTexture();
+    var muralMat = new THREE.MeshStandardMaterial({
+      map: muralTex,
+      roughness: 0.72,
+      metalness: 0.06,
+      bumpMap: microCementBump,
+      bumpScale: 0.0016
     });
 
-    // Outer framing (clean architectural profile)
-    box(0.06, headerBottom - sillH, 0.06, xR - 0.03, sillH + (headerBottom - sillH) / 2, winZ0, winFrameMat);
-    box(0.06, headerBottom - sillH, 0.06, xR - 0.03, sillH + (headerBottom - sillH) / 2, winZ1, winFrameMat);
-    box(0.06, 0.06, winLen, xR - 0.03, headerBottom, (winZ0 + winZ1) / 2, winFrameMat);
-    box(0.06, 0.06, winLen, xR - 0.03, sillH, (winZ0 + winZ1) / 2, winFrameMat);
+    var mural = new THREE.Mesh(new THREE.PlaneGeometry(muralW, muralH), muralMat);
+    mural.rotation.y = -Math.PI / 2;
+    mural.position.set(xR - T / 2 - 0.006, H / 2, wallZ);
+    mural.receiveShadow = true;
+    root.add(mural);
 
-    // Single slim interior vertical mullion creating two tall uninterrupted glass panels (no horizontal transoms)
-    var centerBayZ = winZ0 + winLen * 0.5;
-    box(0.04, headerBottom - sillH, 0.055, xR - 0.03, sillH + (headerBottom - sillH) / 2, centerBayZ, winFrameMat);
+    // Sleek minimal architectural border frame (matte dark charcoal profile)
+    var frameMat = new THREE.MeshStandardMaterial({ color: 0x0c0d10, roughness: 0.45, metalness: 0.6 });
+    var fT = 0.035; // thickness
+    var fD = 0.025; // depth
+    var fX = xR - T / 2 - fD / 2;
 
-    // ---- Rainy Glass Pane ----
-    var rainNormalMap = createRainyGlassNormalMap();
-    var glassMat = new THREE.MeshPhysicalMaterial({
-      color: 0xffffff,
-      transmission: 0.92,
-      roughness: 0.14,
-      ior: 1.5,
-      transparent: true,
-      normalMap: rainNormalMap,
-      side: THREE.DoubleSide
-    });
-    glassMat.normalScale.set(0.1, 0.1);
+    box(fD, fT, muralW + 0.06, fX, H / 2 + muralH / 2 + fT / 2, wallZ, frameMat);
+    box(fD, fT, muralW + 0.06, fX, H / 2 - muralH / 2 - fT / 2, wallZ, frameMat);
+    box(fD, muralH, fT, fX, H / 2, wallZ - muralW / 2 - fT / 2, frameMat);
+    box(fD, muralH, fT, fX, H / 2, wallZ + muralW / 2 + fT / 2, frameMat);
 
-    var glass = new THREE.Mesh(
-      new THREE.PlaneGeometry(winLen - 0.02, headerBottom - sillH - 0.02),
-      glassMat
-    );
-    glass.rotation.y = Math.PI / 2;
-    glass.position.set(xR - 0.02, sillH + (headerBottom - sillH) / 2, (winZ0 + winZ1) / 2);
-    root.add(glass);
-
-    // ---- Dark Atmospheric Night Backdrop strictly framed within window aperture ----
-    var cityGroup = new THREE.Group();
-    cityGroup.name = 'exterior-city-skyline';
-
-    var skyTex = createRainySkylineBackdropTex();
-    var skyMat = new THREE.MeshBasicMaterial({
-      map: skyTex,
-      side: THREE.DoubleSide,
-      toneMapped: false
-    });
-
-    // Sized strictly to window aperture dimensions and positioned inside wall casing behind glass
-    var skyPlane = new THREE.Mesh(
-      new THREE.PlaneGeometry(winLen, headerBottom - sillH),
-      skyMat
-    );
-    skyPlane.rotation.y = Math.PI / 2;
-    skyPlane.position.set(xR + 0.06, sillH + (headerBottom - sillH) / 2, (winZ0 + winZ1) / 2);
-    cityGroup.add(skyPlane);
-
-    root.add(cityGroup);
-
-    // ---- Dark Sheer Curtain (Far-right edge only, softening architectural perimeter) ----
-    var curtainW = winLen * 0.12;
-    var curtainH = H;
-    var curtainGeo = new THREE.PlaneGeometry(curtainW, curtainH, 28, 12);
-    var cPos = curtainGeo.attributes.position;
-    for (var cj = 0; cj < cPos.count; cj++) {
-      var cu = (cPos.getX(cj) / curtainW) + 0.5;
-      var cv = (cPos.getY(cj) / curtainH) + 0.5;
-      var foldAmp = 0.03 * (1.0 - cv * 0.12);
-      var foldWave = Math.sin(cu * Math.PI * 7.0) * foldAmp;
-      cPos.setZ(cj, foldWave);
-    }
-    curtainGeo.computeVertexNormals();
-
-    var curtainMat = new THREE.MeshStandardMaterial({
-      color: 0x0e1017,
-      roughness: 0.94,
-      metalness: 0.02,
-      transparent: true,
-      opacity: 0.9,
-      side: THREE.DoubleSide
-    });
-    var curtain = new THREE.Mesh(curtainGeo, curtainMat);
-    curtain.rotation.y = Math.PI / 2;
-    curtain.position.set(xR - 0.1, curtainH / 2, winZ1 - curtainW / 2);
-    curtain.castShadow = true;
-    curtain.receiveShadow = true;
-    root.add(curtain);
-
-
-        // 5. Recessed Ceiling Linear Graze (Top of window)
+    // Recessed ceiling linear graze light washing softly over the art mural
     var grazeBar = new THREE.Mesh(
-      new THREE.BoxGeometry(0.04, 0.025, winLen),
+      new THREE.BoxGeometry(0.04, 0.025, wallD * 0.75),
       new THREE.MeshStandardMaterial({
         color: 0x14161a,
         emissive: 0xffeedd,
-        emissiveIntensity: 0.6,
+        emissiveIntensity: 0.5,
         roughness: 0.4
       })
     );
-    grazeBar.position.set(xR - 0.06, headerBottom + 0.015, (winZ0 + winZ1) / 2);
+    grazeBar.position.set(xR - T / 2 - 0.06, H - 0.06, wallZ);
     root.add(grazeBar);
 
-    var windowGrazeLight = new THREE.SpotLight(0xffeedd, 0.65, 5.5, Math.PI / 3.0, 0.85, 1.3);
-    windowGrazeLight.position.set(xR - 0.1, headerBottom, (winZ0 + winZ1) / 2);
-    windowGrazeLight.target.position.set(xR - 0.05, 0, (winZ0 + winZ1) / 2);
-    root.add(windowGrazeLight);
-    root.add(windowGrazeLight.target);
+    var muralWashLight = new THREE.SpotLight(0xffeedd, 0.85, 7.5, Math.PI / 3.0, 0.85, 1.2);
+    muralWashLight.position.set(xR - T / 2 - 0.35, H - 0.05, wallZ);
+    muralWashLight.target.position.set(xR - T / 2, 2.6, wallZ);
+    root.add(muralWashLight);
+    root.add(muralWashLight.target);
 
     // 6. Tall Architectural Plant (Corner Focal Piece where curtain was bunched)
     var plantGroup = new THREE.Group();
