@@ -233,10 +233,15 @@
       }
     }
 
-    // Reposition Jukebox along the left wall
+    // Dedicated placement along the left / front-left room zone
     if (typeof jukebox !== 'undefined' && jukebox) {
-      jukebox.position.set(-3.95, 0, 1.1);
+      jukebox.position.set(-3.95, 0, 0.75);
       jukebox.rotation.y = Math.PI / 2;
+    }
+
+    var decorSlotObj = scene.getObjectByName('corner-decor-slot');
+    if (decorSlotObj) {
+      decorSlotObj.position.set(-3.85, 0, 2.5);
     }
 
     scene.traverse(function (obj) {
@@ -1053,6 +1058,17 @@
     box(T, headerH, winLen, xR, headerBottom + headerH / 2, winMidZ, rightWallMat);
     box(T, sillH, winLen, xR, sillH / 2, winMidZ, rightWallMat);
 
+    // Subtle dark recessed architectural reveal border around aperture
+    var revealMat = new THREE.MeshStandardMaterial({
+      color: 0x07080a,
+      roughness: 0.92,
+      metalness: 0.08
+    });
+    box(0.02, winH + 0.02, 0.035, xR - T / 2 + 0.01, winMidH, winZ0, revealMat);
+    box(0.02, winH + 0.02, 0.035, xR - T / 2 + 0.01, winMidH, winZ1, revealMat);
+    box(0.02, 0.035, winLen + 0.02, xR - T / 2 + 0.01, headerBottom, winMidZ, revealMat);
+    box(0.02, 0.035, winLen + 0.02, xR - T / 2 + 0.01, sillH, winMidZ, revealMat);
+
     function boxIn(parent, w, h, d, x, y, z, mat) {
       var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
       m.position.set(x, y, z);
@@ -1080,19 +1096,24 @@
         ? (tex.image.width / tex.image.height)
         : (650 / 753);
       if (planeAspect > imgAspect) {
-        tex.repeat.set(1, imgAspect / planeAspect);
-        tex.offset.set(0, (1 - imgAspect / planeAspect) * 0.5);
+        var s = planeAspect / imgAspect;
+        tex.repeat.set(1, s);
+        tex.offset.set(0, (1 - s) * 0.5);
       } else {
-        tex.repeat.set(planeAspect / imgAspect, 1);
-        tex.offset.set((1 - planeAspect / imgAspect) * 0.5, 0);
+        var s = imgAspect / planeAspect;
+        tex.repeat.set(s, 1);
+        tex.offset.set((1 - s) * 0.5, 0);
       }
       tex.needsUpdate = true;
+      if (typeof renderer !== 'undefined' && renderer && renderer.initTexture) {
+        renderer.initTexture(tex);
+      }
     });
 
     var muralMat = new THREE.MeshStandardMaterial({
       map: muralTex,
-      roughness: 0.82,
-      metalness: 0.05,
+      roughness: 0.88,
+      metalness: 0.04,
       transparent: true,
       opacity: 1.0,
       side: THREE.DoubleSide
@@ -1100,14 +1121,14 @@
 
     var muralMesh = new THREE.Mesh(new THREE.PlaneGeometry(muralW, muralH), muralMat);
     muralMesh.rotation.y = -Math.PI / 2;
-    muralMesh.position.set(xR - T / 2 - 0.005, winMidH, winMidZ);
+    muralMesh.position.set(xR - T / 2 + 0.005, winMidH, winMidZ);
     muralMesh.receiveShadow = true;
     muralMesh.userData.isRightWallFeature = true;
     muralGroup.add(muralMesh);
 
-    var muralWashLight = new THREE.SpotLight(0xffeedd, 0.75, 7.5, Math.PI / 3.0, 0.85, 1.2);
-    muralWashLight.position.set(xR - T / 2 - 0.35, H - 0.05, winMidZ);
-    muralWashLight.target.position.set(xR - T / 2, 2.6, winMidZ);
+    var muralWashLight = new THREE.SpotLight(0xffeedd, 0.50, 8.0, Math.PI / 3.2, 0.85, 1.2);
+    muralWashLight.position.set(xR - 0.5, H - 0.1, winMidZ);
+    muralWashLight.target.position.set(xR, winMidH, winMidZ);
     muralGroup.add(muralWashLight);
     muralGroup.add(muralWashLight.target);
 
@@ -1118,7 +1139,8 @@
     // ==========================================
     var windowGroup = new THREE.Group();
     windowGroup.name = 'right-wall-window-group';
-    windowGroup.visible = false; // Hidden initially in Mural state
+    // Pre-warmed on GPU with opacity 0 to eliminate first-click shader compilation stall
+    windowGroup.visible = true;
 
     var winFrameMat = new THREE.MeshStandardMaterial({
       color: 0x0c0d10,
@@ -1140,16 +1162,16 @@
     // Physical Glass Pane with Rain Normal Map
     var rainNormalMap = createRainyGlassNormalMap();
     var glassMat = new THREE.MeshPhysicalMaterial({
-      color: 0xffffff,
-      transmission: 0.92,
-      roughness: 0.14,
-      ior: 1.5,
+      color: 0xd8e4ec,
+      transmission: 0.90,
+      roughness: 0.15,
+      ior: 1.48,
       transparent: true,
       opacity: 0.0,
       normalMap: rainNormalMap,
       side: THREE.DoubleSide
     });
-    glassMat.normalScale.set(0.1, 0.1);
+    glassMat.normalScale.set(0.08, 0.08);
 
     var glass = new THREE.Mesh(
       new THREE.PlaneGeometry(winLen - 0.02, winH - 0.02),
@@ -1168,21 +1190,26 @@
         ? (tex.image.width / tex.image.height)
         : (1487 / 751);
       if (winAspect > imgAspect) {
-        tex.repeat.set(1, imgAspect / winAspect);
-        tex.offset.set(0, (1 - imgAspect / winAspect) * 0.5);
+        var s = winAspect / imgAspect;
+        tex.repeat.set(1, s);
+        tex.offset.set(0, (1 - s) * 0.5);
       } else {
-        tex.repeat.set(winAspect / imgAspect, 1);
-        tex.offset.set((1 - winAspect / imgAspect) * 0.5, 0);
+        var s = imgAspect / winAspect;
+        tex.repeat.set(s, 1);
+        tex.offset.set((1 - s) * 0.5, 0);
       }
       tex.needsUpdate = true;
+      if (typeof renderer !== 'undefined' && renderer && renderer.initTexture) {
+        renderer.initTexture(tex);
+      }
     });
 
     var highMat = new THREE.MeshBasicMaterial({
       map: highTex,
+      color: new THREE.Color(0.72, 0.74, 0.78), // Subtly toned down by ~25-28% for balanced night integration
       side: THREE.DoubleSide,
       transparent: true,
-      opacity: 0.0,
-      toneMapped: false
+      opacity: 0.0
     });
 
     var skyPlane = new THREE.Mesh(
@@ -1197,8 +1224,8 @@
     // Recessed ceiling linear graze light
     var grazeMat = new THREE.MeshStandardMaterial({
       color: 0x14161a,
-      emissive: 0xffeedd,
-      emissiveIntensity: 0.4,
+      emissive: 0xdde8f8,
+      emissiveIntensity: 0.35,
       roughness: 0.4,
       transparent: true,
       opacity: 0.0
@@ -1207,9 +1234,9 @@
     grazeBar.position.set(xR - 0.06, headerBottom + 0.015, winMidZ);
     windowGroup.add(grazeBar);
 
-    var windowGrazeLight = new THREE.SpotLight(0xffeedd, 0.0, 5.5, Math.PI / 3.0, 0.85, 1.3);
+    var windowGrazeLight = new THREE.SpotLight(0xd4e2f4, 0.0, 5.5, Math.PI / 3.0, 0.85, 1.3);
     windowGrazeLight.position.set(xR - 0.1, headerBottom, winMidZ);
-    windowGrazeLight.target.position.set(xR - 0.05, 0, winMidZ);
+    windowGrazeLight.target.position.set(xR - 0.05, 0.5, winMidZ);
     windowGroup.add(windowGrazeLight);
     windowGroup.add(windowGrazeLight.target);
 
@@ -1226,11 +1253,11 @@
     root.add(hitPlane);
 
     // ==========================================
-    // 3. TOGGLE INTERACTION (Smooth 600ms Crossfade)
+    // 3. TOGGLE INTERACTION (Smooth 700ms Crossfade)
     // ==========================================
     var isWindowState = false;
     var isTransitioning = false;
-    var transitionDuration = 600;
+    var transitionDuration = 700;
 
     function toggleRightWallState() {
       if (isTransitioning) return;
@@ -1242,20 +1269,20 @@
       muralGroup.visible = true;
       windowGroup.visible = true;
 
-      function easeInOutQuad(t) {
-        return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+      function easeInOutCubic(t) {
+        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
       }
 
       function animateTransition(now) {
         var elapsed = now - startTime;
         var t = Math.min(1.0, elapsed / transitionDuration);
-        var eased = easeInOutQuad(t);
+        var eased = easeInOutCubic(t);
         var progress = startVal + (targetVal - startVal) * eased;
 
         // Crossfade Mural
         muralMat.opacity = 1.0 - progress;
         if (muralWashLight) {
-          muralWashLight.intensity = 0.75 * (1.0 - progress);
+          muralWashLight.intensity = 0.50 * (1.0 - progress);
         }
 
         // Crossfade Window components
@@ -1264,7 +1291,7 @@
         highMat.opacity = progress;
         grazeMat.opacity = progress;
         if (windowGrazeLight) {
-          windowGrazeLight.intensity = 0.65 * progress;
+          windowGrazeLight.intensity = 0.35 * progress;
         }
 
         if (t < 1.0) {
@@ -1424,7 +1451,7 @@
 
     decorSlotGroup.add(balloonVariantGroup);
 
-    decorSlotGroup.position.set(3.6, 0, 3.0);
+    decorSlotGroup.position.set(-3.85, 0, 2.5);
     root.add(decorSlotGroup);
 
     // Decor Slot Toggle Interaction
@@ -1746,6 +1773,9 @@
           applyLighting();
           setupInteractiveTooltips();
           loadFurniture();
+          if (typeof renderer !== 'undefined' && renderer && typeof camera !== 'undefined' && camera && renderer.compile) {
+            try { renderer.compile(scene, camera); } catch (e) {}
+          }
           setTimeout(function () {
             removeLegacyFloorMat();
             placeWorkstation();
