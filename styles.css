@@ -642,21 +642,52 @@ body.intro-active {
     z-index: 1;
 }
 
-/* Hover Tooltip */
+/* Hover Tooltip - 3D Object Connected Glassmorphic Badge */
 .hover-tooltip {
     position: fixed;
-    background: rgba(0, 0, 0, 0.9);
-    color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    font-weight: 600;
+    background: rgba(14, 17, 24, 0.92);
+    color: #f1f3f7;
+    padding: 0.55rem 1.15rem;
+    border-radius: 9999px;
+    font-size: 0.84rem;
+    font-weight: 500;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     pointer-events: none;
-    z-index: 10;
-    display: none;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    letter-spacing: 1px;
+    z-index: 2000;
+    display: block;
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(-50%, -100%) translateY(-10px) scale(0.85);
+    transform-origin: center bottom;
+    transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                visibility 0.35s ease;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55), 0 0 1px rgba(255, 255, 255, 0.25);
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    will-change: transform, opacity, left, top;
+}
+
+.hover-tooltip.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, -100%) translateY(-10px) scale(1.0);
+}
+
+.hover-tooltip::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%) rotate(45deg);
+    width: 8px;
+    height: 8px;
+    background: rgba(14, 17, 24, 0.92);
+    border-right: 1px solid rgba(255, 255, 255, 0.16);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.16);
 }
 
 .chat-widget {

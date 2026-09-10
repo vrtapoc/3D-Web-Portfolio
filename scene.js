@@ -169,6 +169,9 @@
           var origRender = renderer.render.bind(renderer);
           var isRenderingComposer = false;
           renderer.render = function (s, c) {
+            if (window.__updateTooltipPosition) {
+              try { window.__updateTooltipPosition(); } catch (e) {}
+            }
             if (window.__dioramaComposer && !isRenderingComposer) {
               isRenderingComposer = true;
               try {
@@ -1357,63 +1360,152 @@
     scene.add(root);
   }
 
-      function patchNeonClick() {
-    if (window.__neonClickPatched) return;
-    if (typeof renderer === 'undefined' || !renderer || !renderer.domElement) {
-      setTimeout(patchNeonClick, 150);
+  function setupInteractiveTooltips() {
+    if (window.__tooltipsSetup) return;
+    if (typeof renderer === 'undefined' || !renderer || !renderer.domElement || typeof camera === 'undefined' || !camera) {
+      setTimeout(setupInteractiveTooltips, 150);
       return;
     }
-    window.__neonClickPatched = true;
+    window.__tooltipsSetup = true;
 
-    var ray = new THREE.Raycaster();
+    var tooltipEl = document.getElementById('hoverTooltip');
+    var raycaster = new THREE.Raycaster();
     var mouse = new THREE.Vector2();
-    var isHovered = false;
+    var currentHoveredObj = null;
     var pointerDownPos = new THREE.Vector2();
 
-    function checkNeonHit(clientX, clientY) {
-      if (!camera || !scene) return false;
+    var TOOLTIPS = {
+      'computer': '🖥️ Click to Open Portfolio',
+      'lamp': '💡 Toggle Desk Lamp',
+      'keyboard': '⌨️ Cycle Keyboard RGB',
+      'coffeeMug': '☕ Drink Coffee (100% Fuel)',
+      'tablet': '📱 Cycle Tablet Notes',
+      'balloon': '🎈 Bounce Balloon (Change Color)',
+      'jukebox': '📻 Toggle Retro Jukebox Music',
+      'neonSign': '💡 Cycle Neon Glow',
+      'rightWallFeature': '🖼️ Toggle Mural / Window'
+    };
+
+    function getObjectAnchor(obj, name) {
+      var box3 = new THREE.Box3().setFromObject(obj);
+      var center = box3.getCenter(new THREE.Vector3());
+      var pos = new THREE.Vector3();
+
+      if (name === 'computer') {
+        pos.set(center.x, box3.max.y + 0.12, center.z);
+      } else if (name === 'lamp') {
+        pos.set(center.x, box3.max.y + 0.10, center.z);
+      } else if (name === 'keyboard') {
+        pos.set(center.x, box3.max.y + 0.12, center.z);
+      } else if (name === 'coffeeMug') {
+        pos.set(center.x, box3.max.y + 0.10, center.z);
+      } else if (name === 'tablet') {
+        pos.set(center.x, box3.max.y + 0.10, center.z);
+      } else if (name === 'balloon') {
+        pos.set(center.x, box3.max.y + 0.16, center.z);
+      } else if (name === 'jukebox') {
+        pos.set(center.x, box3.max.y + 0.15, center.z);
+      } else if (name === 'neonSign') {
+        pos.set(center.x, box3.max.y + 0.15, center.z);
+      } else if (name === 'rightWallFeature') {
+        pos.set(center.x - 0.2, center.y + 0.35, center.z);
+      } else {
+        pos.set(center.x, box3.max.y + 0.12, center.z);
+      }
+      return pos;
+    }
+
+    function updateTooltipPosition() {
+      if (!currentHoveredObj || !camera || !tooltipEl) return;
+      var name = currentHoveredObj.userData ? (currentHoveredObj.userData.name || (currentHoveredObj.userData.isRightWallFeature ? 'rightWallFeature' : '')) : '';
+      var anchor = getObjectAnchor(currentHoveredObj, name);
+      var projected = anchor.clone().project(camera);
+
+      // Behind camera check
+      if (projected.z > 1) {
+        tooltipEl.classList.remove('visible');
+        return;
+      }
+
+      var sx = (projected.x * 0.5 + 0.5) * window.innerWidth;
+      var sy = (-projected.y * 0.5 + 0.5) * window.innerHeight;
+
+      // Viewport safety clamping
+      var padX = 70;
+      sx = Math.max(padX, Math.min(window.innerWidth - padX, sx));
+      sy = Math.max(35, Math.min(window.innerHeight - 30, sy));
+
+      tooltipEl.style.left = sx + 'px';
+      tooltipEl.style.top = sy + 'px';
+    }
+    window.__updateTooltipPosition = updateTooltipPosition;
+
+    function findInteractiveObject(clientX, clientY) {
+      if (!camera || !scene || !renderer || !renderer.domElement) return null;
       var rect = renderer.domElement.getBoundingClientRect();
       mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
-      ray.setFromCamera(mouse, camera);
-      var hits = ray.intersectObjects(scene.children, true);
+      raycaster.setFromCamera(mouse, camera);
+      var hits = raycaster.intersectObjects(scene.children, true);
+
       for (var i = 0; i < hits.length; i++) {
         var obj = hits[i].object;
         while (obj && obj !== scene) {
-          if (obj.userData && obj.userData.name === 'neonSign') return true;
+          if (obj.userData && (obj.userData.interactive || obj.userData.isRightWallFeature)) {
+            return obj;
+          }
           obj = obj.parent;
         }
       }
-      return false;
+      return null;
     }
 
-    function checkRightWallHit(clientX, clientY) {
-      if (!camera || !scene) return false;
-      var rect = renderer.domElement.getBoundingClientRect();
-      mouse.x = ((clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((clientY - rect.top) / rect.height) * 2 + 1;
-      ray.setFromCamera(mouse, camera);
-      var hits = ray.intersectObjects(scene.children, true);
-      for (var i = 0; i < hits.length; i++) {
-        var obj = hits[i].object;
-        while (obj && obj !== scene) {
-          if (obj.userData && obj.userData.isRightWallFeature) return true;
-          obj = obj.parent;
-        }
-      }
-      return false;
-    }
-
-    // Set cursor to pointer on hover
     window.addEventListener('pointermove', function (e) {
-      var hitNeon = checkNeonHit(e.clientX, e.clientY);
-      var hitWall = checkRightWallHit(e.clientX, e.clientY);
-      if (hitNeon || hitWall) {
-        document.body.style.cursor = 'pointer';
-        isHovered = true;
-      } else if (isHovered) {
-        document.body.style.cursor = 'default';
-        isHovered = false;
+      if (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) {
+        if (tooltipEl) tooltipEl.classList.remove('visible');
+        return;
+      }
+
+      var hitObj = findInteractiveObject(e.clientX, e.clientY);
+
+      if (hitObj) {
+        var name = hitObj.userData ? (hitObj.userData.name || (hitObj.userData.isRightWallFeature ? 'rightWallFeature' : '')) : '';
+
+        if (currentHoveredObj !== hitObj) {
+          // Restore previous hovered object scale
+          if (currentHoveredObj && currentHoveredObj.scale) {
+            currentHoveredObj.scale.set(1, 1, 1);
+          }
+
+          currentHoveredObj = hitObj;
+
+          // Subtle active scale on hover
+          if (hitObj.scale && name !== 'rightWallFeature' && name !== 'neonSign') {
+            var s = name === 'computer' ? 1.05 : 1.04;
+            hitObj.scale.set(s, s, s);
+          }
+
+          if (tooltipEl) {
+            var text = TOOLTIPS[name] || 'Interactive Object';
+            tooltipEl.textContent = text;
+            updateTooltipPosition();
+            tooltipEl.classList.add('visible');
+          }
+          document.body.style.cursor = 'pointer';
+        } else {
+          updateTooltipPosition();
+        }
+      } else {
+        if (currentHoveredObj) {
+          if (currentHoveredObj.scale) {
+            currentHoveredObj.scale.set(1, 1, 1);
+          }
+          currentHoveredObj = null;
+          if (tooltipEl) {
+            tooltipEl.classList.remove('visible');
+          }
+          document.body.style.cursor = 'default';
+        }
       }
     }, { passive: true });
 
@@ -1423,15 +1515,58 @@
 
     window.addEventListener('pointerup', function (e) {
       var dist = Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y);
-      if (dist > 10) return; // Ignore camera orbit drags
-      if (checkNeonHit(e.clientX, e.clientY)) {
-        if (window.__cycleNeonColor) {
-          window.__cycleNeonColor();
+      if (dist > 10) return; // Orbit drag threshold
+
+      var hitObj = findInteractiveObject(e.clientX, e.clientY);
+      if (!hitObj || !hitObj.userData) return;
+
+      var name = hitObj.userData.name;
+
+      if (name === 'computer' && !isAnimating) {
+        if (typeof zoomToMonitor === 'function') zoomToMonitor();
+        if (window.playUiSound) window.playUiSound('click');
+      } else if (name === 'lamp') {
+        isLampOn = !isLampOn;
+        if (lampLight) lampLight.intensity = isLampOn ? 1.0 : 0.05;
+        if (lampBulb) lampBulb.material.emissiveIntensity = isLampOn ? 1.3 : 0.05;
+        if (window.showToast) window.showToast(isLampOn ? '💡 Desk Lamp ON' : '🌑 Desk Lamp OFF');
+        if (window.playUiSound) window.playUiSound('toggle');
+      } else if (name === 'keyboard') {
+        if (typeof keyboardColors !== 'undefined' && keyboardColors.length) {
+          keyboardColorIndex = (keyboardColorIndex + 1) % keyboardColors.length;
+          var newColor = keyboardColors[keyboardColorIndex];
+          if (keyboardLight) keyboardLight.color.setHex(newColor);
         }
-      } else if (checkRightWallHit(e.clientX, e.clientY)) {
-        if (window.__toggleRightWallState) {
-          window.__toggleRightWallState();
+        if (window.showToast) window.showToast('⌨️ Keyboard RGB updated!');
+        if (window.playUiSound) window.playUiSound('click');
+      } else if (name === 'coffeeMug') {
+        if (window.showToast) window.showToast('☕ Sip... Coffee level 100%! Ready to code.');
+        if (window.playUiSound) window.playUiSound('sip');
+      } else if (name === 'tablet') {
+        if (typeof tabletNotes !== 'undefined' && tabletNotes.length) {
+          tabletNoteIndex = (tabletNoteIndex + 1) % tabletNotes.length;
+          if (typeof drawTabletNote === 'function') drawTabletNote(tabletNoteIndex);
+          if (window.showToast) window.showToast('📱 Note switched: ' + tabletNotes[tabletNoteIndex].title);
         }
+        if (window.playUiSound) window.playUiSound('click');
+      } else if (name === 'balloon') {
+        if (typeof balloonColors !== 'undefined' && balloonColors.length) {
+          balloonColorIndex = (balloonColorIndex + 1) % balloonColors.length;
+          if (balloonMaterial) balloonMaterial.color.setHex(balloonColors[balloonColorIndex]);
+        }
+        balloonWobbleTime = Date.now();
+        if (window.showToast) window.showToast('🎈 Balloon bounced! Color updated.');
+        if (window.playUiSound) window.playUiSound('boing');
+      } else if (name === 'jukebox') {
+        isJukeboxPlaying = !isJukeboxPlaying;
+        if (jukeboxLight) jukeboxLight.intensity = isJukeboxPlaying ? 1.4 : 0.3;
+        if (typeof updateJukeboxBulbState === 'function') updateJukeboxBulbState();
+        if (window.showToast) window.showToast(isJukeboxPlaying ? '📻 Jukebox ON: Playing Retro Beats!' : '📻 Jukebox OFF');
+        if (window.playJukeboxBeats) window.playJukeboxBeats(isJukeboxPlaying);
+      } else if (name === 'neonSign') {
+        if (window.__cycleNeonColor) window.__cycleNeonColor();
+      } else if (hitObj.userData.isRightWallFeature || name === 'rightWallFeature') {
+        if (window.__toggleRightWallState) window.__toggleRightWallState();
       }
     }, { passive: true });
   }
@@ -1512,6 +1647,12 @@
       ].forEach(function (declaration) {
         code = code.replace('let ' + declaration + ';', 'var ' + declaration + ';');
       });
+
+      // Neutralize the legacy flat mouse-offset pointer listeners in injected code so setupInteractiveTooltips controls all 3D projected tooltips
+      code = code.replace("window.addEventListener('pointermove', onPointerMove", "// window.addEventListener('pointermove', onPointerMove");
+      code = code.replace("window.addEventListener('pointerup', onPointerUp", "// window.addEventListener('pointerup', onPointerUp");
+      code = code.replace("window.addEventListener('pointerdown', onPointerDown", "// window.addEventListener('pointerdown', onPointerDown");
+
       var s = document.createElement('script');
       s.textContent = code;
       document.body.appendChild(s);
@@ -1535,7 +1676,7 @@
           removeLegacyFloorMat();
           placeWorkstation();
           applyLighting();
-          patchNeonClick();
+          setupInteractiveTooltips();
           loadFurniture();
           setTimeout(function () {
             removeLegacyFloorMat();
