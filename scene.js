@@ -1130,43 +1130,35 @@
     box(T, headerH, winLen, xR, headerBottom + headerH / 2, (winZ0 + winZ1) / 2);
     box(T, sillH, winLen, xR, sillH / 2, (winZ0 + winZ1) / 2);
 
-        // Industrial Loft Window: crisp matte-black anodized steel mullions
+    // Architectural Window: matte-black slim steel frame with single center mullion
     var winFrameMat = new THREE.MeshStandardMaterial({
       color: 0x0c0d10,
       roughness: 0.35,
       metalness: 0.7
     });
 
-    // Outer framing
+    // Outer framing (clean architectural profile)
     box(0.06, headerBottom - sillH, 0.06, xR - 0.03, sillH + (headerBottom - sillH) / 2, winZ0, winFrameMat);
     box(0.06, headerBottom - sillH, 0.06, xR - 0.03, sillH + (headerBottom - sillH) / 2, winZ1, winFrameMat);
     box(0.06, 0.06, winLen, xR - 0.03, headerBottom, (winZ0 + winZ1) / 2, winFrameMat);
     box(0.06, 0.06, winLen, xR - 0.03, sillH, (winZ0 + winZ1) / 2, winFrameMat);
 
-    // Vertical interior mullions dividing into 3 tall bays
-    var bay1Z = winZ0 + winLen * 0.33;
-    var bay2Z = winZ0 + winLen * 0.67;
-    box(0.045, headerBottom - sillH, 0.045, xR - 0.03, sillH + (headerBottom - sillH) / 2, bay1Z, winFrameMat);
-    box(0.045, headerBottom - sillH, 0.045, xR - 0.03, sillH + (headerBottom - sillH) / 2, bay2Z, winFrameMat);
-
-    // Horizontal transom bars
-    var transom1Y = sillH + (headerBottom - sillH) * 0.45;
-    var transom2Y = sillH + (headerBottom - sillH) * 0.85;
-    box(0.04, 0.04, winLen, xR - 0.03, transom1Y, (winZ0 + winZ1) / 2, winFrameMat);
-    box(0.04, 0.04, winLen, xR - 0.03, transom2Y, (winZ0 + winZ1) / 2, winFrameMat);
+    // Single slim interior vertical mullion creating two tall uninterrupted glass panels (no horizontal transoms)
+    var centerBayZ = winZ0 + winLen * 0.5;
+    box(0.04, headerBottom - sillH, 0.055, xR - 0.03, sillH + (headerBottom - sillH) / 2, centerBayZ, winFrameMat);
 
     // ---- Rainy Glass Pane ----
     var rainNormalMap = createRainyGlassNormalMap();
     var glassMat = new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
-      transmission: 0.9,
+      transmission: 0.92,
       roughness: 0.15,
       ior: 1.5,
       transparent: true,
       normalMap: rainNormalMap,
       side: THREE.DoubleSide
     });
-    glassMat.normalScale.set(0.12, 0.12);
+    glassMat.normalScale.set(0.1, 0.1);
 
     var glass = new THREE.Mesh(
       new THREE.PlaneGeometry(winLen - 0.02, headerBottom - sillH - 0.02),
