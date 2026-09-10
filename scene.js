@@ -1058,6 +1058,22 @@
     box(T, headerH, winLen, xR, headerBottom + headerH / 2, winMidZ, rightWallMat);
     box(T, sillH, winLen, xR, sillH / 2, winMidZ, rightWallMat);
 
+    // Subtle Shallow Recessed Architectural Border (#08090B, depth 0.04, width 0.05)
+    var recessMat = new THREE.MeshStandardMaterial({
+      color: 0x08090b,
+      roughness: 0.92,
+      metalness: 0.05
+    });
+    var borderW = 0.05;
+    var recessD = 0.04;
+    var panelX = xR - T / 2 - 0.005;
+
+    // Inner reveal liner framing the aperture
+    box(recessD, borderW, winLen, panelX + recessD / 2, headerBottom - borderW / 2, winMidZ, recessMat);
+    box(recessD, borderW, winLen, panelX + recessD / 2, sillH + borderW / 2, winMidZ, recessMat);
+    box(recessD, winH, borderW, panelX + recessD / 2, winMidH, winZ0 + borderW / 2, recessMat);
+    box(recessD, winH, borderW, panelX + recessD / 2, winMidH, winZ1 - borderW / 2, recessMat);
+
     function boxIn(parent, w, h, d, x, y, z, mat) {
       var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
       m.position.set(x, y, z);
@@ -1106,16 +1122,17 @@
       side: THREE.DoubleSide
     });
 
+    // Exact same panel geometry and position shared by Mural and Window
     var muralMesh = new THREE.Mesh(new THREE.PlaneGeometry(muralW, muralH), muralMat);
     muralMesh.rotation.y = -Math.PI / 2;
-    muralMesh.position.set(xR - T / 2 - 0.005, winMidH, winMidZ);
+    muralMesh.position.set(panelX, winMidH, winMidZ);
     muralMesh.receiveShadow = true;
     muralMesh.userData.isRightWallFeature = true;
     muralGroup.add(muralMesh);
 
     var muralWashLight = new THREE.SpotLight(0xffeedd, 0.75, 7.5, Math.PI / 3.0, 0.85, 1.2);
-    muralWashLight.position.set(xR - T / 2 - 0.35, H - 0.05, winMidZ);
-    muralWashLight.target.position.set(xR - T / 2, 2.6, winMidZ);
+    muralWashLight.position.set(panelX - 0.35, H - 0.05, winMidZ);
+    muralWashLight.target.position.set(panelX, 2.6, winMidZ);
     muralGroup.add(muralWashLight);
     muralGroup.add(muralWashLight.target);
 
@@ -1129,22 +1146,15 @@
     // Pre-warmed on GPU with opacity 0 to eliminate first-click shader compilation stall
     windowGroup.visible = true;
 
-    var winFrameMat = new THREE.MeshStandardMaterial({
-      color: 0x0c0d10,
-      roughness: 0.35,
-      metalness: 0.7,
+    // Single slim interior vertical mullion (near-black #050608, NO horizontal mullions)
+    var mullionMat = new THREE.MeshStandardMaterial({
+      color: 0x050608,
+      roughness: 0.55,
+      metalness: 0.6,
       transparent: true,
       opacity: 0.0
     });
-
-    // Outer architectural frame
-    boxIn(windowGroup, 0.06, winH, 0.06, xR - 0.03, winMidH, winZ0, winFrameMat);
-    boxIn(windowGroup, 0.06, winH, 0.06, xR - 0.03, winMidH, winZ1, winFrameMat);
-    boxIn(windowGroup, 0.06, 0.06, winLen, xR - 0.03, headerBottom, winMidZ, winFrameMat);
-    boxIn(windowGroup, 0.06, 0.06, winLen, xR - 0.03, sillH, winMidZ, winFrameMat);
-
-    // Single slim interior vertical mullion (NO horizontal mullions)
-    boxIn(windowGroup, 0.04, winH, 0.055, xR - 0.03, winMidH, winMidZ, winFrameMat);
+    boxIn(windowGroup, 0.04, winH, 0.045, panelX - 0.012, winMidH, winMidZ, mullionMat);
 
     // Physical Glass Pane with Rain Normal Map (crystal clear glass with crisp raindrops, zero frosted blur)
     var rainNormalMap = createRainyGlassNormalMap();
@@ -1161,11 +1171,11 @@
     glassMat.normalScale.set(0.04, 0.04);
 
     var glass = new THREE.Mesh(
-      new THREE.PlaneGeometry(winLen - 0.02, winH - 0.02),
+      new THREE.PlaneGeometry(winLen, winH),
       glassMat
     );
-    glass.rotation.y = Math.PI / 2;
-    glass.position.set(xR - 0.02, winMidH, winMidZ);
+    glass.rotation.y = -Math.PI / 2;
+    glass.position.set(panelX - 0.002, winMidH, winMidZ);
     glass.userData.isRightWallFeature = true;
     windowGroup.add(glass);
 
@@ -1191,18 +1201,19 @@
 
     var highMat = new THREE.MeshBasicMaterial({
       map: highTex,
-      color: 0x8e98a4, // Subtly darkened ~20-25% so highlights are controlled and integrate with dark room
+      color: 0x767f8a, // Subtly darkened ~18% further to balance night lights while preserving buildings, river & clouds
       side: THREE.DoubleSide,
       transparent: true,
       opacity: 0.0
     });
 
+    // Exact same panel dimensions, alignment, and position as Mural
     var skyPlane = new THREE.Mesh(
       new THREE.PlaneGeometry(winLen, winH),
       highMat
     );
-    skyPlane.rotation.y = Math.PI / 2;
-    skyPlane.position.set(xR + 0.08, winMidH, winMidZ);
+    skyPlane.rotation.y = -Math.PI / 2;
+    skyPlane.position.set(panelX, winMidH, winMidZ);
     skyPlane.userData.isRightWallFeature = true;
     windowGroup.add(skyPlane);
 
@@ -1216,12 +1227,12 @@
       opacity: 0.0
     });
     var grazeBar = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.025, winLen), grazeMat);
-    grazeBar.position.set(xR - 0.06, headerBottom + 0.015, winMidZ);
+    grazeBar.position.set(panelX - 0.04, headerBottom - 0.015, winMidZ);
     windowGroup.add(grazeBar);
 
     var windowGrazeLight = new THREE.SpotLight(0xffeedd, 0.0, 5.5, Math.PI / 3.0, 0.85, 1.3);
-    windowGrazeLight.position.set(xR - 0.1, headerBottom, winMidZ);
-    windowGrazeLight.target.position.set(xR - 0.05, 0, winMidZ);
+    windowGrazeLight.position.set(panelX - 0.1, headerBottom, winMidZ);
+    windowGrazeLight.target.position.set(panelX, 0, winMidZ);
     windowGroup.add(windowGrazeLight);
     windowGroup.add(windowGrazeLight.target);
 
@@ -1233,7 +1244,7 @@
       new THREE.MeshBasicMaterial({ visible: false })
     );
     hitPlane.rotation.y = -Math.PI / 2;
-    hitPlane.position.set(xR - T / 2 - 0.01, winMidH, winMidZ);
+    hitPlane.position.set(panelX - 0.01, winMidH, winMidZ);
     hitPlane.userData.isRightWallFeature = true;
     root.add(hitPlane);
 
@@ -1271,7 +1282,7 @@
         }
 
         // Crossfade Window components
-        winFrameMat.opacity = progress;
+        mullionMat.opacity = progress;
         glassMat.opacity = progress;
         highMat.opacity = progress;
         grazeMat.opacity = progress;
