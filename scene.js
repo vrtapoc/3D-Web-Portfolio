@@ -233,16 +233,17 @@
       }
     }
 
-    // Staging Area: Cluster Jukebox and Floor Lamp along FAR-LEFT room wall
+    // Reposition Jukebox along the left wall
     if (typeof jukebox !== 'undefined' && jukebox) {
-      jukebox.position.set(-4.1, 0, 1.4);
-      jukebox.rotation.y = Math.PI * 0.45;
+      jukebox.position.set(-3.95, 0, 1.1);
+      jukebox.rotation.y = Math.PI / 2;
     }
 
     scene.traverse(function (obj) {
-      if (obj.userData && obj.userData.name === 'lamp') {
-        obj.position.set(-4.1, 0, 0.4);
-        obj.rotation.y = 0.85;
+      // Completely hide and deactivate lamp
+      if (obj.name === 'lamp' || (obj.userData && obj.userData.name === 'lamp')) {
+        obj.visible = false;
+        if (obj.userData) obj.userData.interactive = false;
       }
       // Hide legacy duplicate plant/balloon instances from original scene
       if (obj.userData && (obj.userData.name === 'balloon' || obj.userData.name === 'plant')) {
@@ -251,6 +252,15 @@
         }
       }
     });
+
+    if (typeof lampLight !== 'undefined' && lampLight) {
+      lampLight.intensity = 0;
+      lampLight.visible = false;
+    }
+    if (typeof lampBulb !== 'undefined' && lampBulb) {
+      lampBulb.visible = false;
+    }
+
     buildModernOfficeChair();
   }
 
@@ -1414,7 +1424,7 @@
 
     decorSlotGroup.add(balloonVariantGroup);
 
-    decorSlotGroup.position.set(xR - 0.45, 0, winZ0 + 0.48);
+    decorSlotGroup.position.set(3.6, 0, 3.0);
     root.add(decorSlotGroup);
 
     // Decor Slot Toggle Interaction
@@ -1457,7 +1467,6 @@
 
     var TOOLTIPS = {
       'computer': '🖥️ Click to Open Portfolio',
-      'lamp': '💡 Toggle Desk Lamp',
       'keyboard': '⌨️ Cycle Keyboard RGB',
       'coffeeMug': '☕ Drink Coffee (100% Fuel)',
       'tablet': '📱 Cycle Tablet Notes',
@@ -1474,8 +1483,6 @@
 
       if (name === 'computer') {
         pos.set(center.x, box3.max.y + 0.12, center.z);
-      } else if (name === 'lamp') {
-        pos.set(center.x, box3.max.y + 0.10, center.z);
       } else if (name === 'keyboard') {
         pos.set(center.x, box3.max.y + 0.12, center.z);
       } else if (name === 'coffeeMug') {
@@ -1610,12 +1617,6 @@
       if (name === 'computer' && !isAnimating) {
         if (typeof zoomToMonitor === 'function') zoomToMonitor();
         if (window.playUiSound) window.playUiSound('click');
-      } else if (name === 'lamp') {
-        isLampOn = !isLampOn;
-        if (lampLight) lampLight.intensity = isLampOn ? 1.0 : 0.05;
-        if (lampBulb) lampBulb.material.emissiveIntensity = isLampOn ? 1.3 : 0.05;
-        if (window.showToast) window.showToast(isLampOn ? '💡 Desk Lamp ON' : '🌑 Desk Lamp OFF');
-        if (window.playUiSound) window.playUiSound('toggle');
       } else if (name === 'keyboard') {
         if (typeof keyboardColors !== 'undefined' && keyboardColors.length) {
           keyboardColorIndex = (keyboardColorIndex + 1) % keyboardColors.length;
@@ -1675,27 +1676,12 @@
 
   function loadFurniture() {
     if (window.__furnitureAdded) return;
-    function run() {
-      if (window.__furnitureAdded) return;
-      if (typeof createOfficeChair !== 'function') {
-        setTimeout(run, 100);
-        return;
-      }
-      window.__furnitureAdded = true;
-      try {
-        createOfficeChair();
-        placeWorkstation();
-      } catch (e) {
-        console.warn(e);
-      }
+    window.__furnitureAdded = true;
+    try {
+      placeWorkstation();
+    } catch (e) {
+      console.warn(e);
     }
-    if (!document.querySelector('script[data-furniture]')) {
-      var s = document.createElement('script');
-      s.src = 'furniture.js?v=layout2';
-      s.setAttribute('data-furniture', '1');
-      s.onload = run;
-      document.body.appendChild(s);
-    } else run();
   }
 
   fetch(ORIG_URL, { cache: 'no-cache' })
