@@ -499,67 +499,22 @@
     cvs.height = 1024;
     var ctx = cvs.getContext('2d');
 
-    // Background: subtle vertical/diagonal gradient (dark cinematic night)
-    // top: #02050B, middle: #050B16, bottom: #071321
+    // Subtle vertical atmospheric night gradient:
+    // TOP: #02050A, MIDDLE: #050B15, BOTTOM: #07111C
     var skyGrad = ctx.createLinearGradient(0, 0, 0, 1024);
-    skyGrad.addColorStop(0.0, '#02050B');
-    skyGrad.addColorStop(0.55, '#050B16');
-    skyGrad.addColorStop(1.0, '#071321');
+    skyGrad.addColorStop(0.0, '#02050A');
+    skyGrad.addColorStop(0.55, '#050B15');
+    skyGrad.addColorStop(1.0, '#07111C');
     ctx.fillStyle = skyGrad;
     ctx.fillRect(0, 0, 1024, 1024);
 
-    // Atmospheric Haze: subtle dark-blue radial depth glow
-    var hazeGrad = ctx.createRadialGradient(512, 700, 40, 512, 700, 580);
-    hazeGrad.addColorStop(0.0, 'rgba(10, 30, 55, 0.28)');
-    hazeGrad.addColorStop(0.6, 'rgba(7, 20, 38, 0.12)');
-    hazeGrad.addColorStop(1.0, 'rgba(2, 5, 11, 0.0)');
-    ctx.fillStyle = hazeGrad;
-    ctx.fillRect(0, 0, 1024, 1024);
-
-    // 4 to 6 Soft Blurred Bokeh Lights (subtle, heavily blurred, no bright circles)
-    var blurredLights = [
-      { x: 280, y: 640, r: 24, color: '140, 185, 235', alpha: 0.18 },
-      { x: 620, y: 580, r: 28, color: '160, 200, 245', alpha: 0.2 },
-      { x: 440, y: 720, r: 18, color: '240, 190, 120', alpha: 0.14 }, // subtle warm
-      { x: 810, y: 660, r: 25, color: '130, 175, 225', alpha: 0.16 },
-      { x: 160, y: 760, r: 20, color: '150, 195, 240', alpha: 0.14 }
-    ];
-    blurredLights.forEach(function (l) {
-      var g = ctx.createRadialGradient(l.x, l.y, 0, l.x, l.y, l.r);
-      g.addColorStop(0.0, 'rgba(' + l.color + ', ' + l.alpha + ')');
-      g.addColorStop(0.45, 'rgba(' + l.color + ', ' + l.alpha * 0.45 + ')');
-      g.addColorStop(1.0, 'rgba(' + l.color + ', 0.0)');
-      ctx.fillStyle = g;
-      ctx.beginPath();
-      ctx.arc(l.x, l.y, l.r, 0, Math.PI * 2);
-      ctx.fill();
-    });
-
-    // 18-25 Tiny Distant Lights (1-3px, low opacity, cool white/blue with 3-4 warm amber)
-    var seed = 108;
-    function rand() {
-      seed = (seed * 9301 + 49297) % 233280;
-      return seed / 233280;
-    }
-
-    var lightColors = [
-      'rgba(215, 230, 255, ',
-      'rgba(170, 210, 255, ',
-      'rgba(195, 225, 255, ',
-      'rgba(145, 190, 245, ',
-      'rgba(255, 200, 130, ' // warm amber
-    ];
-
-    for (var i = 0; i < 22; i++) {
-      var lx = 50 + rand() * 924;
-      var ly = 460 + rand() * 460;
-      var sz = 1.0 + rand() * 1.8; // 1 to 2.8 px
-      var colPrefix = lightColors[Math.floor(rand() * lightColors.length)];
-      var op = 0.25 + rand() * 0.35; // 0.25 to 0.60 opacity
-
-      ctx.fillStyle = colPrefix + op + ')';
-      ctx.fillRect(Math.floor(lx), Math.floor(ly), Math.max(1, Math.floor(sz)), Math.max(1, Math.floor(sz)));
-    }
+    // Subtle horizontal atmospheric haze near lower third (distant night horizon, soft blurred blend)
+    var horizonHaze = ctx.createLinearGradient(0, 640, 0, 960);
+    horizonHaze.addColorStop(0.0, 'rgba(7, 17, 28, 0.0)');
+    horizonHaze.addColorStop(0.45, 'rgba(11, 24, 38, 0.32)');
+    horizonHaze.addColorStop(1.0, 'rgba(7, 17, 28, 0.0)');
+    ctx.fillStyle = horizonHaze;
+    ctx.fillRect(0, 640, 1024, 320);
 
     var tex = new THREE.CanvasTexture(cvs);
     tex.needsUpdate = true;
@@ -1138,7 +1093,7 @@
     var glassMat = new THREE.MeshPhysicalMaterial({
       color: 0xffffff,
       transmission: 0.92,
-      roughness: 0.15,
+      roughness: 0.14,
       ior: 1.5,
       transparent: true,
       normalMap: rainNormalMap,
@@ -1154,7 +1109,7 @@
     glass.position.set(xR - 0.02, sillH + (headerBottom - sillH) / 2, (winZ0 + winZ1) / 2);
     root.add(glass);
 
-    // ---- Rainy Neo-City Skyline Backdrop strictly framed within window aperture ----
+    // ---- Dark Atmospheric Night Backdrop strictly framed within window aperture ----
     var cityGroup = new THREE.Group();
     cityGroup.name = 'exterior-city-skyline';
 
@@ -1175,6 +1130,35 @@
     cityGroup.add(skyPlane);
 
     root.add(cityGroup);
+
+    // ---- Dark Sheer Curtain (Far-right edge only, softening architectural perimeter) ----
+    var curtainW = winLen * 0.12;
+    var curtainH = H;
+    var curtainGeo = new THREE.PlaneGeometry(curtainW, curtainH, 28, 12);
+    var cPos = curtainGeo.attributes.position;
+    for (var cj = 0; cj < cPos.count; cj++) {
+      var cu = (cPos.getX(cj) / curtainW) + 0.5;
+      var cv = (cPos.getY(cj) / curtainH) + 0.5;
+      var foldAmp = 0.03 * (1.0 - cv * 0.12);
+      var foldWave = Math.sin(cu * Math.PI * 7.0) * foldAmp;
+      cPos.setZ(cj, foldWave);
+    }
+    curtainGeo.computeVertexNormals();
+
+    var curtainMat = new THREE.MeshStandardMaterial({
+      color: 0x0e1017,
+      roughness: 0.94,
+      metalness: 0.02,
+      transparent: true,
+      opacity: 0.9,
+      side: THREE.DoubleSide
+    });
+    var curtain = new THREE.Mesh(curtainGeo, curtainMat);
+    curtain.rotation.y = Math.PI / 2;
+    curtain.position.set(xR - 0.1, curtainH / 2, winZ1 - curtainW / 2);
+    curtain.castShadow = true;
+    curtain.receiveShadow = true;
+    root.add(curtain);
 
 
         // 5. Recessed Ceiling Linear Graze (Top of window)
