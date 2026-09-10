@@ -1058,17 +1058,6 @@
     box(T, headerH, winLen, xR, headerBottom + headerH / 2, winMidZ, rightWallMat);
     box(T, sillH, winLen, xR, sillH / 2, winMidZ, rightWallMat);
 
-    // Subtle dark recessed architectural reveal border around aperture
-    var revealMat = new THREE.MeshStandardMaterial({
-      color: 0x07080a,
-      roughness: 0.92,
-      metalness: 0.08
-    });
-    box(0.02, winH + 0.02, 0.035, xR - T / 2 + 0.01, winMidH, winZ0, revealMat);
-    box(0.02, winH + 0.02, 0.035, xR - T / 2 + 0.01, winMidH, winZ1, revealMat);
-    box(0.02, 0.035, winLen + 0.02, xR - T / 2 + 0.01, headerBottom, winMidZ, revealMat);
-    box(0.02, 0.035, winLen + 0.02, xR - T / 2 + 0.01, sillH, winMidZ, revealMat);
-
     function boxIn(parent, w, h, d, x, y, z, mat) {
       var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
       m.position.set(x, y, z);
@@ -1096,13 +1085,11 @@
         ? (tex.image.width / tex.image.height)
         : (650 / 753);
       if (planeAspect > imgAspect) {
-        var s = planeAspect / imgAspect;
-        tex.repeat.set(1, s);
-        tex.offset.set(0, (1 - s) * 0.5);
+        tex.repeat.set(1, imgAspect / planeAspect);
+        tex.offset.set(0, (1 - imgAspect / planeAspect) * 0.5);
       } else {
-        var s = imgAspect / planeAspect;
-        tex.repeat.set(s, 1);
-        tex.offset.set((1 - s) * 0.5, 0);
+        tex.repeat.set(planeAspect / imgAspect, 1);
+        tex.offset.set((1 - planeAspect / imgAspect) * 0.5, 0);
       }
       tex.needsUpdate = true;
       if (typeof renderer !== 'undefined' && renderer && renderer.initTexture) {
@@ -1112,8 +1099,8 @@
 
     var muralMat = new THREE.MeshStandardMaterial({
       map: muralTex,
-      roughness: 0.88,
-      metalness: 0.04,
+      roughness: 0.82,
+      metalness: 0.05,
       transparent: true,
       opacity: 1.0,
       side: THREE.DoubleSide
@@ -1121,14 +1108,14 @@
 
     var muralMesh = new THREE.Mesh(new THREE.PlaneGeometry(muralW, muralH), muralMat);
     muralMesh.rotation.y = -Math.PI / 2;
-    muralMesh.position.set(xR - T / 2 + 0.005, winMidH, winMidZ);
+    muralMesh.position.set(xR - T / 2 - 0.005, winMidH, winMidZ);
     muralMesh.receiveShadow = true;
     muralMesh.userData.isRightWallFeature = true;
     muralGroup.add(muralMesh);
 
-    var muralWashLight = new THREE.SpotLight(0xffeedd, 0.50, 8.0, Math.PI / 3.2, 0.85, 1.2);
-    muralWashLight.position.set(xR - 0.5, H - 0.1, winMidZ);
-    muralWashLight.target.position.set(xR, winMidH, winMidZ);
+    var muralWashLight = new THREE.SpotLight(0xffeedd, 0.75, 7.5, Math.PI / 3.0, 0.85, 1.2);
+    muralWashLight.position.set(xR - T / 2 - 0.35, H - 0.05, winMidZ);
+    muralWashLight.target.position.set(xR - T / 2, 2.6, winMidZ);
     muralGroup.add(muralWashLight);
     muralGroup.add(muralWashLight.target);
 
@@ -1156,22 +1143,22 @@
     boxIn(windowGroup, 0.06, 0.06, winLen, xR - 0.03, headerBottom, winMidZ, winFrameMat);
     boxIn(windowGroup, 0.06, 0.06, winLen, xR - 0.03, sillH, winMidZ, winFrameMat);
 
-    // Single slim interior vertical mullion
+    // Single slim interior vertical mullion (NO horizontal mullions)
     boxIn(windowGroup, 0.04, winH, 0.055, xR - 0.03, winMidH, winMidZ, winFrameMat);
 
-    // Physical Glass Pane with Rain Normal Map
+    // Physical Glass Pane with Rain Normal Map (crystal clear glass with crisp raindrops, zero frosted blur)
     var rainNormalMap = createRainyGlassNormalMap();
     var glassMat = new THREE.MeshPhysicalMaterial({
-      color: 0xd8e4ec,
-      transmission: 0.90,
-      roughness: 0.15,
-      ior: 1.48,
+      color: 0xffffff,
+      transmission: 0.88,
+      roughness: 0.02,
+      ior: 1.45,
       transparent: true,
       opacity: 0.0,
       normalMap: rainNormalMap,
       side: THREE.DoubleSide
     });
-    glassMat.normalScale.set(0.08, 0.08);
+    glassMat.normalScale.set(0.04, 0.04);
 
     var glass = new THREE.Mesh(
       new THREE.PlaneGeometry(winLen - 0.02, winH - 0.02),
@@ -1190,13 +1177,11 @@
         ? (tex.image.width / tex.image.height)
         : (1487 / 751);
       if (winAspect > imgAspect) {
-        var s = winAspect / imgAspect;
-        tex.repeat.set(1, s);
-        tex.offset.set(0, (1 - s) * 0.5);
+        tex.repeat.set(1, imgAspect / winAspect);
+        tex.offset.set(0, (1 - imgAspect / winAspect) * 0.5);
       } else {
-        var s = imgAspect / winAspect;
-        tex.repeat.set(s, 1);
-        tex.offset.set((1 - s) * 0.5, 0);
+        tex.repeat.set(winAspect / imgAspect, 1);
+        tex.offset.set((1 - winAspect / imgAspect) * 0.5, 0);
       }
       tex.needsUpdate = true;
       if (typeof renderer !== 'undefined' && renderer && renderer.initTexture) {
@@ -1206,7 +1191,7 @@
 
     var highMat = new THREE.MeshBasicMaterial({
       map: highTex,
-      color: new THREE.Color(0.72, 0.74, 0.78), // Subtly toned down by ~25-28% for balanced night integration
+      color: 0x8e98a4, // Subtly darkened ~20-25% so highlights are controlled and integrate with dark room
       side: THREE.DoubleSide,
       transparent: true,
       opacity: 0.0
@@ -1224,8 +1209,8 @@
     // Recessed ceiling linear graze light
     var grazeMat = new THREE.MeshStandardMaterial({
       color: 0x14161a,
-      emissive: 0xdde8f8,
-      emissiveIntensity: 0.35,
+      emissive: 0xffeedd,
+      emissiveIntensity: 0.4,
       roughness: 0.4,
       transparent: true,
       opacity: 0.0
@@ -1234,9 +1219,9 @@
     grazeBar.position.set(xR - 0.06, headerBottom + 0.015, winMidZ);
     windowGroup.add(grazeBar);
 
-    var windowGrazeLight = new THREE.SpotLight(0xd4e2f4, 0.0, 5.5, Math.PI / 3.0, 0.85, 1.3);
+    var windowGrazeLight = new THREE.SpotLight(0xffeedd, 0.0, 5.5, Math.PI / 3.0, 0.85, 1.3);
     windowGrazeLight.position.set(xR - 0.1, headerBottom, winMidZ);
-    windowGrazeLight.target.position.set(xR - 0.05, 0.5, winMidZ);
+    windowGrazeLight.target.position.set(xR - 0.05, 0, winMidZ);
     windowGroup.add(windowGrazeLight);
     windowGroup.add(windowGrazeLight.target);
 
@@ -1269,20 +1254,20 @@
       muralGroup.visible = true;
       windowGroup.visible = true;
 
-      function easeInOutCubic(t) {
-        return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+      function easeInOutQuad(t) {
+        return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
       }
 
       function animateTransition(now) {
         var elapsed = now - startTime;
         var t = Math.min(1.0, elapsed / transitionDuration);
-        var eased = easeInOutCubic(t);
+        var eased = easeInOutQuad(t);
         var progress = startVal + (targetVal - startVal) * eased;
 
         // Crossfade Mural
         muralMat.opacity = 1.0 - progress;
         if (muralWashLight) {
-          muralWashLight.intensity = 0.50 * (1.0 - progress);
+          muralWashLight.intensity = 0.75 * (1.0 - progress);
         }
 
         // Crossfade Window components
@@ -1291,7 +1276,7 @@
         highMat.opacity = progress;
         grazeMat.opacity = progress;
         if (windowGrazeLight) {
-          windowGrazeLight.intensity = 0.35 * progress;
+          windowGrazeLight.intensity = 0.55 * progress;
         }
 
         if (t < 1.0) {
