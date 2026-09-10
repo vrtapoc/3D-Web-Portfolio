@@ -525,9 +525,9 @@
       chair.add(wheel);
     }
 
-    // Centered cleanly behind desk on rug, rotated ~14 deg toward camera
+    // Centered cleanly behind desk on rug, facing desk with subtle ~15°-20° welcoming angle toward isometric camera
     chair.position.set(0.18, 0, DESK_Z + 0.58);
-    chair.rotation.y = 2.78;
+    chair.rotation.y = 2.78 - Math.PI;
     scene.add(chair);
     return chair;
   }
@@ -1031,12 +1031,11 @@
     glass.position.set(xR - 0.02, sillH + (headerBottom - sillH) / 2, (winZ0 + winZ1) / 2);
     root.add(glass);
 
-                        // ---- Confined Realistic Night City Skyline strictly framed behind window ----
+    // ---- Moody Lo-Fi / Cyberpunk Horizon Backdrop strictly framed behind window ----
     var cityGroup = new THREE.Group();
     cityGroup.name = 'exterior-city-skyline';
     __cityBeacons = [];
 
-    // ---- Night City Skyline: Canvas-painted backdrop ----
     var skyW = winLen + 0.4;
     var skyH = headerBottom - sillH + 0.2;
     (function buildSkylineBackdrop() {
@@ -1044,152 +1043,50 @@
       cvs.width = 1024; cvs.height = 512;
       var ctx = cvs.getContext('2d');
 
-      // Sky gradient: near-black pitch at top, deep indigo/navy glow at horizon
+      // Atmospheric vertical canvas gradient:
+      // Top: Pitch / Deep Navy (#030712)
+      // Horizon / Bottom: Subtle glow of Deep Indigo/Teal (#0e3a40 / #0f172a) to harmonize with interior cyan neon
       var skyGrad = ctx.createLinearGradient(0, 0, 0, cvs.height);
-      skyGrad.addColorStop(0.0,  '#03060d');
-      skyGrad.addColorStop(0.55, '#060c1c');
-      skyGrad.addColorStop(0.80, '#0b1a30');
-      skyGrad.addColorStop(1.0,  '#0c1d38');
+      skyGrad.addColorStop(0.0,  '#030712');
+      skyGrad.addColorStop(0.50, '#060f1c');
+      skyGrad.addColorStop(0.80, '#0a232c');
+      skyGrad.addColorStop(1.0,  '#0e3a40');
       ctx.fillStyle = skyGrad;
       ctx.fillRect(0, 0, cvs.width, cvs.height);
 
-      // Faint atmospheric city haze glow at horizon
-      var hazeGrad = ctx.createRadialGradient(512, cvs.height, 0, 512, cvs.height, 480);
-      hazeGrad.addColorStop(0,   'rgba(24,60,120,0.38)');
-      hazeGrad.addColorStop(0.5, 'rgba(10,30,75,0.18)');
-      hazeGrad.addColorStop(1,   'rgba(0,0,0,0)');
-      ctx.fillStyle = hazeGrad;
-      ctx.fillRect(0, 0, cvs.width, cvs.height);
+      // Soft ambient horizon glow
+      var horizonGlow = ctx.createLinearGradient(0, cvs.height * 0.45, 0, cvs.height);
+      horizonGlow.addColorStop(0.0, 'rgba(14, 58, 64, 0.0)');
+      horizonGlow.addColorStop(0.6, 'rgba(14, 58, 64, 0.25)');
+      horizonGlow.addColorStop(1.0, 'rgba(15, 23, 42, 0.55)');
+      ctx.fillStyle = horizonGlow;
+      ctx.fillRect(0, cvs.height * 0.45, cvs.width, cvs.height * 0.55);
 
-      // Subtle stars scattered in upper sky
-      ctx.fillStyle = 'rgba(255,255,255,0.55)';
-      var starSeeds = [
-        [80,28],[145,55],[210,18],[300,42],[390,15],[455,70],[530,22],[620,45],
-        [690,12],[760,60],[830,28],[900,50],[960,18],[50,80],[180,90],[350,75],
-        [500,88],[650,72],[820,95],[105,35],[275,65],[720,40],[880,20]
+      // Building Silhouettes: 2 to 3 wide, clean, low-contrast skyscraper silhouettes
+      // using dark materials with soft gradient dissolving into horizon mist
+      var groundY = cvs.height;
+      var silhouettes = [
+        { x: 60,  w: 270, h: 220, alpha: 0.70 },
+        { x: 360, w: 340, h: 295, alpha: 0.85 },
+        { x: 730, w: 240, h: 185, alpha: 0.65 }
       ];
-      for (var si = 0; si < starSeeds.length; si++) {
-        var sr = (si % 3 === 0) ? 1.2 : (si % 3 === 1 ? 0.8 : 0.5);
-        ctx.beginPath();
-        ctx.arc(starSeeds[si][0], starSeeds[si][1], sr, 0, Math.PI * 2);
-        ctx.fill();
-      }
 
-      // Moon disc — soft ivory, upper-left quadrant
-      var moonX = 130, moonY = 90, moonR = 28;
-      var moonGrad2 = ctx.createRadialGradient(moonX - 4, moonY - 5, 2, moonX, moonY, moonR);
-      moonGrad2.addColorStop(0,   '#fffef0');
-      moonGrad2.addColorStop(0.6, '#fef6d8');
-      moonGrad2.addColorStop(1,   'rgba(255,240,180,0)');
-      ctx.fillStyle = moonGrad2;
-      ctx.beginPath(); ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2); ctx.fill();
-      // Soft corona halo
-      var coronaGrad = ctx.createRadialGradient(moonX, moonY, moonR * 0.8, moonX, moonY, moonR * 2.2);
-      coronaGrad.addColorStop(0, 'rgba(200,190,130,0.15)');
-      coronaGrad.addColorStop(1, 'rgba(0,0,0,0)');
-      ctx.fillStyle = coronaGrad;
-      ctx.beginPath(); ctx.arc(moonX, moonY, moonR * 2.2, 0, Math.PI * 2); ctx.fill();
-
-      // Helper: draw a skyscraper silhouette with lit windows
-      function drawBuilding(x, groundY, w, h, winCols, winRows, winCol) {
-        // Main body
-        var bGrad = ctx.createLinearGradient(x, groundY - h, x + w, groundY);
-        bGrad.addColorStop(0,   '#0a0e18');
-        bGrad.addColorStop(0.4, '#070a12');
-        bGrad.addColorStop(1,   '#050709');
+      silhouettes.forEach(function (b) {
+        var bGrad = ctx.createLinearGradient(0, groundY - b.h, 0, groundY);
+        bGrad.addColorStop(0.0, 'rgba(4, 10, 18, ' + b.alpha + ')');
+        bGrad.addColorStop(0.55, 'rgba(6, 18, 26, ' + (b.alpha * 0.85) + ')');
+        bGrad.addColorStop(1.0, 'rgba(14, 45, 52, ' + (b.alpha * 0.35) + ')');
         ctx.fillStyle = bGrad;
-        ctx.fillRect(x, groundY - h, w, h);
+        ctx.fillRect(b.x, groundY - b.h, b.w, b.h);
+      });
 
-        // Lit windows: scattered warm/cool glow
-        var wPad = w * 0.12;
-        var wW = (w - wPad * 2) / winCols * 0.55;
-        var wH = h / winRows * 0.42;
-        var wGapX = (w - wPad * 2) / winCols;
-        var wGapY = h / winRows;
-        for (var row = 0; row < winRows; row++) {
-          for (var col = 0; col < winCols; col++) {
-            var lit = (Math.sin((row * 7 + col * 13 + x * 0.3) * 0.61) > 0.05);
-            if (!lit) continue;
-            var wx = x + wPad + col * wGapX;
-            var wy = groundY - h + row * wGapY + wGapY * 0.25;
-            // Alternate warm amber and cool blue-white per window
-            var isWarm = ((row + col) % 3 !== 0);
-            ctx.fillStyle = isWarm ? 'rgba(255,220,110,0.78)' : 'rgba(160,200,255,0.58)';
-            ctx.fillRect(wx, wy, wW, wH);
-            // Tiny window inner glow
-            ctx.fillStyle = isWarm ? 'rgba(255,240,180,0.18)' : 'rgba(180,220,255,0.12)';
-            ctx.fillRect(wx - 1, wy - 1, wW + 2, wH + 2);
-          }
-        }
-
-        // Rooftop antenna on taller buildings
-        if (h > 200) {
-          ctx.strokeStyle = 'rgba(80,90,110,0.9)';
-          ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.moveTo(x + w * 0.5, groundY - h);
-          ctx.lineTo(x + w * 0.5, groundY - h - w * 0.28);
-          ctx.stroke();
-          // Red beacon on antenna tip
-          ctx.fillStyle = 'rgba(255,30,30,0.9)';
-          ctx.beginPath();
-          ctx.arc(x + w * 0.5, groundY - h - w * 0.28, 2.2, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-
-      // Ground horizon line
-      var groundY = cvs.height - 40;
-
-      // Buildings: arranged L→R across window span, varied sizes
-      var buildings = [
-        { x: 20,  w: 80,  h: 195, c: 5, r: 14 },
-        { x: 90,  w: 110, h: 290, c: 7, r: 20 },
-        { x: 190, w: 65,  h: 155, c: 4, r: 12 },
-        { x: 242, w: 90,  h: 260, c: 6, r: 18 },
-        { x: 320, w: 130, h: 340, c: 8, r: 24 },
-        { x: 435, w: 75,  h: 205, c: 5, r: 14 },
-        { x: 498, w: 95,  h: 285, c: 6, r: 20 },
-        { x: 578, w: 60,  h: 165, c: 4, r: 12 },
-        { x: 625, w: 115, h: 310, c: 7, r: 22 },
-        { x: 726, w: 80,  h: 230, c: 5, r: 16 },
-        { x: 790, w: 100, h: 270, c: 6, r: 19 },
-        { x: 875, w: 70,  h: 185, c: 4, r: 13 },
-        { x: 930, w: 94,  h: 255, c: 6, r: 18 }
-      ];
-
-      // Draw back row (smaller, desaturated, at 85% opacity to suggest depth)
-      ctx.globalAlpha = 0.55;
-      for (var bi = 0; bi < buildings.length; bi++) {
-        var b = buildings[bi];
-        var bx2 = b.x + 18, bh2 = b.h * 0.65;
-        var bw2 = b.w * 0.8;
-        ctx.fillStyle = '#060810';
-        ctx.fillRect(bx2, groundY - bh2, bw2, bh2);
-      }
-      ctx.globalAlpha = 1.0;
-
-      // Draw front row with full detail
-      for (var bi2 = 0; bi2 < buildings.length; bi2++) {
-        var bf = buildings[bi2];
-        drawBuilding(bf.x, groundY, bf.w, bf.h, bf.c, bf.r, 0);
-      }
-
-      // Ground-level street glow: amber & white light trails
-      var streetGrad = ctx.createLinearGradient(0, groundY, 0, cvs.height);
-      streetGrad.addColorStop(0, 'rgba(30,20,10,0.0)');
-      streetGrad.addColorStop(1, 'rgba(8,6,4,1)');
-      ctx.fillStyle = streetGrad;
-      ctx.fillRect(0, groundY, cvs.width, cvs.height - groundY);
-
-      // Amber car trail (right-side)
-      ctx.strokeStyle = 'rgba(255,160,30,0.45)';
-      ctx.lineWidth = 1.8;
-      ctx.beginPath(); ctx.moveTo(0, groundY + 18); ctx.lineTo(cvs.width, groundY + 14); ctx.stroke();
-      // White car trail (left-side, closer)
-      ctx.strokeStyle = 'rgba(240,240,220,0.30)';
-      ctx.lineWidth = 1.4;
-      ctx.beginPath(); ctx.moveTo(0, groundY + 26); ctx.lineTo(cvs.width, groundY + 22); ctx.stroke();
+      // Soft distance mist dissolving the silhouette bases smoothly into the horizon
+      var mistGrad = ctx.createLinearGradient(0, groundY - 140, 0, groundY);
+      mistGrad.addColorStop(0.0, 'rgba(14, 58, 64, 0.0)');
+      mistGrad.addColorStop(0.6, 'rgba(14, 58, 64, 0.22)');
+      mistGrad.addColorStop(1.0, 'rgba(14, 58, 64, 0.50)');
+      ctx.fillStyle = mistGrad;
+      ctx.fillRect(0, groundY - 140, cvs.width, 140);
 
       // Canvas → Three.js texture
       var skyTex = new THREE.CanvasTexture(cvs);
@@ -1205,10 +1102,10 @@
       skyPlane.position.set(xR + 0.55, sillH + (headerBottom - sillH) / 2, (winZ0 + winZ1) / 2);
       cityGroup.add(skyPlane);
 
-      // Subtle moonlight point from outside the window
-      var moonGlow = new THREE.PointLight(0xffeecc, 0.22, 3.0, 1.8);
-      moonGlow.position.set(xR + 0.45, headerBottom - 0.6, winZ0 + winLen * 0.18);
-      cityGroup.add(moonGlow);
+      // Subtle atmospheric teal horizon light outside the window
+      var horizonLight = new THREE.PointLight(0x0e3a40, 0.35, 3.5, 1.8);
+      horizonLight.position.set(xR + 0.45, sillH + 0.6, winZ0 + winLen * 0.5);
+      cityGroup.add(horizonLight);
     })();
 
     root.add(cityGroup);
