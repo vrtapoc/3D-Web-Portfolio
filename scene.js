@@ -155,16 +155,16 @@
       if (obj.isAmbientLight || obj.isHemisphereLight) obj.intensity = Math.min(obj.intensity, 0.12);
       if (obj.isDirectionalLight) obj.intensity = Math.min(obj.intensity, 0.2);
     });
-    var amb = new THREE.AmbientLight(0xa8b0c0, 0.28);
+    var amb = new THREE.AmbientLight(0x222426, 0.40);
     amb.name = 'amb-ambient';
     scene.add(amb);
-    var hemi = new THREE.HemisphereLight(0xc8d0e0, 0x121218, 0.32);
+    var hemi = new THREE.HemisphereLight(0x35383c, 0x141618, 0.35);
     hemi.name = 'amb-hemi';
     scene.add(hemi);
-    var fill = new THREE.DirectionalLight(0xd0d4e0, 0.35);
+    var fill = new THREE.DirectionalLight(0xdedad2, 0.26);
     fill.position.set(-5, 5.5, 7);
     scene.add(fill);
-        var moonlight = new THREE.DirectionalLight(0xffeedd, 0.28);
+    var moonlight = new THREE.DirectionalLight(0xffeedd, 0.28);
     moonlight.name = 'mural-accent-light';
     moonlight.position.set(8.5, 4.5, 1.2);
     moonlight.target.position.set(0, 0.5, 0.5);
@@ -676,21 +676,34 @@
     floor.receiveShadow = true;
     root.add(floor);
 
-    // ---- Continuous Smooth Charcoal Microcement Back Wall ----
+    // ---- Continuous Smooth Dark Graphite Microcement Back Wall ----
     var backWallMat = new THREE.MeshStandardMaterial({
-      color: 0x15181b,
-      roughness: 0.76,
-      metalness: 0.04,
+      color: 0x111518,
+      roughness: 0.82,
+      metalness: 0.02,
       bumpMap: microCementBump,
-      bumpScale: 0.002
+      bumpScale: 0.0018
     });
     box(xR - xL, H, T, (xL + xR) / 2, H / 2, zB, backWallMat);
 
+    // Subtle dark recessed architectural reveal joints for panel depth
+    var revealMat = new THREE.MeshStandardMaterial({
+      color: 0x090b0d,
+      roughness: 0.95,
+      metalness: 0.0
+    });
+    // Horizontal architectural division line at y = 2.9m
+    box(xR - (startX + endX) / 2, 0.008, 0.006, ((startX + endX) / 2 + xR) / 2, 2.9, zB + T / 2 + 0.003, revealMat);
+    // Vertical architectural division line between slat accent and center wall zone (x = endX)
+    box(0.008, H, 0.006, endX, H / 2, zB + T / 2 + 0.003, revealMat);
+    // Vertical architectural division line towards right zone (x = 2.3)
+    box(0.008, H, 0.006, 2.3, H / 2, zB + T / 2 + 0.003, revealMat);
+
     // Sleek minimal baseboard trim along floor
     var baseTrimMat = new THREE.MeshStandardMaterial({
-      color: 0x101215,
-      roughness: 0.7,
-      metalness: 0.1
+      color: 0x0e1012,
+      roughness: 0.8,
+      metalness: 0.05
     });
     var baseH = 0.05;
     box(xR - xL, baseH, 0.025, (xL + xR) / 2, baseH / 2, zB + T / 2 + 0.012, baseTrimMat);
@@ -887,33 +900,10 @@
     drawNeonText(NEON_PALETTE[0].str);
 
     var neonGroup = new THREE.Group();
-    neonGroup.position.set(DESK_X, 3.42, zB + T / 2 + 0.12);
+    neonGroup.position.set(DESK_X, 3.42, zB + T / 2 + 0.02);
 
-    var plateW = 3.2;
-    var plateH = 1.15;
-    var plateMat = new THREE.MeshStandardMaterial({
-      color: 0x12141a,
-      roughness: 0.12,
-      metalness: 0.1,
-      transparent: true,
-      opacity: 0.35,
-      side: THREE.DoubleSide
-    });
-    var plate = new THREE.Mesh(new THREE.BoxGeometry(plateW, plateH, 0.025), plateMat);
-    neonGroup.add(plate);
-
-    var chromeMat = new THREE.MeshStandardMaterial({ color: 0xc0c4cc, roughness: 0.25, metalness: 0.9 });
-    [
-      [-plateW * 0.46, plateH * 0.4],
-      [plateW * 0.46, plateH * 0.4],
-      [-plateW * 0.46, -plateH * 0.4],
-      [plateW * 0.46, -plateH * 0.4]
-    ].forEach(function (xy) {
-      var stand = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.05, 10), chromeMat);
-      stand.rotation.x = Math.PI / 2;
-      stand.position.set(xy[0], xy[1], -0.035);
-      neonGroup.add(stand);
-    });
+    var neonW = 2.9;
+    var neonH = 0.9;
 
     var neonLogoMat = new THREE.MeshBasicMaterial({
       map: neonTex,
@@ -922,16 +912,16 @@
       side: THREE.DoubleSide,
       depthWrite: false
     });
-    var logo = new THREE.Mesh(new THREE.PlaneGeometry(plateW * 0.9, plateH * 0.75), neonLogoMat);
-    logo.position.set(0, 0, 0.015);
+    var logo = new THREE.Mesh(new THREE.PlaneGeometry(neonW, neonH), neonLogoMat);
+    logo.position.set(0, 0, 0.01);
     neonGroup.add(logo);
 
     var neonLight = new THREE.PointLight(NEON_PALETTE[0].hex, 2.4, 7.5, 1.2);
-    neonLight.position.set(0, 0, 0.5);
+    neonLight.position.set(0, 0, 0.45);
     neonGroup.add(neonLight);
     __neonLight = neonLight;
 
-        function cycleNeonColor() {
+    function cycleNeonColor() {
       neonColorIndex = (neonColorIndex + 1) % NEON_PALETTE.length;
       var c = NEON_PALETTE[neonColorIndex];
       drawNeonText(c.str);
@@ -974,7 +964,6 @@
     function markNeon(m) {
       m.userData = { interactive: true, name: 'neonSign', onClick: cycleNeonColor };
     }
-    markNeon(plate);
     markNeon(logo);
     neonGroup.userData = { interactive: true, name: 'neonSign', onClick: cycleNeonColor };
     root.add(neonGroup);
