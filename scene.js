@@ -1260,12 +1260,8 @@
     var winMidH = sillH + winH / 2;
     var winMidZ = (winZ0 + winZ1) / 2;
 
-    // Solid Wall Bounding Casing around the Right-Wall Feature Aperture
-    var rightWallMat = new THREE.MeshStandardMaterial({
-      color: 0x090a0c,
-      roughness: 0.95,
-      metalness: 0.05
-    });
+    // Solid Wall Bounding Casing around the Right-Wall Feature Aperture (Matching Warm Charcoal Stucco)
+    var rightWallMat = backWallMat;
     box(T, H, winZ0 - zB, xR, H / 2, (zB + winZ0) / 2, rightWallMat);
     box(T, H, zF - winZ1, xR, H / 2, (winZ1 + zF) / 2, rightWallMat);
     box(T, headerH, winLen, xR, headerBottom + headerH / 2, winMidZ, rightWallMat);
