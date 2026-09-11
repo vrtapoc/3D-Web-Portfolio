@@ -32,8 +32,8 @@
     var kill = [];
     scene.traverse(function (obj) {
       if (!obj) return;
+      if (obj.name === 'diorama-walls') return;
       if (
-        obj.name === 'diorama-walls' ||
         obj.name === 'back-wall-decor' ||
         obj.name === 'framed-art-logo' ||
         obj.name === 'wall-poster'
@@ -46,14 +46,15 @@
       if (Math.abs(p.x + 7.5) < 0.6 || Math.abs(p.x - 7.5) < 0.6) kill.push(obj);
       if (obj.geometry && obj.geometry.type === 'PlaneGeometry' && Math.abs(p.z + 3) < 0.45 && Math.abs(p.y - 4) < 3)
         kill.push(obj);
+      // Remove any legacy horizontal floor plane or box
       if (
-        obj.geometry &&
-        obj.geometry.type === 'PlaneGeometry' &&
-        Math.abs(p.y) < 0.05 &&
-        obj.rotation &&
-        Math.abs(obj.rotation.x + Math.PI / 2) < 0.25
-      )
-        kill.push(obj);
+        (obj.geometry && obj.geometry.type === 'PlaneGeometry' && p.y < 0.06 && Math.abs(obj.rotation.x + Math.PI / 2) < 0.35) ||
+        (p.y <= 0.02 && Math.abs(obj.rotation.x + Math.PI / 2) < 0.35)
+      ) {
+        if (!obj.userData || (!obj.userData.isStudioRug && !obj.userData.isDioramaFloor)) {
+          kill.push(obj);
+        }
+      }
       // Legacy floating poster frames and poster planes
       if (
         Math.abs(p.z + 2.88) < 0.25 &&
@@ -81,7 +82,7 @@
     if (!scene) return;
     var kill = [];
     scene.traverse(function (obj) {
-      if (!obj.isMesh || (obj.userData && obj.userData.isStudioRug)) return;
+      if (!obj.isMesh || (obj.userData && (obj.userData.isStudioRug || obj.userData.isDioramaFloor))) return;
       var bounds = new THREE.Box3().setFromObject(obj);
       var size = bounds.getSize(new THREE.Vector3());
       var center = bounds.getCenter(new THREE.Vector3());
@@ -171,6 +172,8 @@
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.repeat.set(2.0, 2.0);
     tex.anisotropy = 8;
+    if (THREE.sRGBEncoding) tex.encoding = THREE.sRGBEncoding;
+    if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
     return tex;
   }
 
@@ -221,8 +224,14 @@
     if (!scene) return;
     scene.traverse(function (obj) {
       if (!obj.isLight) return;
-      if (obj.isAmbientLight || obj.isHemisphereLight) obj.intensity = Math.min(obj.intensity, 0.12);
-      if (obj.isDirectionalLight) obj.intensity = Math.min(obj.intensity, 0.2);
+      if (obj.name && obj.name.indexOf('amb-') === 0) return;
+      if (obj.name === 'mural-accent-light') return;
+      if (obj.isPointLight && obj !== __neonLight && obj !== __consoleUnderglow && obj !== __consoleUnderglow2) {
+        obj.intensity = 0;
+        obj.visible = false;
+      }
+      if (obj.isAmbientLight || obj.isHemisphereLight) obj.intensity = 0;
+      if (obj.isDirectionalLight && obj.name !== 'mural-accent-light') obj.intensity = 0;
     });
     var amb = new THREE.AmbientLight(0x222426, 0.40);
     amb.name = 'amb-ambient';
@@ -230,10 +239,11 @@
     var hemi = new THREE.HemisphereLight(0x35383c, 0x141618, 0.35);
     hemi.name = 'amb-hemi';
     scene.add(hemi);
-    var fill = new THREE.DirectionalLight(0xdedad2, 0.26);
+    var fill = new THREE.DirectionalLight(0xdcd8ce, 0.24);
+    fill.name = 'amb-fill';
     fill.position.set(-5, 5.5, 7);
     scene.add(fill);
-    var moonlight = new THREE.DirectionalLight(0xffeedd, 0.28);
+    var moonlight = new THREE.DirectionalLight(0xd0d4de, 0.22);
     moonlight.name = 'mural-accent-light';
     moonlight.position.set(8.5, 4.5, 1.2);
     moonlight.target.position.set(0, 0.5, 0.5);
@@ -901,6 +911,7 @@
     );
     floor.position.set((xL + xR) / 2, -0.08, (zB + zF) / 2);
     floor.receiveShadow = true;
+    floor.userData.isDioramaFloor = true;
     root.add(floor);
 
     // ---- Continuous Smooth Warm Charcoal Stucco Back Wall ----
@@ -1168,55 +1179,92 @@
               if (__neonLight) __neonLight.intensity = 2.4;
             }, 50);
           }, 50);
-        }, 40);
+        }, 30);
       }
-
       if (__consoleUnderglow) __consoleUnderglow.color.setHex(c.hex);
       if (__consoleUnderglow2) __consoleUnderglow2.color.setHex(c.hex);
-      if (window.showToast) window.showToast('Neon: ' + c.str);
-      if (window.playUiSound) window.playUiSound('click');
+
+      if (window.showToast) {
+        var names = ['Cyan', 'Magenta', 'Amber', 'Green', 'Purple'];
+        window.showToast('💡 Neon Glow: ' + names[neonColorIndex]);
+      }
+      if (window.playUiSound) window.playUiSound('buzz');
     }
     window.__cycleNeonColor = cycleNeonColor;
 
-    function markNeon(m) {
-      m.userData = { interactive: true, name: 'neonSign', onClick: cycleNeonColor };
-    }
-    markNeon(logo);
-    neonGroup.userData = { interactive: true, name: 'neonSign', onClick: cycleNeonColor };
     root.add(neonGroup);
 
-        // ---- Floating wood shelf below neon with breathing room ----
-    var shelfW = 2.4;
-    var shelfH = 0.05;
-    var shelfD = 0.32;
-    // Lowered assembly downward so decor has clear visual breathing room below neon sign plate
-    var shelfY = 2.62;
-    var shelfZ = zB + T / 2 + shelfD / 2 + 0.04;
-    var shelfTopSurface = shelfY + shelfH / 2;
+    // ---- Clean Floating Shelf on Back Wall (Centered directly over desk & monitor) ----
+    var shelfW = 2.7;
+    var shelfD = 0.26;
+    var shelfT = 0.025;
+    var shelfZ = zB + T / 2 + shelfD / 2 + 0.005;
+    var shelfY = 4.08;
+    var shelfTopSurface = shelfY + shelfT / 2;
 
-    var oakMat = new THREE.MeshStandardMaterial({
-      color: 0x1a1614,
-      roughness: 0.62,
-      metalness: 0.08
+    var shelfMat = new THREE.MeshStandardMaterial({
+      color: 0x16181b,
+      roughness: 0.65,
+      metalness: 0.15
     });
-    var shelf = new THREE.Mesh(new THREE.BoxGeometry(shelfW, shelfH, shelfD), oakMat);
-    shelf.position.set(DESK_X, shelfY, shelfZ);
-    shelf.castShadow = true;
-    shelf.receiveShadow = true;
-    root.add(shelf);
+    box(shelfW, shelfT, shelfD, DESK_X, shelfY, shelfZ, shelfMat);
 
-    var potMat = new THREE.MeshStandardMaterial({ color: 0xf2f0ea, roughness: 0.7, metalness: 0.0 });
-    var leafMat = new THREE.MeshStandardMaterial({ color: 0x3d6b45, roughness: 0.55, metalness: 0.0 });
+    // Twin black steel low-profile mounting brackets under shelf
+    var bracketMat = new THREE.MeshStandardMaterial({ color: 0x0e1012, roughness: 0.45, metalness: 0.7 });
+    [-0.85, 0.85].forEach(function (bx) {
+      box(0.024, 0.11, shelfD * 0.82, DESK_X + bx, shelfY - 0.055, shelfZ - 0.015, bracketMat);
+    });
+
+    // Books with varied realistic colors & angled leaning book
+    var bookColors = [0x2c3e50, 0x8b4513, 0x1e3f20, 0x3d2b1f, 0x4a235a];
+    var bookStartX = DESK_X - shelfW * 0.18;
+    for (var bi = 0; bi < 4; bi++) {
+      var bMat = new THREE.MeshStandardMaterial({ color: bookColors[bi % bookColors.length], roughness: 0.8 });
+      var bH = 0.20 + (bi % 3) * 0.035;
+      var bMesh = new THREE.Mesh(new THREE.BoxGeometry(0.032, bH, 0.16), bMat);
+      bMesh.position.set(bookStartX + bi * 0.042, shelfTopSurface + bH / 2, shelfZ);
+      bMesh.castShadow = true;
+      root.add(bMesh);
+    }
+    // Leaning book
+    var leanMat = new THREE.MeshStandardMaterial({ color: bookColors[4], roughness: 0.8 });
+    var leanBook = new THREE.Mesh(new THREE.BoxGeometry(0.032, 0.23, 0.16), leanMat);
+    leanBook.position.set(bookStartX + 4 * 0.042 + 0.02, shelfTopSurface + 0.11, shelfZ);
+    leanBook.rotation.z = -0.22;
+    leanBook.castShadow = true;
+    root.add(leanBook);
+
+    // Decorative ceramic planter pots with realistic organic succulents
+    var potMat = new THREE.MeshStandardMaterial({ color: 0xdddbd5, roughness: 0.85, metalness: 0.05 });
+    var darkPotMat = new THREE.MeshStandardMaterial({ color: 0x222428, roughness: 0.85, metalness: 0.1 });
+    var plantMat = new THREE.MeshStandardMaterial({ color: 0x3d6b4f, roughness: 0.65, metalness: 0.0 });
+    var soilMat = new THREE.MeshStandardMaterial({ color: 0x1c150e, roughness: 0.95 });
+
     function makePot(px) {
       var g = new THREE.Group();
-      var pot = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.1, 16), potMat);
-      pot.position.y = 0.05;
-      g.add(pot);
-      for (var li = 0; li < 4; li++) {
-        var leaf = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.12, 0.04), leafMat);
-        leaf.position.set((li - 1.5) * 0.025, 0.14, 0);
-        leaf.rotation.z = (li - 1.5) * 0.15;
-        g.add(leaf);
+      var isDark = px > DESK_X;
+      var pMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.042, 0.09, 16), isDark ? darkPotMat : potMat);
+      pMesh.position.y = 0.045;
+      pMesh.castShadow = true;
+      g.add(pMesh);
+
+      var soil = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.01, 14), soilMat);
+      soil.position.y = 0.088;
+      g.add(soil);
+
+      // Realistic layered organic succulent rosettes (12 curved petals)
+      for (var p = 0; p < 12; p++) {
+        var ang = (p / 12) * Math.PI * 2 + (p % 2) * 0.25;
+        var pLen = 0.035 + (p % 3) * 0.008;
+        var petal = new THREE.Mesh(
+          new THREE.ConeGeometry(0.016, pLen, 6),
+          plantMat
+        );
+        petal.position.set(Math.cos(ang) * 0.025, 0.092 + (p % 2) * 0.008, Math.sin(ang) * 0.025);
+        petal.rotation.x = Math.sin(ang) * 0.45;
+        petal.rotation.z = -Math.cos(ang) * 0.45;
+        petal.castShadow = true;
+        g.add(petal);
       }
       // Succulents sit flush on the top surface of the repositioned shelf
       g.position.set(px, shelfTopSurface, shelfZ);
@@ -1241,24 +1289,25 @@
     root.add(clockRim);
 
     // Subtle warm downlight washing softly toward desk
-    var shelfWash = new THREE.PointLight(0xffeedb, 0.6, 2.2, 1.4);
+    var shelfWash = new THREE.PointLight(0xffeedb, 0.45, 2.2, 1.4);
     shelfWash.position.set(DESK_X, shelfY - 0.06, shelfZ - 0.04);
     root.add(shelfWash);
 
-    var biasLight = new THREE.PointLight(0xff9922, 2.2, 3.2, 1.3);
+    var biasLight = new THREE.PointLight(0xffeedb, 0.45, 2.5, 1.4);
     biasLight.position.set(DESK_X, CONSOLE_Y + CONSOLE_H / 2 + 0.15, DESK_Z - CONSOLE_D * 0.35);
     root.add(biasLight);
 
     // ---- RIGHT WALL: Two-State Interactive Feature (Mural <-> Window) ----
-    var winZ0 = -2.3;
-    var winZ1 = zF - 0.4;
-    var winLen = winZ1 - winZ0;
-    var headerH = 0.55;
-    var sillH = 0.15;
+    // Sized proportionally to fill the usable right-wall area with clean, elegant architectural margins
+    var winZ0 = -5.0;
+    var winZ1 = 3.5;
+    var winLen = winZ1 - winZ0; // 8.5 units wide
+    var headerH = 0.48;
+    var sillH = 0.22;
     var headerBottom = H - headerH;
-    var winH = headerBottom - sillH;
-    var winMidH = sillH + winH / 2;
-    var winMidZ = (winZ0 + winZ1) / 2;
+    var winH = headerBottom - sillH; // 5.10 units high
+    var winMidH = sillH + winH / 2; // 2.77
+    var winMidZ = (winZ0 + winZ1) / 2; // -0.75
 
     // Solid Wall Bounding Casing around the Right-Wall Feature Aperture (Matching Warm Charcoal Stucco)
     var rightWallMat = backWallMat;
@@ -1325,9 +1374,9 @@
     muralMesh.userData.isRightWallFeature = true;
     muralGroup.add(muralMesh);
 
-    var muralWashLight = new THREE.SpotLight(0xffeedd, 0.75, 7.5, Math.PI / 3.0, 0.85, 1.2);
-    muralWashLight.position.set(panelX - 0.35, H - 0.05, winMidZ);
-    muralWashLight.target.position.set(panelX, 2.6, winMidZ);
+    var muralWashLight = new THREE.SpotLight(0xd4d8e0, 0.65, 8.5, Math.PI / 3.0, 0.85, 1.2);
+    muralWashLight.position.set(panelX - 0.4, H - 0.05, winMidZ);
+    muralWashLight.target.position.set(panelX, winMidH, winMidZ);
     muralGroup.add(muralWashLight);
     muralGroup.add(muralWashLight.target);
 
