@@ -10,9 +10,9 @@
   var H = 5.8;
   var T = 0.22;
   var WALL = 0x090a0c;
-  var xL = -4.8;
-  var xR = 4.4;
-  var zB = -2.7;
+  var xL = -6.8;
+  var xR = 6.4;
+  var zB = -5.7;
   var zF = 4.2;
 
   var DESK_X = 0.2;
@@ -693,11 +693,13 @@
       metalness: 0.0
     });
     // Horizontal architectural division line at y = 2.9m
-    box(xR - (startX + endX) / 2, 0.008, 0.006, ((startX + endX) / 2 + xR) / 2, 2.9, zB + T / 2 + 0.003, revealMat);
-    // Vertical architectural division line between slat accent and center wall zone (x = endX)
-    box(0.008, H, 0.006, endX, H / 2, zB + T / 2 + 0.003, revealMat);
+    box(xR - xL, 0.008, 0.006, (xL + xR) / 2, 2.9, zB + T / 2 + 0.003, revealMat);
+    // Vertical architectural division line between slat accent and center wall zone (x = -2.65)
+    box(0.008, H, 0.006, -2.65, H / 2, zB + T / 2 + 0.003, revealMat);
     // Vertical architectural division line towards right zone (x = 2.3)
     box(0.008, H, 0.006, 2.3, H / 2, zB + T / 2 + 0.003, revealMat);
+    // Vertical architectural division line on left extension (x = -4.8)
+    box(0.008, H, 0.006, -4.8, H / 2, zB + T / 2 + 0.003, revealMat);
 
     // Sleek minimal baseboard trim along floor
     var baseTrimMat = new THREE.MeshStandardMaterial({
@@ -722,9 +724,9 @@
       metalness: 0.04
     });
 
-    // Left accent section spanning ~17% of back wall (from xL + 0.55 to xL + 2.15)
-    var startX = xL + 0.55;
-    var endX = xL + 2.15;
+    // Left accent section at exact coordinates (from -4.25 to -2.65)
+    var startX = -4.25;
+    var endX = -2.65;
     var slatH = H - baseH;
     var slatGeo = new THREE.BoxGeometry(slatW, slatH, slatD);
     var dummy = new THREE.Object3D();
@@ -1033,9 +1035,7 @@
     root.add(biasLight);
 
     // ---- RIGHT WALL: Two-State Interactive Feature (Mural <-> Window) ----
-    var wallD = zF - zB;
-    var wallZ = (zB + zF) / 2;
-    var winZ0 = zB + 0.4;
+    var winZ0 = -2.3;
     var winZ1 = zF - 0.4;
     var winLen = winZ1 - winZ0;
     var headerH = 0.55;
