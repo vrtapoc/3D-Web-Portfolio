@@ -32,7 +32,12 @@
     var kill = [];
     scene.traverse(function (obj) {
       if (!obj) return;
-      if (obj.name === 'diorama-walls' || obj.name === 'back-wall-decor' || obj.name === 'framed-art-logo') {
+      if (
+        obj.name === 'diorama-walls' ||
+        obj.name === 'back-wall-decor' ||
+        obj.name === 'framed-art-logo' ||
+        obj.name === 'wall-poster'
+      ) {
         kill.push(obj);
         return;
       }
@@ -49,10 +54,24 @@
         Math.abs(obj.rotation.x + Math.PI / 2) < 0.25
       )
         kill.push(obj);
+      // Legacy floating poster frames and poster planes
+      if (
+        Math.abs(p.z + 2.88) < 0.25 &&
+        p.y > 1.8 &&
+        p.y < 3.8 &&
+        (Math.abs(p.x + 2.1) < 0.6 || Math.abs(p.x) < 0.9 || Math.abs(p.x - 2.1) < 0.6)
+      ) {
+        kill.push(obj);
+      }
     });
     kill.forEach(function (o) {
       try {
         o.visible = false;
+        if (o.geometry && o.geometry.dispose) o.geometry.dispose();
+        if (o.material) {
+          if (o.material.map && o.material.map.dispose) o.material.map.dispose();
+          if (o.material.dispose) o.material.dispose();
+        }
         if (o.parent) o.parent.remove(o);
       } catch (e) {}
     });
@@ -643,14 +662,13 @@
 
     var microCementBump = createMicroCementBump();
     var wallMat = new THREE.MeshStandardMaterial({
-      color: 0x15181b,
-      roughness: 0.76,
-      metalness: 0.04,
+      color: 0x111518,
+      roughness: 0.82,
+      metalness: 0.02,
       bumpMap: microCementBump,
-      bumpScale: 0.002
+      bumpScale: 0.0018
     });
     var frameMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.55, metalness: 0.2 });
-    var doorMat = new THREE.MeshStandardMaterial({ color: 0x101012, roughness: 0.78, metalness: 0.04 });
     var metalMat = new THREE.MeshStandardMaterial({ color: 0x9a9aa0, roughness: 0.3, metalness: 0.8 });
 
     function box(w, h, d, x, y, z, mat) {
@@ -1704,6 +1722,10 @@
       code = code.replace(/window\.addEventListener\('pointermove'[^)]+\);?/g, '// pointermove removed');
       code = code.replace(/window\.addEventListener\('pointerdown'[^)]+\);?/g, '// pointerdown removed');
       code = code.replace(/window\.addEventListener\('pointerup'[^)]+\);?/g, '// pointerup removed');
+
+      // Completely remove legacy poster wall / floating poster objects from scene creation
+      code = code.replace(/createWallPoster\(\);?/g, '// createWallPoster removed');
+      code = code.replace(/function createWallPoster\(\)[\s\S]*?\n\}\n/g, 'function createWallPoster() {}\n');
 
       var s = document.createElement('script');
       s.textContent = code;
