@@ -1660,13 +1660,13 @@
     }
     if (window.__isoViewApplied) return;
     window.__isoViewApplied = true;
-    controls.target.set(0.3, 1.1, 0.4);
-    // Pulled back by ~22% for wider isometric diorama framing with full negative space
-    camera.position.set(-9.25, 8.05, 10.3);
-    camera.lookAt(0.3, 1.1, 0.4);
+    controls.target.set(-0.15, 1.45, -0.75);
+    // Pulled back and raised for centered composition with comfortable margins matching reference
+    camera.position.set(-11.75, 9.60, 11.40);
+    camera.lookAt(-0.15, 1.45, -0.75);
     controls.enablePan = false;
     controls.minDistance = 12;
-    controls.maxDistance = 26;
+    controls.maxDistance = 28;
     controls.minAzimuthAngle = -Math.PI / 8;
     controls.maxAzimuthAngle = Math.PI / 6;
     controls.minPolarAngle = Math.PI / 3.8;
