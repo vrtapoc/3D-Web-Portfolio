@@ -81,21 +81,69 @@
     canvas.width = 1024;
     canvas.height = 1024;
     var ctx = canvas.getContext('2d');
-    var planks = 12;
-    var plankH = canvas.height / planks;
-    ctx.fillStyle = '#0a0908';
+
+    // Base deep walnut underlayer
+    ctx.fillStyle = '#1e140d';
     ctx.fillRect(0, 0, 1024, 1024);
-    for (var i = 0; i < planks; i++) {
-      var y = i * plankH;
-      var v = 16 + ((i * 3) % 5);
-      ctx.fillStyle = 'rgb(' + (v + 4) + ',' + (v + 1) + ',' + v + ')';
-      ctx.fillRect(0, y + 1, 1024, plankH - 2);
-      ctx.fillStyle = '#050403';
-      ctx.fillRect(0, y, 1024, 1.5);
+
+    var numPlanks = 14;
+    var plankH = 1024 / numPlanks;
+    var plankCols = 3;
+    var plankW = 1024 / plankCols;
+
+    // Palette of rich dark/medium walnut tones centered around #3A2920 (rgb: 58, 41, 32)
+    var walnutTones = [
+      { r: 58, g: 41, b: 32 }, // #3A2920 base walnut
+      { r: 52, g: 37, b: 29 }, // deep walnut
+      { r: 64, g: 46, b: 36 }, // warm walnut midtone
+      { r: 55, g: 39, b: 31 }, // neutral dark walnut
+      { r: 61, g: 44, b: 34 }, // rich walnut
+      { r: 49, g: 34, b: 27 }, // shadow walnut plank
+      { r: 66, g: 48, b: 38 }  // highlight walnut plank
+    ];
+
+    for (var row = 0; row < numPlanks; row++) {
+      var y = row * plankH;
+      // Stagger vertical joints for natural plank layout
+      var rowOffset = (row % 3) * (plankW * 0.37);
+
+      for (var col = -1; col <= plankCols + 1; col++) {
+        var x = col * plankW + rowOffset;
+        var toneIdx = Math.floor(Math.abs(Math.sin(row * 12.7 + col * 7.3)) * walnutTones.length);
+        var baseTone = walnutTones[toneIdx];
+
+        // Draw plank base
+        ctx.fillStyle = 'rgb(' + baseTone.r + ',' + baseTone.g + ',' + baseTone.b + ')';
+        ctx.fillRect(x, y + 1.5, plankW, plankH - 3);
+
+        // Subtle longitudinal wood grain streaks
+        for (var g = 0; g < 10; g++) {
+          var gy = y + 2 + (g * (plankH - 4) / 10) + (Math.sin(g * 2.3 + col) * 1.5);
+          var grainBright = ((g % 2 === 0) ? 1 : -1) * (Math.random() * 5 + 2);
+          var gr = Math.max(0, Math.min(255, baseTone.r + grainBright));
+          var gg = Math.max(0, Math.min(255, baseTone.g + Math.round(grainBright * 0.7)));
+          var gb = Math.max(0, Math.min(255, baseTone.b + Math.round(grainBright * 0.5)));
+          ctx.fillStyle = 'rgba(' + gr + ',' + gg + ',' + gb + ', 0.32)';
+          ctx.fillRect(x, gy, plankW, 1.2);
+        }
+
+        // Dark butt-joint seam between planks
+        ctx.fillStyle = '#140d09';
+        ctx.fillRect(x, y + 1.5, 1.5, plankH - 3);
+      }
+
+      // Dark horizontal plank gap / shadow line
+      ctx.fillStyle = '#120c08';
+      ctx.fillRect(0, y, 1024, 1.8);
+
+      // Very subtle bevel light catching edge on bottom lip of seam
+      ctx.fillStyle = 'rgba(90, 68, 54, 0.22)';
+      ctx.fillRect(0, y + 1.8, 1024, 0.8);
     }
+
     var tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(2.2, 2.2);
+    tex.repeat.set(2.0, 2.0);
     tex.anisotropy = 8;
     return tex;
   }
@@ -132,11 +180,6 @@
     }
     if (scene.background) scene.background = new THREE.Color(0x06060a);
 
-    // Warm doorway ambient fill — subtle warm spill from the door corridor
-    var warmFill = new THREE.PointLight(0xffd580, 0.45, 4.2, 1.8);
-    warmFill.position.set(-3.15, 1.6, zB + 1.0);
-    warmFill.name = 'door-warm-fill';
-    scene.add(warmFill);
 
     // Deep indigo/navy atmospheric fog outside
     scene.fog = new THREE.Fog(0x060c1c, 16, 48);
@@ -600,11 +643,11 @@
 
     var microCementBump = createMicroCementBump();
     var wallMat = new THREE.MeshStandardMaterial({
-      color: 0x0f1013,
-      roughness: 0.92,
-      metalness: 0.06,
+      color: 0x15181b,
+      roughness: 0.76,
+      metalness: 0.04,
       bumpMap: microCementBump,
-      bumpScale: 0.0025
+      bumpScale: 0.002
     });
     var frameMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.55, metalness: 0.2 });
     var doorMat = new THREE.MeshStandardMaterial({ color: 0x101012, roughness: 0.78, metalness: 0.04 });
@@ -623,91 +666,81 @@
     var floorD = zF - zB;
     var floor = new THREE.Mesh(
       new THREE.BoxGeometry(floorW, 0.16, floorD),
-      new THREE.MeshStandardMaterial({ map: createWoodFloor(), color: 0x1a1614, roughness: 0.55, metalness: 0.05 })
+      new THREE.MeshStandardMaterial({
+        map: createWoodFloor(),
+        roughness: 0.50,
+        metalness: 0.04
+      })
     );
     floor.position.set((xL + xR) / 2, -0.08, (zB + zF) / 2);
     floor.receiveShadow = true;
     root.add(floor);
 
-        // ---- Acoustic Felt Backing + Vertical Wood Slat Wall ----
-    var doorW = 1.3;
-    var doorH = 3.2;
-    var doorX = -3.15;
-    var doorX0 = doorX - doorW / 2;
-    var doorX1 = doorX + doorW / 2;
-
-    // 1. Acoustic Felt Backing (Base Wall: near-black charcoal matte felt 0x090b0d, roughness 0.98)
-    var feltMat = new THREE.MeshStandardMaterial({
-      color: 0x090b0d,
-      roughness: 0.98,
-      metalness: 0.0
+    // ---- Continuous Smooth Charcoal Microcement Back Wall ----
+    var backWallMat = new THREE.MeshStandardMaterial({
+      color: 0x15181b,
+      roughness: 0.76,
+      metalness: 0.04,
+      bumpMap: microCementBump,
+      bumpScale: 0.002
     });
-    box(xR - xL, H, T, (xL + xR) / 2, H / 2, zB, feltMat);
+    box(xR - xL, H, T, (xL + xR) / 2, H / 2, zB, backWallMat);
 
-    // Minimal perimeter baseboard along bottom floor seam + crown trim
-    var trimMat = new THREE.MeshStandardMaterial({
-      color: 0x0c0e11,
-      roughness: 0.65,
-      metalness: 0.12
+    // Sleek minimal baseboard trim along floor
+    var baseTrimMat = new THREE.MeshStandardMaterial({
+      color: 0x101215,
+      roughness: 0.7,
+      metalness: 0.1
     });
-    var baseH = 0.08;
-    var crownH = 0.06;
-    box(xR - xL, baseH, 0.035, (xL + xR) / 2, baseH / 2, zB + T / 2 + 0.018, trimMat);
-    box(xR - xL, crownH, 0.035, (xL + xR) / 2, H - crownH / 2, zB + T / 2 + 0.018, trimMat);
+    var baseH = 0.05;
+    box(xR - xL, baseH, 0.025, (xL + xR) / 2, baseH / 2, zB + T / 2 + 0.012, baseTrimMat);
 
-    // 2. Vertical Slat Array using THREE.InstancedMesh (Dark Graphite Charcoal #151A1D, matte roughness 0.72)
-    var slatW = 0.045;
-    var slatD = 0.025;
-    var slatGap = 0.038;
+    // ---- Narrow Vertical Walnut Slat Accent (Left ~17% of Back Wall) ----
+    var slatW = 0.038;
+    var slatD = 0.026;
+    var slatGap = 0.034;
     var slatPitch = slatW + slatGap;
     var slatZ = zB + T / 2 + slatD / 2 + 0.002;
 
+    // Dark walnut material for slats (#3A2418)
     var slatMat = new THREE.MeshStandardMaterial({
-      color: 0x151a1d,
-      roughness: 0.72,
-      metalness: 0.08
+      color: 0x3a2418,
+      roughness: 0.74,
+      metalness: 0.04
     });
 
-    var slatGeo = new THREE.BoxGeometry(slatW, 1, slatD);
+    // Left accent section spanning ~17% of back wall (from xL + 0.55 to xL + 2.15)
+    var startX = xL + 0.55;
+    var endX = xL + 2.15;
+    var slatH = H - baseH;
+    var slatGeo = new THREE.BoxGeometry(slatW, slatH, slatD);
     var dummy = new THREE.Object3D();
 
-    var fullSlatH = H - baseH - crownH;
-    var fullSlatY = baseH + fullSlatH / 2;
-
-    var overDoorBottom = doorH + 0.045;
-    var overDoorH = H - crownH - overDoorBottom;
-    var overDoorY = overDoorBottom + overDoorH / 2;
-
-    // Door boundary clearance
-    var doorClearLeft = doorX0 - 0.04;
-    var doorClearRight = doorX1 + 0.04;
+    // Recessed dark walnut accent backing panel behind the slats
+    var accentPanelW = (endX - startX) + slatPitch;
+    var accentPanelX = (startX + endX) / 2;
+    var accentBackMat = new THREE.MeshStandardMaterial({
+      color: 0x120d09,
+      roughness: 0.9,
+      metalness: 0.0
+    });
+    box(accentPanelW, H, 0.012, accentPanelX, H / 2, zB + T / 2 + 0.006, accentBackMat);
 
     var slatConfigs = [];
-    var startX = xL + 0.08;
-    var endX = xR - 0.08;
-
     for (var sx = startX; sx <= endX; sx += slatPitch) {
-      if (sx >= doorClearLeft && sx <= doorClearRight) {
-        // Over-door header slats
-        if (overDoorH > 0.2) {
-          slatConfigs.push({ x: sx, y: overDoorY, h: overDoorH });
-        }
-      } else {
-        // Full height slats
-        slatConfigs.push({ x: sx, y: fullSlatY, h: fullSlatH });
-      }
+      slatConfigs.push({ x: sx, y: baseH + slatH / 2, h: 1 });
     }
 
     if (slatConfigs.length > 0) {
       var slatInstances = new THREE.InstancedMesh(slatGeo, slatMat, slatConfigs.length);
-      slatInstances.name = 'acoustic-slats';
+      slatInstances.name = 'walnut-acoustic-slats';
       slatInstances.castShadow = true;
       slatInstances.receiveShadow = true;
 
       for (var si = 0; si < slatConfigs.length; si++) {
         var cfg = slatConfigs[si];
         dummy.position.set(cfg.x, cfg.y, slatZ);
-        dummy.scale.set(1, cfg.h, 1);
+        dummy.scale.set(1, 1, 1);
         dummy.rotation.set(0, 0, 0);
         dummy.updateMatrix();
         slatInstances.setMatrixAt(si, dummy.matrix);
@@ -715,48 +748,17 @@
       slatInstances.instanceMatrix.needsUpdate = true;
       root.add(slatInstances);
 
-      // Subtle architectural graphite slat graze light (soft, localized, non-bright)
-      var slatGraze = new THREE.SpotLight(0xa0b0c0, 0.45, 6.5, Math.PI / 2.8, 0.9, 1.4);
-      slatGraze.position.set(0.2, H - 0.15, zB + 0.6);
-      slatGraze.target.position.set(0.2, H / 2, zB);
-      root.add(slatGraze);
-      root.add(slatGraze.target);
+      // Subtle warm vertical lighting between/behind the walnut slats
+      var slatWarmGlow = new THREE.PointLight(0xff9944, 0.75, 3.8, 1.8);
+      slatWarmGlow.position.set((startX + endX) / 2, 0.45, zB + 0.22);
+      root.add(slatWarmGlow);
+
+      var slatTopGlow = new THREE.SpotLight(0xffb86c, 0.45, 5.2, Math.PI / 3, 0.8, 1.5);
+      slatTopGlow.position.set((startX + endX) / 2, H - 0.15, zB + 0.35);
+      slatTopGlow.target.position.set((startX + endX) / 2, H * 0.4, zB);
+      root.add(slatTopGlow);
+      root.add(slatTopGlow.target);
     }
-
-    var doorPanelMat = new THREE.MeshStandardMaterial({ color: 0x1a1b1f, roughness: 0.82, metalness: 0.04 });
-    box(doorW - 0.04, doorH - 0.04, 0.04, doorX, doorH / 2, zB + T / 2 + 0.025, doorPanelMat);
-
-    var frameSlim = new THREE.MeshStandardMaterial({ color: 0x2a2b30, roughness: 0.5, metalness: 0.25 });
-    box(0.03, doorH + 0.04, 0.05, doorX0, doorH / 2, zB + T / 2 + 0.02, frameSlim);
-    box(0.03, doorH + 0.04, 0.05, doorX1, doorH / 2, zB + T / 2 + 0.02, frameSlim);
-    box(doorW + 0.06, 0.03, 0.05, doorX, doorH, zB + T / 2 + 0.02, frameSlim);
-
-    var handleMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.35, metalness: 0.7 });
-    var handle = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.28, 0.025), handleMat);
-    handle.position.set(doorX1 - 0.06, doorH * 0.48, zB + T / 2 + 0.06);
-    root.add(handle);
-
-    var doorLight = new THREE.SpotLight(0xffeedd, 1.4, 3.8, Math.PI / 3.5, 0.85, 1.4);
-    doorLight.position.set(doorX, 0.04, zB + 0.06);
-    doorLight.target.position.set(doorX, 0, zB + 1.5);
-    root.add(doorLight);
-    root.add(doorLight.target);
-    var doorFill = new THREE.PointLight(0xffeedd, 0.35, 2.0, 1.6);
-    doorFill.position.set(doorX, 0.06, zB + 0.18);
-    root.add(doorFill);
-    var crack = new THREE.Mesh(
-      new THREE.PlaneGeometry(doorW * 0.9, 0.028),
-      new THREE.MeshBasicMaterial({
-        color: 0xffeedd,
-        transparent: true,
-        opacity: 0.45,
-        side: THREE.DoubleSide,
-        depthWrite: false
-      })
-    );
-    crack.rotation.x = -Math.PI / 2;
-    crack.position.set(doorX, 0.012, zB + T / 2 + 0.1);
-    root.add(crack);
 
         // Dark studio rug (rounded rectangle with woven border)
     var rugW = 3.2, rugD = 2.4, rugT = 0.015, cornerR = 0.22;
