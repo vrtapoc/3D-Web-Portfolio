@@ -662,11 +662,11 @@
 
     var microCementBump = createMicroCementBump();
     var wallMat = new THREE.MeshStandardMaterial({
-      color: 0x111518,
-      roughness: 0.82,
-      metalness: 0.02,
+      color: 0x15191c,
+      roughness: 0.78,
+      metalness: 0.0,
       bumpMap: microCementBump,
-      bumpScale: 0.0018
+      bumpScale: 0.0016
     });
     var frameMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.55, metalness: 0.2 });
     var metalMat = new THREE.MeshStandardMaterial({ color: 0x9a9aa0, roughness: 0.3, metalness: 0.8 });
@@ -696,37 +696,58 @@
 
     // ---- Continuous Smooth Dark Graphite Microcement Back Wall ----
     var backWallMat = new THREE.MeshStandardMaterial({
-      color: 0x111518,
-      roughness: 0.82,
-      metalness: 0.02,
+      color: 0x15191c,
+      roughness: 0.78,
+      metalness: 0.0,
       bumpMap: microCementBump,
-      bumpScale: 0.0018
+      bumpScale: 0.0016
     });
     box(xR - xL, H, T, (xL + xR) / 2, H / 2, zB, backWallMat);
 
-    // Subtle dark recessed architectural reveal joints for panel depth
-    var revealMat = new THREE.MeshStandardMaterial({
+    // ---- Subtle Integrated Architectural Recess Behind Workstation ----
+    var recessW = 5.0;
+    var recessH = 3.2;
+    var recessX = 0.2;
+    var recessY = 0.9 + recessH / 2;
+    var recessDepth = 0.06;
+    var recessFrontZ = zB + T / 2;
+
+    var recessPanelMat = new THREE.MeshStandardMaterial({
+      color: 0x0e1214,
+      roughness: 0.82,
+      metalness: 0.0,
+      bumpMap: microCementBump,
+      bumpScale: 0.0014
+    });
+    var recessPanel = new THREE.Mesh(
+      new THREE.PlaneGeometry(recessW, recessH),
+      recessPanelMat
+    );
+    recessPanel.position.set(recessX, recessY, recessFrontZ - recessDepth + 0.002);
+    recessPanel.receiveShadow = true;
+    root.add(recessPanel);
+
+    // Architectural perimeter bevel/frame for the recess
+    var recessTrimMat = new THREE.MeshStandardMaterial({
       color: 0x090b0d,
-      roughness: 0.95,
+      roughness: 0.90,
       metalness: 0.0
     });
-    // Horizontal architectural division line at y = 2.9m
-    box(xR - xL, 0.008, 0.006, (xL + xR) / 2, 2.9, zB + T / 2 + 0.003, revealMat);
-    // Vertical architectural division line between slat accent and center wall zone (x = -2.65)
-    box(0.008, H, 0.006, -2.65, H / 2, zB + T / 2 + 0.003, revealMat);
-    // Vertical architectural division line towards right zone (x = 2.3)
-    box(0.008, H, 0.006, 2.3, H / 2, zB + T / 2 + 0.003, revealMat);
-    // Vertical architectural division line on left extension (x = -4.8)
-    box(0.008, H, 0.006, -4.8, H / 2, zB + T / 2 + 0.003, revealMat);
+    var trimThick = 0.018;
+    box(recessW + trimThick * 2, trimThick, recessDepth, recessX, recessY + recessH / 2, recessFrontZ - recessDepth / 2, recessTrimMat);
+    box(recessW + trimThick * 2, trimThick, recessDepth, recessX, recessY - recessH / 2, recessFrontZ - recessDepth / 2, recessTrimMat);
+    box(trimThick, recessH, recessDepth, recessX - recessW / 2, recessY, recessFrontZ - recessDepth / 2, recessTrimMat);
+    box(trimThick, recessH, recessDepth, recessX + recessW / 2, recessY, recessFrontZ - recessDepth / 2, recessTrimMat);
 
     // Sleek minimal baseboard trim along floor
     var baseTrimMat = new THREE.MeshStandardMaterial({
-      color: 0x0e1012,
-      roughness: 0.8,
-      metalness: 0.05
+      color: 0x0b0d0f,
+      roughness: 0.75,
+      metalness: 0.0
     });
-    var baseH = 0.05;
-    box(xR - xL, baseH, 0.025, (xL + xR) / 2, baseH / 2, zB + T / 2 + 0.012, baseTrimMat);
+    var baseH = 0.09;
+    var baseD = 0.035;
+    box(xR - xL, baseH, baseD, (xL + xR) / 2, baseH / 2, zB + T / 2 + baseD / 2, baseTrimMat);
 
     // ---- Narrow Vertical Walnut Slat Accent (Left ~17% of Back Wall) ----
     var slatW = 0.038;
