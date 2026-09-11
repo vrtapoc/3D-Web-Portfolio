@@ -1724,8 +1724,7 @@
       code = code.replace(/window\.addEventListener\('pointerup'[^)]+\);?/g, '// pointerup removed');
 
       // Completely remove legacy poster wall / floating poster objects from scene creation
-      code = code.replace(/createWallPoster\(\);?/g, '// createWallPoster removed');
-      code = code.replace(/function createWallPoster\(\)[\s\S]*?\n\}\n/g, 'function createWallPoster() {}\n');
+      code = code.replace(/function\s+createWallPoster\s*\(\)\s*\{/g, 'function createWallPoster() { return; ');
 
       var s = document.createElement('script');
       s.textContent = code;
