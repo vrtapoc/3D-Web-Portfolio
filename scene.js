@@ -220,6 +220,30 @@
     return tex;
   }
 
+  function createAtmosphericBackgroundTexture() {
+    var bgCanvas = document.createElement('canvas');
+    bgCanvas.width = 1024;
+    bgCanvas.height = 1024;
+    var bgCtx = bgCanvas.getContext('2d');
+
+    // Subtle dark purple/indigo atmospheric radial gradient:
+    // Center/area around room: #29232A
+    // Middle area: #1B1920
+    // Outer edges: #09090C -> #060608
+    var gradient = bgCtx.createRadialGradient(512, 512, 100, 512, 512, 600);
+    gradient.addColorStop(0.0, '#29232a');
+    gradient.addColorStop(0.42, '#1b1920');
+    gradient.addColorStop(0.82, '#09090c');
+    gradient.addColorStop(1.0, '#060608');
+
+    bgCtx.fillStyle = gradient;
+    bgCtx.fillRect(0, 0, 1024, 1024);
+
+    var bgTex = new THREE.CanvasTexture(bgCanvas);
+    if (THREE.SRGBColorSpace) bgTex.colorSpace = THREE.SRGBColorSpace;
+    return bgTex;
+  }
+
   function applyLighting() {
     if (!scene) return;
     scene.traverse(function (obj) {
@@ -233,21 +257,21 @@
       if (obj.isAmbientLight || obj.isHemisphereLight) obj.intensity = 0;
       if (obj.isDirectionalLight && obj.name !== 'mural-accent-light') obj.intensity = 0;
     });
-    var amb = new THREE.AmbientLight(0x2a2d32, 0.52);
+    var amb = new THREE.AmbientLight(0x32353b, 0.65);
     amb.name = 'amb-ambient';
     scene.add(amb);
-    var hemi = new THREE.HemisphereLight(0x3e4248, 0x1c1e20, 0.45);
+    var hemi = new THREE.HemisphereLight(0x484d56, 0x222428, 0.56);
     hemi.name = 'amb-hemi';
     scene.add(hemi);
-    var fill = new THREE.DirectionalLight(0xe2ded4, 0.30);
+    var fill = new THREE.DirectionalLight(0xe6e2d8, 0.38);
     fill.name = 'amb-fill';
     fill.position.set(-5, 5.5, 7);
     scene.add(fill);
-    var warmArchFill = new THREE.DirectionalLight(0xd8b98a, 0.14);
+    var warmArchFill = new THREE.DirectionalLight(0xd8b98a, 0.16);
     warmArchFill.name = 'amb-warm-arch-fill';
-    warmArchFill.position.set(1.5, 3.2, 5.5);
+    warmArchFill.position.set(1.5, 3.5, 6.0);
     scene.add(warmArchFill);
-    var moonlight = new THREE.DirectionalLight(0xd0d4de, 0.26);
+    var moonlight = new THREE.DirectionalLight(0xd0d4de, 0.32);
     moonlight.name = 'mural-accent-light';
     moonlight.position.set(8.5, 4.5, 1.2);
     moonlight.target.position.set(0, 0.5, 0.5);
@@ -258,14 +282,13 @@
     scene.add(moonlight.target);
     if (renderer) {
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.05;
+      renderer.toneMappingExposure = 1.12;
       renderer.shadowMap.enabled = true;
     }
-    if (scene.background) scene.background = new THREE.Color(0x06060a);
+    scene.background = createAtmosphericBackgroundTexture();
 
-
-    // Deep indigo/navy atmospheric fog outside
-    scene.fog = new THREE.Fog(0x060c1c, 16, 48);
+    // Dark purple/indigo atmospheric fog outside
+    scene.fog = new THREE.Fog(0x110f16, 18, 52);
 
     // Bloom via EffectComposer (targeting neon sign and screen glows)
     (function tryBloom() {
@@ -1076,12 +1099,14 @@
     topCap.position.set(DESK_X, CONSOLE_Y + CONSOLE_H / 2 + 0.01, DESK_Z);
     root.add(topCap);
 
-    var ug = new THREE.PointLight(0x00f5ff, 1.0, 2.2, 1.4);
+    var ug = new THREE.PointLight(0x00f5ff, 0, 2.2, 1.4);
     ug.position.set(DESK_X, CONSOLE_BOTTOM - 0.08, DESK_Z);
+    ug.visible = false;
     root.add(ug);
     __consoleUnderglow = ug;
-    var ug2 = new THREE.PointLight(0x00f5ff, 0.35, 1.8, 1.5);
+    var ug2 = new THREE.PointLight(0x00f5ff, 0, 1.8, 1.5);
     ug2.position.set(DESK_X, CONSOLE_BOTTOM - 0.05, DESK_Z + 0.1);
+    ug2.visible = false;
     root.add(ug2);
     __consoleUnderglow2 = ug2;
 
@@ -1104,7 +1129,8 @@
       { hex: 0x00ff66, str: '#00ff66' }, // Green
       { hex: 0xa855f7, str: '#a855f7' }  // Purple
     ];
-    var neonColorIndex = 0;
+    var neonIsActive = false;
+    var neonColorIndex = -1;
     var neonCanvas = document.createElement('canvas');
     neonCanvas.width = 1024;
     neonCanvas.height = 384;
@@ -1118,22 +1144,32 @@
       neonCtx.font = '900 160px "JetBrains Mono", Consolas, monospace';
       neonCtx.textAlign = 'center';
       neonCtx.textBaseline = 'middle';
-      neonCtx.shadowColor = colorStr;
-      neonCtx.shadowBlur = 40;
-      neonCtx.fillStyle = colorStr;
-      neonCtx.fillText('</bosst>', 512, 200);
-      neonCtx.shadowBlur = 18;
-      neonCtx.fillText('</bosst>', 512, 200);
-      neonCtx.shadowBlur = 6;
-      neonCtx.fillStyle = '#ffffff';
-      neonCtx.fillText('</bosst>', 512, 200);
+
+      if (!colorStr) {
+        // Off state: Crisp unlit architectural lettering with zero emissive glow
+        neonCtx.shadowBlur = 0;
+        neonCtx.shadowColor = 'transparent';
+        neonCtx.fillStyle = '#6e7681';
+        neonCtx.fillText('</bosst>', 512, 200);
+      } else {
+        // Active state: Tasteful vibrant neon glow
+        neonCtx.shadowColor = colorStr;
+        neonCtx.shadowBlur = 32;
+        neonCtx.fillStyle = colorStr;
+        neonCtx.fillText('</bosst>', 512, 200);
+        neonCtx.shadowBlur = 12;
+        neonCtx.fillText('</bosst>', 512, 200);
+        neonCtx.shadowBlur = 4;
+        neonCtx.fillStyle = '#ffffff';
+        neonCtx.fillText('</bosst>', 512, 200);
+      }
       neonTex.needsUpdate = true;
     }
-    drawNeonText(NEON_PALETTE[0].str);
+    drawNeonText(null); // Initially unlit
 
     var neonGroup = new THREE.Group();
     neonGroup.position.set(DESK_X, 3.42, zB + T / 2 + 0.02);
-    neonGroup.userData = { interactive: true, name: 'neonSign', label: 'Cycle Neon Glow' };
+    neonGroup.userData = { interactive: true, name: 'neonSign', label: 'Turn ON Neon Sign' };
 
     var neonW = 2.9;
     var neonH = 0.9;
@@ -1147,32 +1183,28 @@
     });
     var logo = new THREE.Mesh(new THREE.PlaneGeometry(neonW, neonH), neonLogoMat);
     logo.position.set(0, 0, 0.01);
-    logo.userData = { interactive: true, name: 'neonSign', label: 'Cycle Neon Glow' };
+    logo.userData = { interactive: true, name: 'neonSign', label: 'Turn ON Neon Sign' };
     neonGroup.add(logo);
 
-    var neonLight = new THREE.PointLight(NEON_PALETTE[0].hex, 2.4, 7.5, 1.2);
+    var neonLight = new THREE.PointLight(NEON_PALETTE[0].hex, 0, 7.5, 1.2);
     neonLight.position.set(0, 0, 0.45);
+    neonLight.visible = false;
     neonGroup.add(neonLight);
     __neonLight = neonLight;
 
-    var autoNeonTimer = null;
-    function startAutoNeonCycle() {
-      if (autoNeonTimer) clearInterval(autoNeonTimer);
-      autoNeonTimer = setInterval(function () {
-        cycleNeonColor(true);
-      }, 7000);
-    }
-
     var lastNeonCycleTime = 0;
-    function cycleNeonColor(isAuto) {
+    function cycleNeonColor() {
       var now = Date.now();
-      if (!isAuto && now - lastNeonCycleTime < 300) return;
+      if (now - lastNeonCycleTime < 280) return;
       lastNeonCycleTime = now;
-      if (!isAuto) {
-        startAutoNeonCycle();
+
+      if (!neonIsActive) {
+        neonIsActive = true;
+        neonColorIndex = 0; // First click activates neon glow to Cyan
+      } else {
+        neonColorIndex = (neonColorIndex + 1) % NEON_PALETTE.length; // Subsequent clicks cycle to next color
       }
 
-      neonColorIndex = (neonColorIndex + 1) % NEON_PALETTE.length;
       var c = NEON_PALETTE[neonColorIndex];
       drawNeonText(c.str);
 
@@ -1181,41 +1213,39 @@
       fresh.needsUpdate = true;
       var oldMap = neonLogoMat.map;
       neonLogoMat.map = fresh;
-      if (neonLogoMat.color) neonLogoMat.color.set(c.hex);
-      if (neonLogoMat.emissive) neonLogoMat.emissive.set(c.hex);
       neonLogoMat.needsUpdate = true;
       neonTex = fresh;
       if (oldMap && oldMap.dispose) {
         try { oldMap.dispose(); } catch (e) {}
       }
 
-      // Point light & underglow color sync + realistic ignition flicker
+      // Point light & underglow sync
       if (__neonLight) {
+        __neonLight.visible = true;
         __neonLight.color.setHex(c.hex);
-        __neonLight.intensity = 0.2;
-        setTimeout(function () {
-          if (__neonLight) __neonLight.intensity = 1.8;
-          setTimeout(function () {
-            if (__neonLight) __neonLight.intensity = 0.4;
-            setTimeout(function () {
-              if (__neonLight) __neonLight.intensity = 2.4;
-            }, 50);
-          }, 50);
-        }, 30);
+        __neonLight.intensity = 2.4;
       }
-      if (__consoleUnderglow) __consoleUnderglow.color.setHex(c.hex);
-      if (__consoleUnderglow2) __consoleUnderglow2.color.setHex(c.hex);
+      if (__consoleUnderglow) {
+        __consoleUnderglow.visible = true;
+        __consoleUnderglow.color.setHex(c.hex);
+        __consoleUnderglow.intensity = 1.0;
+      }
+      if (__consoleUnderglow2) {
+        __consoleUnderglow2.visible = true;
+        __consoleUnderglow2.color.setHex(c.hex);
+        __consoleUnderglow2.intensity = 0.35;
+      }
 
-      if (!isAuto) {
-        if (window.showToast) {
-          var names = ['Cyan', 'Magenta', 'Amber', 'Green', 'Purple'];
-          window.showToast('💡 Neon Glow: ' + names[neonColorIndex]);
-        }
-        if (window.playUiSound) window.playUiSound('buzz');
+      if (logo.userData) logo.userData.label = 'Cycle Neon Glow';
+      if (neonGroup.userData) neonGroup.userData.label = 'Cycle Neon Glow';
+
+      if (window.showToast) {
+        var names = ['Cyan', 'Magenta', 'Amber', 'Green', 'Purple'];
+        window.showToast('💡 Neon Glow: ' + names[neonColorIndex]);
       }
+      if (window.playUiSound) window.playUiSound('buzz');
     }
-    window.__cycleNeonColor = function () { cycleNeonColor(false); };
-    startAutoNeonCycle();
+    window.__cycleNeonColor = cycleNeonColor;
 
     root.add(neonGroup);
 

@@ -30,7 +30,8 @@ html {
 
 body {
     font-family: var(--font-display);
-    background-color: var(--bg-primary);
+    background: radial-gradient(circle at center, #29232a 0%, #1b1920 45%, #09090c 85%, #060608 100%);
+    background-color: #09090c;
     color: var(--text-primary);
     line-height: 1.6;
     overflow: hidden;
