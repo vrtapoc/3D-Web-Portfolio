@@ -101,63 +101,70 @@
     canvas.height = 1024;
     var ctx = canvas.getContext('2d');
 
-    // Base deep charcoal wood underlayer (#181817)
-    ctx.fillStyle = '#181817';
+    // Base deep charcoal wood background (#151514)
+    ctx.fillStyle = '#151514';
     ctx.fillRect(0, 0, 1024, 1024);
 
-    var numPlanks = 16;
+    var numPlanks = 14;
     var plankH = 1024 / numPlanks;
     var plankCols = 3;
     var plankW = 1024 / plankCols;
 
-    // Palette of dark charcoal wood tones centered on #242321, ranging from #181817 to #302F2C
-    var charcoalWoodTones = [
+    // Palette of rich dark charcoal wood tones centered on #242321 (36, 35, 33)
+    // Dark grain: #151514 (21, 21, 20), Lighter grain: #302F2C (48, 47, 44)
+    var plankTones = [
       { r: 36, g: 35, b: 33 }, // #242321 base dark charcoal wood
-      { r: 24, g: 24, b: 23 }, // #181817 dark variation
-      { r: 48, g: 47, b: 44 }, // #302F2C lighter charcoal wood
-      { r: 31, g: 30, b: 28 }, // deep charcoal plank
-      { r: 42, g: 41, b: 38 }, // mid charcoal plank
-      { r: 28, g: 27, b: 26 }, // shadow charcoal plank
-      { r: 45, g: 44, b: 41 }  // muted highlight plank
+      { r: 21, g: 21, b: 20 }, // #151514 dark plank
+      { r: 48, g: 47, b: 44 }, // #302F2C lighter plank
+      { r: 28, g: 27, b: 25 }, // deep tone
+      { r: 42, g: 41, b: 38 }, // warm mid charcoal
+      { r: 32, g: 31, b: 29 }, // neutral charcoal
+      { r: 45, g: 44, b: 41 }  // highlighted grain plank
     ];
 
     for (var row = 0; row < numPlanks; row++) {
       var y = row * plankH;
-      // Stagger vertical joints for natural plank layout
-      var rowOffset = (row % 3) * (plankW * 0.41);
+      var rowOffset = (row % 3) * (plankW * 0.39);
 
       for (var col = -1; col <= plankCols + 1; col++) {
         var x = col * plankW + rowOffset;
-        var toneIdx = Math.floor(Math.abs(Math.sin(row * 13.7 + col * 7.9)) * charcoalWoodTones.length);
-        var baseTone = charcoalWoodTones[toneIdx];
+        var toneIdx = Math.floor(Math.abs(Math.sin(row * 11.3 + col * 7.7)) * plankTones.length);
+        var baseTone = plankTones[toneIdx];
 
-        // Draw plank base
+        // Fill plank base body with 2px inset for crisp dark seam
         ctx.fillStyle = 'rgb(' + baseTone.r + ',' + baseTone.g + ',' + baseTone.b + ')';
-        ctx.fillRect(x, y + 1.2, plankW, plankH - 2.4);
+        ctx.fillRect(x, y + 1.8, plankW, plankH - 3.6);
 
-        // Natural longitudinal wood grain streaks
-        for (var g = 0; g < 12; g++) {
-          var gy = y + 1.5 + (g * (plankH - 3) / 12) + (Math.sin(g * 2.7 + col * 1.3) * 1.2);
-          var grainShift = ((g % 2 === 0) ? 1 : -1) * (Math.random() * 4 + 1.5);
-          var gr = Math.max(0, Math.min(255, Math.round(baseTone.r + grainShift)));
-          var gg = Math.max(0, Math.min(255, Math.round(baseTone.g + grainShift * 0.96)));
-          var gb = Math.max(0, Math.min(255, Math.round(baseTone.b + grainShift * 0.90)));
-          ctx.fillStyle = 'rgba(' + gr + ',' + gg + ',' + gb + ', 0.28)';
-          ctx.fillRect(x, gy, plankW, 1.0);
+        // Natural longitudinal wood grain waves & fibrous streaks
+        for (var g = 0; g < 16; g++) {
+          var gy = y + 2.5 + (g * (plankH - 5) / 16);
+          var wave = Math.sin((g * 1.8) + col * 2.1) * 1.8;
+          var isDark = (g % 3 === 0);
+          var grainBright = isDark ? -(Math.random() * 8 + 4) : (Math.random() * 10 + 3);
+          var gr = Math.max(0, Math.min(255, Math.round(baseTone.r + grainBright)));
+          var gg = Math.max(0, Math.min(255, Math.round(baseTone.g + grainBright * 0.96)));
+          var gb = Math.max(0, Math.min(255, Math.round(baseTone.b + grainBright * 0.90)));
+
+          ctx.strokeStyle = 'rgba(' + gr + ',' + gg + ',' + gb + ', 0.38)';
+          ctx.lineWidth = Math.random() * 1.8 + 0.8;
+          ctx.beginPath();
+          ctx.moveTo(x, gy + wave);
+          ctx.lineTo(x + plankW, gy + wave + (Math.sin(col) * 0.8));
+          ctx.stroke();
         }
 
-        // Dark butt-joint seam between adjacent planks
-        ctx.fillStyle = '#0f0f0e';
-        ctx.fillRect(x, y + 1.2, 1.4, plankH - 2.4);
+        // Dark vertical butt-joint seam between planks
+        ctx.fillStyle = '#0a0a09';
+        ctx.fillRect(x, y + 1.8, 2.2, plankH - 3.6);
       }
 
-      // Dark horizontal plank gap / shadow line
-      ctx.fillStyle = '#0c0c0b';
-      ctx.fillRect(0, y, 1024, 1.4);
+      // Dark horizontal plank gap / seam
+      ctx.fillStyle = '#080807';
+      ctx.fillRect(0, y, 1024, 2.2);
 
-      // Subtle bevel light catching edge on bottom lip of seam
-      ctx.fillStyle = 'rgba(56, 54, 50, 0.18)';
-      ctx.fillRect(0, y + 1.4, 1024, 0.6);
+      // Subtle light-catching bevel highlight along bottom lip of plank
+      ctx.fillStyle = 'rgba(64, 62, 58, 0.26)';
+      ctx.fillRect(0, y + 2.2, 1024, 0.8);
     }
 
     var tex = new THREE.CanvasTexture(canvas);
@@ -175,30 +182,30 @@
     ctx.fillStyle = '#808080';
     ctx.fillRect(0, 0, 1024, 1024);
 
-    var numPlanks = 16;
+    var numPlanks = 14;
     var plankH = 1024 / numPlanks;
     var plankCols = 3;
     var plankW = 1024 / plankCols;
 
     for (var row = 0; row < numPlanks; row++) {
       var y = row * plankH;
-      var rowOffset = (row % 3) * (plankW * 0.41);
+      var rowOffset = (row % 3) * (plankW * 0.39);
 
-      // Horizontal joint grooves
-      ctx.fillStyle = '#555555';
-      ctx.fillRect(0, y, 1024, 1.6);
+      // Deep groove for horizontal seam
+      ctx.fillStyle = '#353535';
+      ctx.fillRect(0, y, 1024, 2.4);
 
       for (var col = -1; col <= plankCols + 1; col++) {
         var x = col * plankW + rowOffset;
-        // Vertical joint groove
-        ctx.fillStyle = '#555555';
-        ctx.fillRect(x, y, 1.4, plankH);
+        // Deep groove for vertical butt-joint
+        ctx.fillStyle = '#353535';
+        ctx.fillRect(x, y, 2.2, plankH);
 
-        // Subtle grain bumps
-        for (var g = 0; g < 6; g++) {
-          var gy = y + 2 + (g * (plankH - 4) / 6);
-          ctx.fillStyle = 'rgba(140, 140, 140, 0.12)';
-          ctx.fillRect(x, gy, plankW, 1.0);
+        // Tactile wood grain bumps along plank
+        for (var g = 0; g < 8; g++) {
+          var gy = y + 2 + (g * (plankH - 4) / 8);
+          ctx.fillStyle = (g % 2 === 0) ? 'rgba(170, 170, 170, 0.18)' : 'rgba(90, 90, 90, 0.18)';
+          ctx.fillRect(x, gy, plankW, 1.2);
         }
       }
     }
@@ -516,75 +523,92 @@
     canvas.height = 1024;
     var ctx = canvas.getContext('2d');
 
-    // Base warm charcoal stucco (#252525)
+    // 1. Base warm charcoal stucco foundation (#252525)
     ctx.fillStyle = '#252525';
     ctx.fillRect(0, 0, 1024, 1024);
 
-    // Multi-scale soft cloudy tonal variations in #2C2C2C, #1D1D1D, and warm charcoal nuances
-    var cloudColors = [
-      'rgba(44, 44, 44, 0.32)',   // #2C2C2C lighter cloudy variation
-      'rgba(29, 29, 29, 0.35)',   // #1D1D1D dark variation
-      'rgba(39, 38, 36, 0.25)',   // warm charcoal midtone
-      'rgba(33, 33, 33, 0.28)',   // neutral charcoal tone
-      'rgba(46, 45, 43, 0.18)'    // subtle highlight plume
+    // 2. Large soft cloudy tonal shifts in #2B2927, #1D1D1B, #222220, #2E2C29
+    var clouds = [
+      { color: 'rgba(43, 41, 39, 0.58)', rMax: 320 },  // #2B2927 warm variation
+      { color: 'rgba(29, 29, 27, 0.62)', rMax: 340 },  // #1D1D1B dark variation
+      { color: 'rgba(49, 46, 43, 0.42)', rMax: 260 },  // #312E2B warm highlight
+      { color: 'rgba(22, 22, 20, 0.52)', rMax: 280 },  // #161614 deep shadow
+      { color: 'rgba(38, 37, 35, 0.48)', rMax: 300 }   // #262523 warm midtone
     ];
 
-    for (var c = 0; c < 60; c++) {
+    for (var c = 0; c < 75; c++) {
+      var item = clouds[c % clouds.length];
       var cx = Math.random() * 1024;
       var cy = Math.random() * 1024;
-      var rw = Math.random() * 240 + 90;
-      var rh = Math.random() * 150 + 60;
-      var rot = (Math.random() - 0.5) * Math.PI * 0.7;
+      var rx = Math.random() * item.rMax + 80;
+      var ry = Math.random() * (item.rMax * 0.7) + 50;
+      var rot = (Math.random() - 0.5) * Math.PI;
+
       ctx.save();
       ctx.translate(cx, cy);
       ctx.rotate(rot);
-      var grad = ctx.createRadialGradient(0, 0, 0, 0, 0, rw);
-      var col = cloudColors[c % cloudColors.length];
-      grad.addColorStop(0, col);
-      grad.addColorStop(0.65, col.replace(/[\d.]+\)$/, '0.10)'));
+      var grad = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
+      grad.addColorStop(0, item.color);
+      grad.addColorStop(0.5, item.color.replace(/[\d.]+\)$/, '0.22)'));
       grad.addColorStop(1, 'rgba(37, 37, 37, 0)');
       ctx.fillStyle = grad;
       ctx.beginPath();
-      ctx.ellipse(0, 0, rw, rh, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
 
-    // Irregular hand-applied troweled strokes
-    for (var s = 0; s < 50; s++) {
+    // 3. Hand-troweled sweep strokes with distinct highlight/shadow relief
+    for (var s = 0; s < 65; s++) {
       var sx = Math.random() * 1024;
       var sy = Math.random() * 1024;
-      var sLen = Math.random() * 190 + 90;
-      var sAngle = (Math.random() * 0.6 - 0.3) + ((s % 2 === 0) ? -0.22 : 0.22);
-      var isHighlight = Math.random() > 0.45;
-      var strokeCol = isHighlight ? 'rgba(44, 44, 44, 0.16)' : 'rgba(28, 28, 28, 0.20)';
-      ctx.strokeStyle = strokeCol;
-      ctx.lineWidth = Math.random() * 30 + 15;
+      var len = Math.random() * 220 + 100;
+      var angle = (Math.random() * 0.7 - 0.35) + ((s % 2 === 0) ? -0.25 : 0.25);
+      var width = Math.random() * 32 + 18;
+      var curve = (Math.random() - 0.5) * 40;
+
+      // Shadow side of trowel pass
+      ctx.strokeStyle = 'rgba(24, 24, 22, 0.28)';
+      ctx.lineWidth = width;
       ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.moveTo(sx, sy);
-      var cpx = sx + Math.cos(sAngle) * (sLen * 0.5) + (Math.random() - 0.5) * 28;
-      var cpy = sy + Math.sin(sAngle) * (sLen * 0.5) + (Math.random() - 0.5) * 20;
-      var ex = sx + Math.cos(sAngle) * sLen;
-      var ey = sy + Math.sin(sAngle) * sLen;
-      ctx.quadraticCurveTo(cpx, cpy, ex, ey);
+      ctx.moveTo(sx - 3, sy - 2);
+      ctx.quadraticCurveTo(
+        sx + Math.cos(angle) * (len * 0.5) + curve - 3,
+        sy + Math.sin(angle) * (len * 0.5) + curve - 2,
+        sx + Math.cos(angle) * len - 3,
+        sy + Math.sin(angle) * len - 2
+      );
+      ctx.stroke();
+
+      // Highlight side of trowel pass (warm edge)
+      ctx.strokeStyle = 'rgba(48, 45, 42, 0.24)';
+      ctx.lineWidth = width * 0.85;
+      ctx.beginPath();
+      ctx.moveTo(sx + 2, sy + 2);
+      ctx.quadraticCurveTo(
+        sx + Math.cos(angle) * (len * 0.5) + curve + 2,
+        sy + Math.sin(angle) * (len * 0.5) + curve + 2,
+        sx + Math.cos(angle) * len + 2,
+        sy + Math.sin(angle) * len + 2
+      );
       ctx.stroke();
     }
 
-    // Fine stucco grit / natural microcement imperfection stippling
+    // 4. Fine stucco microcement grit and natural plaster texture
     var imgData = ctx.getImageData(0, 0, 1024, 1024);
     var data = imgData.data;
     for (var i = 0; i < data.length; i += 4) {
-      var noise = (Math.random() - 0.5) * 16;
+      var noise = (Math.random() - 0.5) * 22;
       data[i] = Math.min(255, Math.max(0, Math.round(data[i] + noise)));
-      data[i + 1] = Math.min(255, Math.max(0, Math.round(data[i + 1] + noise * 0.98)));
-      data[i + 2] = Math.min(255, Math.max(0, Math.round(data[i + 2] + noise * 0.95)));
+      data[i + 1] = Math.min(255, Math.max(0, Math.round(data[i + 1] + noise * 0.95)));
+      data[i + 2] = Math.min(255, Math.max(0, Math.round(data[i + 2] + noise * 0.90)));
     }
     ctx.putImageData(imgData, 0, 0);
 
     var tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(3, 2);
+    tex.repeat.set(3.5, 1.8);
     tex.anisotropy = 8;
     return tex;
   }
@@ -597,23 +621,40 @@
     ctx.fillStyle = '#808080';
     ctx.fillRect(0, 0, 1024, 1024);
 
-    // Stucco trowel ridges and subtle surface relief
-    for (var r = 0; r < 55; r++) {
+    // Trowel ridge passes with raised edge / depression
+    for (var r = 0; r < 70; r++) {
       var rx = Math.random() * 1024;
       var ry = Math.random() * 1024;
-      var rLen = Math.random() * 210 + 85;
-      var rAngle = (Math.random() * 0.6 - 0.3) + ((r % 2 === 0) ? -0.22 : 0.22);
-      var bumpVal = Math.random() > 0.5 ? 'rgba(148, 148, 148, 0.16)' : 'rgba(108, 108, 108, 0.16)';
-      ctx.strokeStyle = bumpVal;
-      ctx.lineWidth = Math.random() * 26 + 12;
+      var rLen = Math.random() * 240 + 90;
+      var rAngle = (Math.random() * 0.7 - 0.35) + ((r % 2 === 0) ? -0.25 : 0.25);
+      var rCurve = (Math.random() - 0.5) * 35;
+      var rWidth = Math.random() * 28 + 14;
+
+      // Dark depression
+      ctx.strokeStyle = 'rgba(95, 95, 95, 0.28)';
+      ctx.lineWidth = rWidth;
       ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.moveTo(rx, ry);
-      var cpx = rx + Math.cos(rAngle) * (rLen * 0.5) + (Math.random() - 0.5) * 25;
-      var cpy = ry + Math.sin(rAngle) * (rLen * 0.5) + (Math.random() - 0.5) * 18;
-      var ex = rx + Math.cos(rAngle) * rLen;
-      var ey = ry + Math.sin(rAngle) * rLen;
-      ctx.quadraticCurveTo(cpx, cpy, ex, ey);
+      ctx.moveTo(rx - 2, ry - 2);
+      ctx.quadraticCurveTo(
+        rx + Math.cos(rAngle) * (rLen * 0.5) + rCurve - 2,
+        ry + Math.sin(rAngle) * (rLen * 0.5) + rCurve - 2,
+        rx + Math.cos(rAngle) * rLen - 2,
+        ry + Math.sin(rAngle) * rLen - 2
+      );
+      ctx.stroke();
+
+      // Bright ridge
+      ctx.strokeStyle = 'rgba(165, 165, 165, 0.26)';
+      ctx.lineWidth = rWidth * 0.8;
+      ctx.beginPath();
+      ctx.moveTo(rx + 2, ry + 2);
+      ctx.quadraticCurveTo(
+        rx + Math.cos(rAngle) * (rLen * 0.5) + rCurve + 2,
+        ry + Math.sin(rAngle) * (rLen * 0.5) + rCurve + 2,
+        rx + Math.cos(rAngle) * rLen + 2,
+        ry + Math.sin(rAngle) * rLen + 2
+      );
       ctx.stroke();
     }
 
@@ -621,7 +662,7 @@
     var imgData = ctx.getImageData(0, 0, 1024, 1024);
     var data = imgData.data;
     for (var i = 0; i < data.length; i += 4) {
-      var noise = (Math.random() - 0.5) * 34;
+      var noise = (Math.random() - 0.5) * 44;
       var v = Math.min(255, Math.max(0, Math.round(128 + noise)));
       data[i] = v;
       data[i + 1] = v;
@@ -631,7 +672,7 @@
 
     var tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(3, 2);
+    tex.repeat.set(3.5, 1.8);
     tex.anisotropy = 8;
     return tex;
   }
@@ -641,17 +682,17 @@
     canvas.width = 1024;
     canvas.height = 1024;
     var ctx = canvas.getContext('2d');
-    // Base roughness centered at 0.81 (255 * 0.81 = 207)
-    ctx.fillStyle = 'rgb(207, 207, 207)';
+    // Base roughness centered at 0.80 (255 * 0.80 = 204)
+    ctx.fillStyle = 'rgb(204, 204, 204)';
     ctx.fillRect(0, 0, 1024, 1024);
 
-    for (var i = 0; i < 45; i++) {
+    for (var i = 0; i < 50; i++) {
       var x = Math.random() * 1024;
       var y = Math.random() * 1024;
       var rw = Math.random() * 200 + 70;
       var rh = Math.random() * 130 + 45;
       var isRougher = Math.random() > 0.5;
-      var col = isRougher ? 'rgba(224, 224, 224, 0.16)' : 'rgba(190, 190, 190, 0.16)';
+      var col = isRougher ? 'rgba(224, 224, 224, 0.18)' : 'rgba(185, 185, 185, 0.18)';
       ctx.fillStyle = col;
       ctx.beginPath();
       ctx.ellipse(x, y, rw, rh, Math.random() * Math.PI, 0, Math.PI * 2);
@@ -660,7 +701,7 @@
 
     var tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(3, 2);
+    tex.repeat.set(3.5, 1.8);
     return tex;
   }
 
@@ -825,12 +866,12 @@
     var stuccoRoughness = createWarmCharcoalStuccoRoughness();
 
     var wallMat = new THREE.MeshStandardMaterial({
-      color: 0x252525,
+      color: 0xffffff,
       map: stuccoTex,
       bumpMap: stuccoBump,
-      bumpScale: 0.0035,
+      bumpScale: 0.009,
       roughnessMap: stuccoRoughness,
-      roughness: 0.81,
+      roughness: 0.80,
       metalness: 0.0
     });
     var frameMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1c, roughness: 0.55, metalness: 0.2 });
@@ -850,9 +891,10 @@
     var floor = new THREE.Mesh(
       new THREE.BoxGeometry(floorW, 0.16, floorD),
       new THREE.MeshStandardMaterial({
+        color: 0xffffff,
         map: createWoodFloor(),
         bumpMap: createWoodFloorBump(),
-        bumpScale: 0.0012,
+        bumpScale: 0.004,
         roughness: 0.60,
         metalness: 0.0
       })
@@ -863,12 +905,12 @@
 
     // ---- Continuous Smooth Warm Charcoal Stucco Back Wall ----
     var backWallMat = new THREE.MeshStandardMaterial({
-      color: 0x252525,
+      color: 0xffffff,
       map: stuccoTex,
       bumpMap: stuccoBump,
-      bumpScale: 0.0035,
+      bumpScale: 0.009,
       roughnessMap: stuccoRoughness,
-      roughness: 0.81,
+      roughness: 0.80,
       metalness: 0.0
     });
     box(xR - xL, H, T, (xL + xR) / 2, H / 2, zB, backWallMat);
